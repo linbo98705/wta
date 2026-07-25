@@ -1,4 +1,4 @@
-# Python
+# Python (no longer needed for GitHub Pages)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,6 +7,8 @@ __pycache__/
 venv/
 env/
 ENV/
+*.db
+data/
 
 # 敏感配置
 .env
@@ -31,3 +33,6 @@ temp/
 
 # 克隆的图片导出
 exports/
+
+# Supabase schema (已手动执行，不需要提交)
+supabase-schema.sql

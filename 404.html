@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WTA模拟赛事</title>
+    <script>
+        // GitHub Pages SPA redirect
+        // Converts path like /tournament/1/draw to /#tournament/1/draw
+        var path = window.location.pathname.replace(/^\/+/, '');
+        var hash = window.location.hash;
+        if (path && path !== 'index.html' && path !== '404.html') {
+            window.location.replace('/#/' + path);
+        } else {
+            window.location.replace('/');
+        }
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>

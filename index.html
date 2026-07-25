@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTA模拟赛事</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+    /* ── Daily Guess Table Styles ── */
+    .dg-card { margin-bottom: 20px; }
+    .dg-countdown { font-size: 0.875rem; font-weight: 700; color: var(--accent-gold); font-variant-numeric: tabular-nums; }
+    .dg-deadline { font-size: 0.75rem; color: var(--gray-500); margin-top: 2px; }
+    .dg-table { width: 100%; border-collapse: collapse; }
+    .dg-table thead { background: var(--gray-100); }
+    .dg-table th { padding: 10px 16px; font-size: 0.8125rem; font-weight: 700; color: var(--gray-600); text-align: left; border-bottom: 1px solid var(--gray-200); }
+    .dg-table td { padding: 12px 16px; font-size: 0.875rem; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+    .dg-table tbody tr:hover { background: var(--purple-bg); }
+    .dg-table tbody tr:last-child td { border-bottom: none; }
+    .dg-tb { font-weight: 700; color: var(--purple); width: 60px; }
+    .dg-match { color: var(--black); }
+    .dg-result { color: var(--accent-green); font-weight: 600; }
+
+    /* ── Admin Extra Styles ── */
+    .search-box input {
+        padding-left: 32px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: 10px center;
+        background-size: 16px;
+    }
+    .player-search-select { position: relative; }
+    .player-search-dropdown {
+        display: none; position: absolute; top: 100%; left: 0; right: 0;
+        max-height: 280px; overflow-y: auto; background: white;
+        border: 1px solid var(--gray-200); border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 1000; margin-top: 4px;
+    }
+    .player-search-item {
+        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+        cursor: pointer; border-bottom: 1px solid var(--gray-100); transition: background 0.15s;
+    }
+    .player-search-item:last-child { border-bottom: none; }
+    .player-search-item:hover { background: var(--purple-bg); }
+    .player-search-item .player-avatar { width: 32px; height: 32px; font-size: 0.875rem; flex-shrink: 0; }
+    .player-search-item-info { display: flex; flex-direction: column; gap: 2px; }
+    .player-search-item-info strong { font-size: 0.875rem; color: var(--black); }
+    .player-search-item-info span { font-size: 0.75rem; color: var(--gray-500); }
+    .player-search-empty { padding: 24px; text-align: center; color: var(--gray-400); font-size: 0.875rem; }
+    </style>
+</head>
+<body>
+    <!-- Main Nav -->
+    <nav class="main-nav">
+        <div class="container nav-container">
+            <a href="#/" class="logo">
+                <img src="static/logo.jpg" alt="网球联赛" class="logo-img">
+                <span class="logo-text">网球联赛</span>
+            </a>
+            <ul class="nav-links" id="navLinks">
+            </ul>
+            <button class="mobile-menu-btn" onclick="toggleMenu()">&#9776;</button>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="app"></div>
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- App Scripts -->
+    <script src="js/supabase-client.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/draw-engine.js"></script>
+
+    <script>
+    // ══════════════════════════════════════════════════════════════
+    // WTA模拟赛事 - SPA 路由 & 视图渲染
+    // ══════════════════════════════════════════════════════════════
+
+    const app = document.getElementById('app');
+
+    // ── Round Labels ──
+    const _roundLabels = {
+        'R128': 'R128', 'R64': 'R64', 'R32': 'R32', 'R16': 'R16',
+        'QF': '1/4决赛', 'SF': '半决赛', 'F': '决赛'
+    };
+
+    // ── Countdown interval reference ──
+    let _countdownInterval = null;
+
+    // ══════════════════════════════════════════════════════════════
+    // Sub-Nav Helper
+    // ══════════════════════════════════════════════════════════════
+    function subnavHtml(tid, activeSub) {
+        const links = [
+            { href: '#/tournament/' + tid, label: '赛事主页', sub: '' },
+            { href: '#/tournament/' + tid + '/players', label: '参赛名单', sub: 'players' },
+            { href: '#/tournament/' + tid + '/draw', label: '签表', sub: 'draw' },
+            { href: '#/tournament/' + tid + '/schedule', label: '赛程赛果', sub: 'schedule' },
+            { href: '#/tournament/' + tid + '/guesses', label: '竞猜', sub: 'guesses' },
+        ];
+        return `<div class="tournament-subnav" id="subnav">
+    <div class="container">
+        ${links.map(l => `<a href="${l.href}" class="${l.sub === activeSub ? 'active' : ''}">${l.label}</a>`).join('\n        ')}
+    </div>
+</div>`;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // renderHome() - Tournament List
+    // ══════════════════════════════════════════════════════════════
+    async function renderHome() {
+        app.innerHTML = `
+<!-- Hero -->
+<section class="tournament-header">
+    <div class="container">
+        <div class="tournament-header-content">
+            <h1>赛事列表</h1>
+            <div class="tournament-header-meta"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Tournament List -->
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <h2>所有赛事</h2>
+                <p>点击赛事卡片查看详情</p>
+            </div>
+        </div>
+        <div class="tournament-grid" id="tournamentGrid">
+            <div class="loading">加载中...</div>
+        </div>
+        <div class="empty-state" id="emptyState" style="display:none;">
+            <h3>暂无赛事</h3>
+            <p>暂未创建赛事</p>
+        </div>
+    </div>
+</section>`;
+
+        const data = await getTournaments();
+        const grid = document.getElementById('tournamentGrid');
+        const empty = document.getElementById('emptyState');
+
+        if (!Array.isArray(data) || data.length === 0) {
+            grid.style.display = 'none';
+            empty.style.display = 'block';
+            return;
+        }
+
+        grid.innerHTML = data.map(t => `
+            <a href="#/tournament/${t.id}" class="tournament-card">
+                <div class="tournament-card-header">
+                    <div class="category-badge">${escapeHtml(t.category)}</div>
+                    <h3>${escapeHtml(t.name_cn || t.name)}</h3>
+                </div>
+                <div class="tournament-card-body">
+                    <div class="tournament-card-info">
+                        <span>&#128205; ${escapeHtml(t.location)}</span>
+                        <span>
+                            <span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span>
+                        </span>
+                    </div>
+                    <div class="tournament-card-info">
+                        <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+                        <span>&#128101; ${t.draw_size}签</span>
+                    </div>
+                    <div class="tournament-card-actions">
+                        <span class="btn btn-outline btn-sm">查看详情 &rarr;</span>
+                    </div>
+                </div>
+            </a>
+        `).join('');
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // renderTournamentHome(tid) - Tournament Detail Home
+    // ══════════════════════════════════════════════════════════════
+    async function renderTournamentHome(tid) {
+        app.innerHTML = subnavHtml(tid, '') + `
+<!-- Tournament Header -->
+<section class="tournament-header" id="tournamentHeader">
+    <div class="container">
+        <div class="tournament-header-content">
+            <div class="tournament-category" id="tCat">加载中...</div>
+            <h1 id="tName">加载中...</h1>
+            <div class="tournament-header-meta" id="tMeta"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Links -->
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2>赛事导航</h2>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px;" id="quickLinks">
+        </div>
+    </div>
+</section>
+
+<!-- Today Top Scores -->
+<section class="section" style="background: var(--purple-bg);">
+    <div class="container">
+        <div class="section-header">
+            <h2>今日最高分</h2>
+        </div>
+        <div id="recentMatches">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+</section>`;
+
+        const t = await getTournament(tid);
+        if (!t) {
+            document.getElementById('tName').textContent = '赛事未找到';
+            return;
+        }
+
+        document.title = `${t.name_cn || t.name} - WTA模拟赛事`;
+        document.getElementById('tCat').textContent = t.category;
+        document.getElementById('tName').textContent = t.name_cn || t.name;
+        document.getElementById('tMeta').innerHTML = `
+            <span>&#128205; ${escapeHtml(t.location)}</span>
+            <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
+            <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+            <span>&#128101; ${t.draw_size}签</span>
+        `;
+
+        document.getElementById('quickLinks').innerHTML = [
+            { icon: '&#128101;', label: '参赛名单', href: '#/tournament/' + tid + '/players', desc: '查看所有参赛球员' },
+            { icon: '&#127942;', label: '比赛签表', href: '#/tournament/' + tid + '/draw', desc: '查看对阵签表' },
+            { icon: '&#128197;', label: '赛程赛果', href: '#/tournament/' + tid + '/schedule', desc: '查看赛程和赛果' },
+            { icon: '&#127919;', label: '每日竞猜', href: '#/tournament/' + tid + '/guesses', desc: '查看每日竞猜内容' },
+        ].map(item => `
+            <a href="${item.href}" class="card" style="padding:20px; text-align:center; display:block;">
+                <div style="font-size:2rem; margin-bottom:8px;">${item.icon}</div>
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:4px; color:var(--purple-dark);">${item.label}</h3>
+                <p style="font-size:0.8125rem; color:var(--gray-500);">${item.desc}</p>
+            </a>
+        `).join('');
+
+        const matches = await getMatches(tid);
+        const recent = Array.isArray(matches) ? matches.filter(m => m.status === 'completed').slice(-4).reverse() : [];
+
+        function renderGuess(m) {
+            if (!m.guess_team_a && !m.guess_team_b) return '';
+            const aName = m.guess_team_a || '-';
+            const bName = m.guess_team_b || '-';
+            const p1Name = m.p1_name || '球员1';
+            const p2Name = m.p2_name || '球员2';
+            const aTb = (m.guess_a_tb || '').split(',').map(Number);
+            const bTb = (m.guess_b_tb || '').split(',').map(Number);
+            const aScores = (m.guess_a_tb_score || '').split(',');
+            const bScores = (m.guess_b_tb_score || '').split(',');
+            const aTotal = m.guess_a_total || 0;
+            const bTotal = m.guess_b_total || 0;
+
+            function tbCell(val, isA) {
+                if (!val || val === 0) return '<span style="color:var(--gray-400)">-</span>';
+                const cls = isA ? 'guess-correct-a' : 'guess-correct-b';
+                return '<span class="' + cls + '">' + (val === 1 ? escapeHtml(p1Name) : escapeHtml(p2Name)) + '</span>';
+            }
+            function scoreCell(scoreVal) {
+                if (!scoreVal || scoreVal.trim() === '') return '<span style="color:var(--gray-400)">-</span>';
+                return '<span class="guess-score-text">' + escapeHtml(scoreVal.trim()) + '</span>';
+            }
+
+            let rows = '';
+            for (let i = 0; i < 5; i++) {
+                rows += '<tr><td class="guess-tb-label">TB' + (i + 1) + '</td><td>' + tbCell(aTb[i], true) + '</td><td>' + tbCell(bTb[i], false) + '</td></tr>';
+                rows += '<tr class="guess-score-row"><td class="guess-tb-label"></td><td>' + scoreCell(aScores[i]) + '</td><td>' + scoreCell(bScores[i]) + '</td></tr>';
+            }
+            return '<div class="match-guess"><table class="match-guess-table"><thead><tr><th></th><th>' + escapeHtml(aName) + '</th><th>' + escapeHtml(bName) + '</th></tr></thead><tbody>' + rows + '<tr class="guess-total-row"><td class="guess-tb-label" style="font-weight:700;">总分</td><td class="guess-total ' + (aTotal > bTotal ? 'guess-winner' : '') + '">' + aTotal + '</td><td class="guess-total ' + (bTotal > aTotal ? 'guess-winner' : '') + '">' + bTotal + '</td></tr></tbody></table></div>';
+        }
+
+        const scores = [];
+        recent.forEach(m => {
+            const isP1Winner = m.winner_id === m.player1_id;
+            const isP2Winner = m.winner_id === m.player2_id;
+            if (m.p1_name && (m.guess_a_total || 0) > 0) {
+                scores.push({ name: m.p1_name, score: m.guess_a_total || 0, isWinner: !!isP1Winner, round: m.round });
+            }
+            if (m.p2_name && (m.guess_b_total || 0) > 0) {
+                scores.push({ name: m.p2_name, score: m.guess_b_total || 0, isWinner: !!isP2Winner, round: m.round });
+            }
+        });
+        scores.sort((a, b) => b.score - a.score);
+        const maxScore = scores.length > 0 ? scores[0].score : 0;
+        const topScores = scores.filter(s => s.score === maxScore);
+
+        const recentHtml = scores.length === 0
+            ? '<div class="empty-state"><h3>暂无比赛结果</h3><p>比赛开始后将在这里显示今日最高分</p></div>'
+            : '<div class="top-score-hero-list">' + topScores.map(s => '<div class="top-score-hero ' + (s.isWinner ? 'top-score-hero-win' : 'top-score-hero-lose') + '"><div class="top-score-hero-meta"><span class="match-round-badge">' + (_roundLabels[s.round] || s.round) + '</span></div><div class="top-score-hero-main"><span class="top-score-hero-name">' + escapeHtml(s.name) + '</span><span class="top-score-hero-tag ' + (s.isWinner ? 'top-score-tag-win' : 'top-score-tag-lose') + '">' + (s.isWinner ? '胜' : '败') + '</span></div><span class="top-score-hero-val">' + s.score + '</span></div>').join('') + '</div>';
+
+        document.getElementById('recentMatches').innerHTML = recentHtml;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // renderPlayers(tid) - Player List
+    // ══════════════════════════════════════════════════════════════
+    async function renderPlayers(tid) {
+        app.innerHTML = subnavHtml(tid, 'players') + `
+<section class="tournament-header">
+    <div class="container">
+        <div class="tournament-header-content">
+            <div class="tournament-category" id="tCat">加载中...</div>
+            <h1 id="tName">参赛名单</h1>
+            <div class="tournament-header-meta" id="tMeta"></div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h3>球员名单</h3>
+                <span id="playerCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">序号</th>
+                            <th>球员</th>
+                            <th>国家/地区</th>
+                            <th style="width:80px;">排名</th>
+                            <th style="width:70px;">种子</th>
+                            <th style="width:100px;">入围类型</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playerTableBody">
+                        <tr><td colspan="6" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>`;
+
+        const t = await getTournament(tid);
+        if (t) {
+            document.getElementById('tCat').textContent = t.category;
+            document.getElementById('tName').textContent = '参赛名单';
+            document.getElementById('tMeta').innerHTML = `
+                <span>&#128205; ${escapeHtml(t.location)}</span>
+                <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
+                <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+            `;
+        }
+
+        const players = await getTournamentPlayers(tid);
+        if (!Array.isArray(players)) {
+            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="6" class="text-center">加载失败</td></tr>';
+            return;
+        }
+
+        document.getElementById('playerCount').textContent = '共 ' + players.length + ' 名球员';
+
+        if (players.length === 0) {
+            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="6"><div class="empty-state"><h3>暂无球员</h3><p>暂未添加参赛球员</p></div></td></tr>';
+            return;
+        }
+
+        document.getElementById('playerTableBody').innerHTML = players.map((p, idx) => `
+            <tr>
+                <td>${idx + 1}</td>
+                <td>
+                    <div class="player-row">
+                        <div class="player-avatar">${(p.name[0] || '').toUpperCase()}</div>
+                        <strong>${escapeHtml(p.name)}</strong>
+                    </div>
+                </td>
+                <td>${countryFlag('', p.country)} ${escapeHtml(p.country)}</td>
+                <td>${p.ranking < 999 ? '#' + p.ranking : '-'}</td>
+                <td>
+                    ${p.t_seed > 0
+                        ? '<span class="seed-badge">' + p.t_seed + '</span>'
+                        : '<span class="seed-badge empty">-</span>'}
+                </td>
+                <td>${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选'}</td>
+            </tr>
+        `).join('');
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // renderDraw(tid) - Draw Bracket
+    // ══════════════════════════════════════════════════════════════
+    async function renderDraw(tid) {
+        app.innerHTML = subnavHtml(tid, 'draw') + `
+<section class="tournament-header">
+    <div class="container">
+        <div class="tournament-header-content">
+            <div class="tournament-category" id="tCat">加载中...</div>
+            <h1 id="tName">比赛签表</h1>
+            <div class="tournament-header-meta" id="tMeta"></div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="card draw-card">
+            <div class="card-header flex-between">
+                <div style="display:flex; gap:16px; align-items:center;">
+                    <h3 id="bracketTitle">对阵签表</h3>
+                    <div class="view-toggle" id="viewToggle" style="display:none;">
+                        <button class="view-btn active" data-view="full">完整签表</button>
+                        <button class="view-btn" data-view="compact">16强起</button>
+                    </div>
+                </div>
+                <span id="drawLegend" style="font-size:0.75rem; color:var(--gray-500);"></span>
+                <button class="btn btn-sm" onclick="downloadBracket()" style="margin-left:12px;">&#128247; 下载图片</button>
+            </div>
+            <div class="card-body">
+                <div class="bracket-container" id="bracketContainer">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>`;
+
+        // Load dom-to-image for download
+        if (typeof domtoimage === 'undefined') {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js';
+            document.head.appendChild(s);
+        }
+
+        await initDrawView(tid, 'bracketContainer');
+    }
+
+    function downloadBracket() {
+        if (typeof domtoimage === 'undefined') {
+            showToast('图片导出库尚未加载，请稍后重试', 'error');
+            return;
+        }
+        const node = document.getElementById('bracketContainer');
+        if (!node) return;
+        const btn = document.querySelector('.card-header button');
+        if (btn) btn.textContent = '生成中...';
+        domtoimage.toPng(node, { bgcolor: '#ffffff', quality: 1 })
+            .then(function(dataUrl) {
+                const link = document.createElement('a');
+                link.download = '签表_' + (document.getElementById('tName') ? document.getElementById('tName').textContent : '') + '.png';
+                link.href = dataUrl;
+                link.click();
+                if (btn) btn.textContent = '\uD83D\uDCF7 下载图片';
+            })
+            .catch(function(err) {
+                console.error('导出失败', err);
+                showToast('导出失败，请尝试使用浏览器截图功能', 'error');
+                if (btn) btn.textContent = '\uD83D\uDCF7 下载图片';
+            });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // renderSchedule(tid) - Schedule & Results
+    // ══════════════════════════════════════════════════════════════
+    async function renderSchedule(tid) {
+        app.innerHTML = subnavHtml(tid, 'schedule') + `
+<section class="tournament-header">
+    <div class="container">
+        <div class="tournament-header-content">
+            <div class="tournament-category" id="tCat">加载中...</div>
+            <h1 id="tName">赛程赛果</h1>
+            <div class="tournament-header-meta" id="tMeta"></div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="card">
+            <div class="card-header flex-between">
+                <h3>赛程赛果</h3>
+                <span id="matchCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+            </div>
+            <div class="card-body">
+                <div class="round-filter" id="roundFilter"></div>
+                <div id="matchList">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>`;
+
+        // Toggle expand/collapse
+        document.addEventListener('click', function handler(e) {
+            const header = e.target.closest('.match-card-toggle');
+            if (!header) return;
+            const card = header.closest('.match-card');
+            card.classList.toggle('collapsed');
+            const icon = header.querySelector('.toggle-icon');
+            if (icon) icon.textContent = card.classList.contains('collapsed') ? '\u25B8' : '\u25BE';
+        });
+
+        const t = await getTournament(tid);
+        if (t) {
+            document.getElementById('tCat').textContent = t.category;
+            document.getElementById('tName').textContent = '赛程赛果';
+            document.getElementById('tMeta').innerHTML = `
+                <span>&#128205; ${escapeHtml(t.location)}</span>
+                <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
+                <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+            `;
+        }
+
+        const matches = await getMatches(tid);
+        if (!Array.isArray(matches)) return;
+
+        const realMatches = matches.filter(m => m.status !== 'bye');
+        const rounds = [...new Set(realMatches.map(m => m.round))];
+
+        let defaultRound = 'all';
+        const liveRounds = [...new Set(realMatches.filter(m => m.status === 'live').map(m => m.round))];
+        if (liveRounds.length > 0) {
+            defaultRound = liveRounds[0];
+        } else {
+            const scheduledRounds = [...new Set(realMatches.filter(m => m.status === 'scheduled').map(m => m.round))];
+            if (scheduledRounds.length > 0) defaultRound = scheduledRounds[0];
+        }
+
+        document.getElementById('roundFilter').innerHTML = `
+            <button class="round-filter-btn ${defaultRound === 'all' ? 'active' : ''}" onclick="filterMatches('all')">全部</button>
+            ${rounds.map(r => '<button class="round-filter-btn ' + (defaultRound === r ? 'active' : '') + '" onclick="filterMatches(\'' + r + '\')">' + (_roundLabels[r] || r) + '</button>').join('')}
+        `;
+        document.getElementById('matchCount').textContent = '共 ' + realMatches.length + ' 场比赛';
+
+        function renderGuessSchedule(m) {
+            const p1Name = m.p1_name || '球员1';
+            const p2Name = m.p2_name || '球员2';
+            const aPreds = (m.guess_a_tb || '').split(',');
+            const bPreds = (m.guess_b_tb || '').split(',');
+            const aScores = (m.guess_a_tb_score || '').split(',');
+            const bScores = (m.guess_b_tb_score || '').split(',');
+            const aTotal = m.guess_a_total || 0;
+            const bTotal = m.guess_b_total || 0;
+            const guessWinner = m.guess_winner || '';
+            const guessReason = m.guess_reason || '';
+
+            const hasData = aPreds.some(v => v && v.trim()) || bPreds.some(v => v && v.trim())
+                         || aScores.some(v => v && v.trim()) || bScores.some(v => v && v.trim());
+            if (!hasData && aTotal === 0 && bTotal === 0) return '';
+
+            function predACell(val) {
+                if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
+                return '<span class="gc-a-text">' + escapeHtml(val.trim()) + '</span>';
+            }
+            function predBCell(val) {
+                if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
+                return '<span class="gc-b-text">' + escapeHtml(val.trim()) + '</span>';
+            }
+            function scoreACell(val) {
+                if (!val || val.trim() === '') return '<span class="gc-score-zero">0</span>';
+                return '<span class="gc-a-score">' + (parseInt(val) || 0) + '</span>';
+            }
+            function scoreBCell(val) {
+                if (!val || val.trim() === '') return '<span class="gc-score-zero">0</span>';
+                return '<span class="gc-b-score">' + (parseInt(val) || 0) + '</span>';
+            }
+
+            let rows = '';
+            for (let i = 0; i < 5; i++) {
+                rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aPreds[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bPreds[i]) + '</td></tr>';
+            }
+
+            return '<div class="match-guess"><table class="gt-table"><thead><tr><th class="gt-th-label"></th><th class="gt-th-a">' + escapeHtml(p1Name) + '</th><th class="gt-th-score">得分</th><th class="gt-th-score">得分</th><th class="gt-th-b">' + escapeHtml(p2Name) + '</th></tr></thead><tbody>' + rows + '<tr class="gt-total-row"><td class="gt-label" style="font-weight:700;">总分</td><td class="gt-a">' + ((aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : '') + '</td><td class="gt-score gt-total ' + (aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')) + '">' + aTotal + '</td><td class="gt-score gt-total ' + (bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')) + '">' + bTotal + '</td><td class="gt-b">' + ((bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : '') + '</td></tr></tbody></table></div>';
+        }
+
+        function renderMatches(filterRound) {
+            const filtered = filterRound === 'all' ? realMatches : realMatches.filter(m => m.round === filterRound);
+
+            if (filtered.length === 0) {
+                document.getElementById('matchList').innerHTML = '<div class="empty-state"><h3>暂无比赛</h3><p>该轮次暂无比赛</p></div>';
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(m => {
+                const isCompleted = m.status === 'completed';
+                const isLive = m.status === 'live';
+                const guessReason = m.guess_reason || '';
+                const score = m.score || '';
+                const scoreParts = score.split(' ');
+                const s1 = scoreParts[0] || '';
+                const s2 = scoreParts[1] || '';
+                let quickScoreText = '';
+                if (isCompleted) {
+                    if (score) {
+                        quickScoreText = score;
+                    } else {
+                        const aTotal = m.guess_a_total || 0;
+                        const bTotal = m.guess_b_total || 0;
+                        if (aTotal > 0 || bTotal > 0) {
+                            quickScoreText = aTotal + ' - ' + bTotal;
+                        }
+                    }
+                    if (quickScoreText && guessReason) {
+                        quickScoreText += ' (' + guessReason + ')';
+                    }
+                }
+
+                const collapsedClass = isCompleted ? ' collapsed' : '';
+                const initIcon = isCompleted ? '\u25B8' : '\u25BE';
+
+                html += '<div class="match-card' + collapsedClass + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '"><div class="mc-player-col"><span class="mc-player-name">' + (isCompleted ? '<strong>' + escapeHtml(m.p1_name || 'TBD') + '</strong>' : escapeHtml(m.p1_name || 'TBD')) + (isCompleted && m.winner_id === m.player1_id ? ' &#127942;' : '') + '</span></div>' + (m.p1_country ? countryFlag(m.p1_country, m.p1_country_name || '') : '') + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + (m.p2_country ? countryFlag(m.p2_country, m.p2_country_name || '') : '') + '<div class="mc-player-col"><span class="mc-player-name">' + (isCompleted ? '<strong>' + escapeHtml(m.p2_name || 'TBD') + '</strong>' : escapeHtml(m.p2_name || 'TBD')) + (isCompleted && m.winner_id === m.player2_id ? ' &#127942;' : '') + '</span></div></div></div></div><div class="mc-body">' + renderGuessSchedule(m) + '</div></div>';
+            });
+
+            document.getElementById('matchList').innerHTML = '<div class="match-grid">' + html + '</div>';
+        }
+
+        window.filterMatches = function(round) {
+            document.querySelectorAll('.round-filter-btn').forEach(b => b.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+            renderMatches(round);
+        };
+
+        renderMatches(defaultRound);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // renderGuesses(tid) - Daily Guesses
+    // ══════════════════════════════════════════════════════════════
+    async function renderGuesses(tid) {
+        app.innerHTML = subnavHtml(tid, 'guesses') + `
+<section class="tournament-header">
+    <div class="container">
+        <div class="tournament-header-content">
+            <div class="tournament-category" id="tCat">加载中...</div>
+            <h1 id="tName">每日竞猜</h1>
+            <div class="tournament-header-meta" id="tMeta"></div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div id="guessList">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+</section>`;
+
+        // Clear any existing countdown
+        if (_countdownInterval) { clearInterval(_countdownInterval); _countdownInterval = null; }
+
+        const t = await getTournament(tid);
+        if (t) {
+            document.getElementById('tCat').textContent = t.category;
+            document.getElementById('tName').textContent = '每日竞猜';
+            document.getElementById('tMeta').innerHTML = `
+                <span>&#128205; ${escapeHtml(t.location)}</span>
+                <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
+                <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+            `;
+        }
+
+        const guesses = await getDailyGuesses(tid);
+        if (!Array.isArray(guesses) || guesses.length === 0) {
+            document.getElementById('guessList').innerHTML = '<div class="empty-state"><h3>暂无竞猜内容</h3><p>竞猜内容将在后台录入后显示</p></div>';
+            return;
+        }
+
+        let html = '';
+        guesses.forEach(g => {
+            const date = g.guess_date || '未设置日期';
+            let rows = '';
+            let hasResult = false;
+            let hasAnyMatch = false;
+            let allResult = true;
+            for (let i = 1; i <= 5; i++) {
+                const match = g['tb' + i + '_match'] || '';
+                const result = g['tb' + i + '_result'] || '';
+                if (result) hasResult = true;
+                if (match) hasAnyMatch = true;
+                if (match && !result) allResult = false;
+                rows += '<tr><td class="dg-tb">TB' + i + '</td><td class="dg-match">' + (match ? escapeHtml(match) : '<span style="color:var(--gray-400)">-</span>') + '</td><td class="dg-result">' + (result ? escapeHtml(result) : '<span style="color:var(--gray-400)">-</span>') + '</td></tr>';
+            }
+
+            const deadline = g.deadline || '';
+            const deadlineDate = deadline ? new Date(deadline) : null;
+            const now = new Date();
+            const isExpired = deadlineDate && deadlineDate <= now;
+            const hasDeadline = !!deadline;
+
+            let statusHtml;
+            if (allResult) {
+                statusHtml = '<span class="match-status completed">已出结果</span>';
+            } else if (hasAnyMatch && isExpired) {
+                statusHtml = '<span class="match-status live">进行中</span>';
+            } else if (hasDeadline && !isExpired) {
+                statusHtml = '<span class="dg-countdown" data-deadline="' + escapeHtml(deadline) + '">&#9203; 截止倒计时加载中...</span>';
+            } else if (hasAnyMatch) {
+                statusHtml = '<span class="match-status live">进行中</span>';
+            } else {
+                statusHtml = '<span class="match-status scheduled">待进行</span>';
+            }
+
+            html += '<div class="card dg-card"><div class="card-header flex-between"><div><h3>&#128197; ' + escapeHtml(date) + '</h3>' + (hasDeadline ? '<span class="dg-deadline">截止: ' + escapeHtml(deadline.replace('T', ' ')) + '</span>' : '') + '</div>' + statusHtml + '</div><div class="card-body" style="padding:0;"><table class="dg-table"><thead><tr><th></th><th>对阵</th><th>结果</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+        });
+
+        document.getElementById('guessList').innerHTML = html;
+
+        // Countdown update
+        let countdownRefreshed = false;
+        function updateCountdowns() {
+            document.querySelectorAll('.dg-countdown').forEach(el => {
+                const dl = el.getAttribute('data-deadline');
+                if (!dl) return;
+                const target = new Date(dl).getTime();
+                const now = Date.now();
+                const diff = target - now;
+                if (diff <= 0) {
+                    if (!countdownRefreshed) {
+                        countdownRefreshed = true;
+                        setTimeout(() => { window.location.reload(); }, 2000);
+                    }
+                    return;
+                }
+                const d = Math.floor(diff / 86400000);
+                const h = Math.floor((diff % 86400000) / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                let text = '\u23F3 ';
+                if (d > 0) text += d + '天 ';
+                text += (h < 10 ? '0' : '') + h + ':';
+                text += (m < 10 ? '0' : '') + m + ':';
+                text += (s < 10 ? '0' : '') + s;
+                el.textContent = text;
+            });
+        }
+        updateCountdowns();
+        _countdownInterval = setInterval(updateCountdowns, 1000);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // renderLogin() - Admin Login Page
+    // ══════════════════════════════════════════════════════════════
+    function renderLogin() {
+        app.innerHTML = `
+<main class="main-content">
+    <section class="section">
+        <div class="container">
+            <div style="max-width:420px; margin:60px auto;">
+                <div class="card">
+                    <div class="card-header" style="text-align:center;">
+                        <h3>管理员登录</h3>
+                        <p style="font-size:0.875rem; color:var(--gray-500); margin-top:4px;">请使用管理员账号登录</p>
+                    </div>
+                    <div class="card-body">
+                        <form id="loginForm">
+                            <div class="form-group">
+                                <label>邮箱</label>
+                                <input type="email" class="form-control" id="loginEmail" required placeholder="admin@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>密码</label>
+                                <input type="password" class="form-control" id="loginPassword" required placeholder="请输入密码">
+                            </div>
+                            <div class="modal-actions">
+                                <button type="submit" class="btn btn-primary btn-sm" style="width:100%;">登录</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>`;
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            const btn = this.querySelector('button[type="submit"]');
+            btn.textContent = '登录中...';
+            btn.disabled = true;
+
+            const result = await adminLogin(email, password);
+            if (result.success) {
+                showToast('登录成功', 'success');
+                window.location.hash = '#/admin';
+            } else {
+                showToast('登录失败: ' + (result.error || '未知错误'), 'error');
+                btn.textContent = '登录';
+                btn.disabled = false;
+            }
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // renderAdmin() - Admin Panel
+    // ══════════════════════════════════════════════════════════════
+    async function renderAdmin() {
+        const loggedIn = await isAdminLoggedIn();
+        if (!loggedIn) {
+            window.location.hash = '#/login';
+            showToast('请先登录管理员账号', 'error');
+            return;
+        }
+
+        // Admin state
+        let playerEditRows = [];
+        let allPlayersCache = [];
+        let entryAllPlayersCache = [];
+
+        app.innerHTML = `
+<div class="admin-layout">
+    <!-- Admin Sidebar -->
+    <nav class="admin-sidebar">
+        <a href="#" class="active" onclick="switchAdminPanel('tournaments', this); return false;">&#128203; 赛事管理</a>
+        <a href="#" onclick="switchAdminPanel('players', this); return false;">&#128101; 球员管理</a>
+        <a href="#" onclick="switchAdminPanel('entry', this); return false;">&#128221; 报名管理</a>
+        <a href="#" onclick="switchAdminPanel('matches', this); return false;">&#127936; 比赛管理</a>
+        <a href="#" onclick="switchAdminPanel('dailyguess', this); return false;">&#127919; 每日竞猜</a>
+        <a href="#" onclick="adminDoLogout(); return false;" style="margin-top:auto; border-top:1px solid var(--gray-200); padding-top:12px;">&#128682; 退出登录</a>
+    </nav>
+
+    <!-- Admin Content -->
+    <div class="admin-content">
+        <!-- Tournaments Panel -->
+        <div class="admin-panel active" id="panel-tournaments">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h3>赛事管理</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openModal('tournamentModal')">+ 创建赛事</button>
+                </div>
+                <div class="card-body" style="overflow-x:auto;">
+                    <table class="data-table">
+                        <thead><tr><th>ID</th><th>赛事名称</th><th>地点</th><th>级别</th><th>场地</th><th>日期</th><th>签位</th><th>状态</th><th>操作</th></tr></thead>
+                        <tbody id="tournamentTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Players Panel -->
+        <div class="admin-panel" id="panel-players">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h3>球员管理</h3>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()">&#128229; 导入文件</button>
+                        <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" style="display:none;" onchange="adminImportFile(this)">
+                        <button class="btn btn-outline btn-sm" onclick="adminAddPlayerRow()">+ 添加行</button>
+                        <button class="btn btn-primary btn-sm" onclick="adminBatchSavePlayers()">&#128190; 批量保存</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p style="font-size:0.8125rem; color:var(--gray-500); margin-bottom:12px;">支持手动输入或导入 Excel/CSV 文件（格式：中文姓名,国家/地区,排名）。填写完毕后点击「批量保存」。</p>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="playerEditTable">
+                            <thead><tr><th style="width:30px;">#</th><th>中文姓名</th><th>国家/地区</th><th>排名</th><th style="width:60px;">操作</th></tr></thead>
+                            <tbody id="playerEditBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card mt-20">
+                <div class="card-header flex-between">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <h3>现有球员</h3>
+                        <span id="playerCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <div class="search-box">
+                            <input type="text" id="playerSearchInput" class="form-control" placeholder="搜索姓名/国家/排名..." oninput="adminFilterPlayerList()" style="width:220px;">
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="adminToggleSelectAll()" id="selectAllBtn">&#9744; 全选</button>
+                        <button class="btn btn-danger btn-sm" onclick="adminBatchDeletePlayers()" id="batchDelBtn" disabled>&#128465; 批量删除</button>
+                    </div>
+                </div>
+                <div class="card-body" style="overflow-x:auto;">
+                    <table class="data-table">
+                        <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAll" onchange="adminToggleAllCheckboxes(this)"></th><th>ID</th><th>姓名</th><th>国家</th><th>排名</th><th>操作</th></tr></thead>
+                        <tbody id="playerTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Entry Panel -->
+        <div class="admin-panel" id="panel-entry">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <h3>报名管理</h3>
+                        <span id="entryCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <select class="form-control" id="entryTournamentSelect" onchange="adminLoadEntryList()" style="width:auto;"><option value="">请选择赛事</option></select>
+                        <button class="btn btn-primary btn-sm" onclick="adminOpenEntryModal()">+ 添加球员</button>
+                        <button class="btn btn-outline btn-sm" onclick="adminRecalcSeeds()">&#128260; 重算种子</button>
+                    </div>
+                </div>
+                <div class="card-body" style="overflow-x:auto;">
+                    <table class="data-table">
+                        <thead><tr><th>种子</th><th>球员</th><th>国家</th><th>排名</th><th>入围类型</th><th>操作</th></tr></thead>
+                        <tbody id="entryTable"><tr><td colspan="6" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Matches Panel -->
+        <div class="admin-panel" id="panel-matches">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h3>比赛管理</h3>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <select class="form-control" id="matchTournamentSelect" onchange="adminLoadMatchList()" style="width:auto;"><option value="">请选择赛事</option></select>
+                        <button class="btn btn-success btn-sm" onclick="adminGenerateDraw()">&#127922; 生成签表</button>
+                        <button class="btn btn-outline btn-sm" onclick="adminAdvanceByes()">&#9193; 处理轮空晋级</button>
+                        <button class="btn btn-primary btn-sm" onclick="adminOpenMatchModal()">+ 添加比赛</button>
+                    </div>
+                </div>
+                <div class="card-body" style="overflow-x:auto;">
+                    <table class="data-table">
+                        <thead><tr><th>#</th><th>轮次</th><th>球员1</th><th>球员2</th><th>比分 / 胜者</th><th>状态</th><th>操作</th></tr></thead>
+                        <tbody id="matchTable"><tr><td colspan="7" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Guess Panel -->
+        <div class="admin-panel" id="panel-dailyguess">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h3>每日竞猜管理</h3>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <select class="form-control" id="guessTournamentSelect" onchange="adminLoadDailyGuessList()" style="width:auto;"><option value="">请选择赛事</option></select>
+                        <button class="btn btn-primary btn-sm" onclick="adminOpenGuessModal()">+ 新增竞猜</button>
+                    </div>
+                </div>
+                <div class="card-body" style="overflow-x:auto;">
+                    <table class="data-table">
+                        <thead><tr><th>ID</th><th>日期</th><th>截止时间</th><th>TB1 对阵</th><th>TB1 结果</th><th>TB2 对阵</th><th>TB2 结果</th><th>TB3 对阵</th><th>TB3 结果</th><th>TB4 对阵</th><th>TB4 结果</th><th>TB5 对阵</th><th>TB5 结果</th><th>操作</th></tr></thead>
+                        <tbody id="dailyGuessTable"><tr><td colspan="14" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Player Edit Modal -->
+<div class="modal-overlay" id="playerEditModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="playerEditModalTitle">编辑球员</h3>
+            <button class="modal-close" onclick="closeModal('playerEditModal')">&times;</button>
+        </div>
+        <form id="playerEditForm" onsubmit="adminSavePlayerEdit(event)">
+            <input type="hidden" id="peId">
+            <div class="form-group"><label>姓名 *</label><input type="text" class="form-control" id="peName" required placeholder="球员姓名"></div>
+            <div class="form-group"><label>国家/地区</label><input type="text" class="form-control" id="peCountry" placeholder="如：中国"></div>
+            <div class="form-group"><label>排名</label><input type="number" class="form-control" id="peRanking" min="1" placeholder="排名" style="width:160px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('playerEditModal')">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tournament Modal -->
+<div class="modal-overlay" id="tournamentModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="tournamentModalTitle">创建赛事</h3>
+            <button class="modal-close" onclick="closeModal('tournamentModal')">&times;</button>
+        </div>
+        <form id="tournamentForm" onsubmit="adminSaveTournament(event)">
+            <input type="hidden" id="tId">
+            <div class="form-group"><label>赛事名称（英文）*</label><input type="text" class="form-control" id="tNameEn" required placeholder="如：China Open"></div>
+            <div class="form-group"><label>赛事名称（中文）*</label><input type="text" class="form-control" id="tNameCn" required placeholder="如：中国网球公开赛"></div>
+            <div class="form-row">
+                <div class="form-group"><label>举办地点*</label><input type="text" class="form-control" id="tLocation" required placeholder="如：北京, 中国"></div>
+                <div class="form-group"><label>赛事级别*</label><select class="form-control" id="tCategory"><option value="WTA 1000">WTA 1000</option><option value="WTA 500" selected>WTA 500</option><option value="WTA 250">WTA 250</option><option value="WTA 125">WTA 125</option></select></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>场地类型*</label><select class="form-control" id="tSurface"><option value="Hard">硬地 (Hard)</option><option value="Clay">红土 (Clay)</option><option value="Grass">草地 (Grass)</option></select></div>
+                <div class="form-group"><label>签位大小*</label><select class="form-control" id="tDrawSize"><option value="16">16签</option><option value="32" selected>32签</option><option value="64">64签</option><option value="96">96签</option><option value="128">128签</option></select></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>开始日期*</label><input type="date" class="form-control" id="tStartDate" required></div>
+                <div class="form-group"><label>结束日期*</label><input type="date" class="form-control" id="tEndDate" required></div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('tournamentModal')">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Entry Modal -->
+<div class="modal-overlay" id="entryModal">
+    <div class="modal">
+        <div class="modal-header"><h3>添加参赛球员</h3><button class="modal-close" onclick="closeModal('entryModal')">&times;</button></div>
+        <form id="entryForm" onsubmit="adminSaveEntry(event)">
+            <div class="form-group">
+                <label>选择球员*</label>
+                <input type="hidden" id="ePlayerId" required>
+                <div class="player-search-select" id="playerSearchSelect">
+                    <input type="text" class="form-control" id="ePlayerSearch" placeholder="搜索球员姓名/国家..." autocomplete="off" oninput="adminFilterEntryPlayers()" onfocus="adminShowEntryPlayerDropdown()" onblur="setTimeout(()=>adminHideEntryPlayerDropdown(),200)">
+                    <div class="player-search-dropdown" id="entryPlayerDropdown"></div>
+                </div>
+                <p id="ePlayerSelected" style="font-size:0.8125rem; color:var(--accent-green); margin-top:4px; display:none;">&#10003; 已选择: <span id="ePlayerSelectedName"></span></p>
+            </div>
+            <div class="form-group"><label>入围类型</label><select class="form-control" id="eEntryType"><option value="main">正选</option><option value="wc">外卡 (WC)</option><option value="q">资格赛 (Q)</option></select></div>
+            <p style="font-size:0.75rem; color:var(--gray-400);">种子排位将根据赛事签位和球员排名自动计算</p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('entryModal')">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm">添加</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Entry Edit Modal -->
+<div class="modal-overlay" id="entryEditModal">
+    <div class="modal">
+        <div class="modal-header"><h3>编辑参赛球员</h3><button class="modal-close" onclick="closeModal('entryEditModal')">&times;</button></div>
+        <form id="entryEditForm" onsubmit="adminSaveEntryEdit(event)">
+            <input type="hidden" id="eePlayerId">
+            <div class="form-group"><label>球员</label><input type="text" class="form-control" id="eePlayerName" readonly style="background:var(--gray-100);"></div>
+            <div class="form-group"><label>入围类型</label><select class="form-control" id="eeEntryType"><option value="main">正选</option><option value="wc">外卡 (WC)</option><option value="q">资格赛 (Q)</option></select></div>
+            <p style="font-size:0.75rem; color:var(--gray-400);">种子排位将根据赛事签位和球员排名自动计算</p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('entryEditModal')">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Match Modal -->
+<div class="modal-overlay" id="matchModal">
+    <div class="modal" style="max-width: 720px;">
+        <div class="modal-header">
+            <h3 id="matchModalTitle">添加比赛</h3>
+            <button class="modal-close" onclick="closeModal('matchModal')">&times;</button>
+        </div>
+        <form id="matchForm" onsubmit="adminSaveMatch(event)">
+            <input type="hidden" id="mId">
+            <input type="hidden" id="mRound">
+            <input type="hidden" id="mOrder" value="1">
+            <input type="hidden" id="mPlayer1">
+            <input type="hidden" id="mPlayer2">
+            <div class="guess-matchup">
+                <div class="guess-matchup-player" id="matchupP1">球员1</div>
+                <div class="guess-matchup-vs">VS</div>
+                <div class="guess-matchup-player" id="matchupP2">球员2</div>
+            </div>
+            <table class="guess-edit-table-5" id="guessEditTable">
+                <thead><tr><th class="ge-score-col">得分</th><th class="ge-predict-col" id="geHeadA">球员1</th><th class="ge-vs-col">VS</th><th class="ge-predict-col" id="geHeadB">球员2</th><th class="ge-score-col">得分</th></tr></thead>
+                <tbody>
+                    <tr><td><input type="number" class="guess-ps-input" id="gaPs1" value="0" min="0"></td><td><input type="text" class="guess-predict-input" id="gaPred1" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB1</td><td><input type="text" class="guess-predict-input" id="gbPred1" placeholder="球员名 比分"></td><td><input type="number" class="guess-ps-input" id="gbPs1" value="0" min="0"></td></tr>
+                    <tr><td><input type="number" class="guess-ps-input" id="gaPs2" value="0" min="0"></td><td><input type="text" class="guess-predict-input" id="gaPred2" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB2</td><td><input type="text" class="guess-predict-input" id="gbPred2" placeholder="球员名 比分"></td><td><input type="number" class="guess-ps-input" id="gbPs2" value="0" min="0"></td></tr>
+                    <tr><td><input type="number" class="guess-ps-input" id="gaPs3" value="0" min="0"></td><td><input type="text" class="guess-predict-input" id="gaPred3" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB3</td><td><input type="text" class="guess-predict-input" id="gbPred3" placeholder="球员名 比分"></td><td><input type="number" class="guess-ps-input" id="gbPs3" value="0" min="0"></td></tr>
+                    <tr><td><input type="number" class="guess-ps-input" id="gaPs4" value="0" min="0"></td><td><input type="text" class="guess-predict-input" id="gaPred4" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB4</td><td><input type="text" class="guess-predict-input" id="gbPred4" placeholder="球员名 比分"></td><td><input type="number" class="guess-ps-input" id="gbPs4" value="0" min="0"></td></tr>
+                    <tr><td><input type="number" class="guess-ps-input" id="gaPs5" value="0" min="0"></td><td><input type="text" class="guess-predict-input" id="gaPred5" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB5</td><td><input type="text" class="guess-predict-input" id="gbPred5" placeholder="球员名 比分"></td><td><input type="number" class="guess-ps-input" id="gbPs5" value="0" min="0"></td></tr>
+                </tbody>
+                <tfoot><tr><td class="ge-total-cell"><span id="geTotalA">0</span></td><td colspan="3" class="ge-total-label">TOTAL POINTS</td><td class="ge-total-cell"><span id="geTotalB">0</span></td></tr></tfoot>
+            </table>
+            <div class="form-row" style="margin-top: 12px;">
+                <div class="form-group"><label>竞猜胜者</label><select class="form-control" id="mGuessWinner"><option value="">自动判定（总分高者）</option><option value="player1" id="gwOption1">球员1</option><option value="player2" id="gwOption2">球员2</option></select></div>
+                <div class="form-group"><label>胜利原因</label><input type="text" class="form-control" id="mGuessReason" placeholder="如：TB3 完胜、关键得分等"></div>
+            </div>
+            <div class="form-group" style="margin-top: 12px;"><label>状态</label><select class="form-control" id="mStatus"><option value="scheduled">待进行</option><option value="live">进行中</option><option value="completed">已完成</option></select></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('matchModal')">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Daily Guess Modal -->
+<div class="modal-overlay" id="guessModal">
+    <div class="modal" style="max-width: 820px;">
+        <div class="modal-header">
+            <h3 id="guessModalTitle">新增竞猜</h3>
+            <button class="modal-close" onclick="closeModal('guessModal')">&times;</button>
+        </div>
+        <form id="guessForm" onsubmit="adminSaveGuess(event)">
+            <input type="hidden" id="gId">
+            <div class="form-group"><label>竞猜日期 *</label><input type="date" class="form-control" id="gDate" required style="width: 200px;"></div>
+            <div class="form-group"><label>截止时间</label><input type="datetime-local" class="form-control" id="gDeadline" style="width: 260px;"></div>
+            <div style="overflow-x:auto;">
+                <table class="data-table" style="margin-top: 8px;">
+                    <thead><tr><th style="width:60px;">TB</th><th>对阵 (如: 奥克佳布列娃 vs 多丹)</th><th>结果 (如: 奥克佳布列娃 6-3 6-3)</th></tr></thead>
+                    <tbody>
+                        <tr><td><input type="text" class="form-control" value="TB1" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb1Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb1Result" placeholder="胜者 比分"></td></tr>
+                        <tr><td><input type="text" class="form-control" value="TB2" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb2Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb2Result" placeholder="胜者 比分"></td></tr>
+                        <tr><td><input type="text" class="form-control" value="TB3" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb3Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb3Result" placeholder="胜者 比分"></td></tr>
+                        <tr><td><input type="text" class="form-control" value="TB4" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb4Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb4Result" placeholder="胜者 比分"></td></tr>
+                        <tr><td><input type="text" class="form-control" value="TB5" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb5Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb5Result" placeholder="胜者 比分"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('guessModal')">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm">保存</button>
+            </div>
+        </form>
+    </div>
+</div>`;
+
+        // ── Expose functions globally ──
+
+        // Panel Switch
+        window.switchAdminPanel = function(panel, el) {
+            document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'));
+            document.getElementById('panel-' + panel).classList.add('active');
+            if (el) el.classList.add('active');
+            if (panel === 'tournaments') adminLoadTournaments();
+            else if (panel === 'players') adminLoadPlayers();
+            else if (panel === 'entry') adminLoadEntrySelect();
+            else if (panel === 'matches') adminLoadMatchSelect();
+            else if (panel === 'dailyguess') adminLoadGuessSelect();
+        };
+
+        window.adminDoLogout = async function() {
+            if (!confirm('确定退出登录？')) return;
+            await adminLogout();
+            showToast('已退出登录', 'success');
+            window.location.hash = '#/';
+        };
+
+        // ── Tournament CRUD ──
+        async function adminLoadTournaments() {
+            const data = await getTournaments();
+            const tbody = document.getElementById('tournamentTable');
+            if (!Array.isArray(data) || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;">暂无赛事，点击"+ 创建赛事"开始</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(t => '<tr><td>' + t.id + '</td><td><strong>' + escapeHtml(t.name_cn || t.name) + '</strong></td><td>' + escapeHtml(t.location) + '</td><td><span class="match-round-badge">' + escapeHtml(t.category) + '</span></td><td><span class="surface-tag ' + surfaceClass(t.surface) + '">' + surfaceLabel(t.surface) + '</span></td><td>' + t.start_date + ' ~ ' + t.end_date + '</td><td>' + t.draw_size + '签</td><td>' + (t.is_active ? '&#9989; 启用' : '&#10060; 停用') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditTournament(' + t.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteTournament(' + t.id + ')">删除</button></td></tr>').join('');
+        }
+
+        window.adminSaveTournament = async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('tId').value;
+            const data = {
+                name: document.getElementById('tNameEn').value,
+                name_cn: document.getElementById('tNameCn').value,
+                location: document.getElementById('tLocation').value,
+                category: document.getElementById('tCategory').value,
+                surface: document.getElementById('tSurface').value,
+                draw_size: parseInt(document.getElementById('tDrawSize').value),
+                start_date: document.getElementById('tStartDate').value,
+                end_date: document.getElementById('tEndDate').value,
+            };
+            let result;
+            if (id) {
+                result = await updateTournament(parseInt(id), data);
+            } else {
+                result = await createTournament(data);
+            }
+            if (result.success) {
+                closeModal('tournamentModal');
+                showToast(id ? '赛事已更新' : '赛事已创建', 'success');
+                adminLoadTournaments();
+            } else {
+                showToast('操作失败: ' + result.error, 'error');
+            }
+        };
+
+        window.adminEditTournament = async function(id) {
+            const t = await getTournament(id);
+            if (!t) return;
+            document.getElementById('tId').value = t.id;
+            document.getElementById('tNameEn').value = t.name;
+            document.getElementById('tNameCn').value = t.name_cn;
+            document.getElementById('tLocation').value = t.location;
+            document.getElementById('tCategory').value = t.category;
+            document.getElementById('tSurface').value = t.surface;
+            document.getElementById('tDrawSize').value = t.draw_size;
+            document.getElementById('tStartDate').value = t.start_date;
+            document.getElementById('tEndDate').value = t.end_date;
+            document.getElementById('tournamentModalTitle').textContent = '编辑赛事';
+            openModal('tournamentModal');
+        };
+
+        window.adminDeleteTournament = async function(id) {
+            if (!confirm('确定删除此赛事？这将同时删除所有相关数据！')) return;
+            const result = await deleteTournament(id);
+            if (result.success) { showToast('赛事已删除', 'success'); adminLoadTournaments(); }
+            else { showToast('删除失败: ' + result.error, 'error'); }
+        };
+
+        // ── Player CRUD ──
+        window.adminAddPlayerRow = function(name, country, ranking) {
+            playerEditRows.push({ name: name || '', country: country || '', ranking: ranking || 999 });
+            adminRenderPlayerEditRows();
+        };
+
+        window.adminRemovePlayerRow = function(idx) {
+            playerEditRows.splice(idx, 1);
+            adminRenderPlayerEditRows();
+        };
+
+        window.adminUpdatePlayerRow = function(idx, field, value) {
+            playerEditRows[idx][field] = value;
+        };
+
+        function adminRenderPlayerEditRows() {
+            const tbody = document.getElementById('playerEditBody');
+            if (playerEditRows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:20px;color:var(--gray-400);">点击「+ 添加行」开始输入球员</td></tr>';
+                return;
+            }
+            tbody.innerHTML = playerEditRows.map((p, i) => '<tr><td>' + (i + 1) + '</td><td><input type="text" class="form-control" value="' + escapeHtml(p.name) + '" placeholder="如：郑钦文" onchange="adminUpdatePlayerRow(' + i + ',\'name\',this.value)"></td><td><input type="text" class="form-control" value="' + escapeHtml(p.country) + '" placeholder="如：中国" onchange="adminUpdatePlayerRow(' + i + ',\'country\',this.value)"></td><td><input type="number" class="form-control" value="' + p.ranking + '" min="1" style="width:80px;" onchange="adminUpdatePlayerRow(' + i + ',\'ranking\',parseInt(this.value)||999)"></td><td><button class="btn btn-danger btn-sm" onclick="adminRemovePlayerRow(' + i + ')">&#10005;</button></td></tr>').join('');
+        }
+
+        window.adminBatchSavePlayers = async function() {
+            const valid = playerEditRows.filter(p => p.name.trim());
+            if (valid.length === 0) { showToast('请至少输入一个球员姓名', 'error'); return; }
+            const result = await batchCreatePlayers(valid);
+            if (result.count > 0) {
+                const msg = result.updated > 0 ? '新增 ' + (result.created || 0) + ' 名，更新 ' + result.updated + ' 名球员' : '成功添加 ' + result.count + ' 名球员';
+                showToast(msg, 'success');
+                playerEditRows = [];
+                adminRenderPlayerEditRows();
+                adminLoadPlayers();
+            } else {
+                showToast('保存失败', 'error');
+            }
+        };
+
+        async function adminLoadPlayers() {
+            const data = await getPlayers();
+            const tbody = document.getElementById('playerTable');
+            allPlayersCache = Array.isArray(data) ? data : [];
+            document.getElementById('playerCount').textContent = allPlayersCache.length ? '共 ' + allPlayersCache.length + ' 名球员' : '';
+            if (allPlayersCache.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无球员</td></tr>';
+                adminUpdateBatchDelBtn();
+                return;
+            }
+            adminRenderPlayerList(allPlayersCache);
+        }
+
+        function adminRenderPlayerList(players) {
+            const tbody = document.getElementById('playerTable');
+            if (!players || players.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;color:var(--gray-400);">未找到匹配的球员</td></tr>';
+                adminUpdateBatchDelBtn();
+                return;
+            }
+            tbody.innerHTML = players.map(p => '<tr><td><input type="checkbox" class="player-check" value="' + p.id + '" onchange="adminUpdateBatchDelBtn()"></td><td>' + p.id + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag('', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditPlayer(' + p.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeletePlayer(' + p.id + ')">删除</button></td></tr>').join('');
+            adminUpdateBatchDelBtn();
+        }
+
+        window.adminFilterPlayerList = function() {
+            const keyword = (document.getElementById('playerSearchInput').value || '').trim().toLowerCase();
+            if (!keyword) {
+                adminRenderPlayerList(allPlayersCache);
+                document.getElementById('playerCount').textContent = allPlayersCache.length ? '共 ' + allPlayersCache.length + ' 名球员' : '';
+                return;
+            }
+            const filtered = allPlayersCache.filter(p => {
+                return (p.name || '').toLowerCase().includes(keyword) || (p.country || '').toLowerCase().includes(keyword) || String(p.ranking || '').includes(keyword) || String(p.id || '').includes(keyword);
+            });
+            document.getElementById('playerCount').textContent = '找到 ' + filtered.length + ' / ' + allPlayersCache.length + ' 名球员';
+            adminRenderPlayerList(filtered);
+        };
+
+        window.adminToggleAllCheckboxes = function(el) {
+            document.querySelectorAll('.player-check').forEach(cb => cb.checked = el.checked);
+            adminUpdateBatchDelBtn();
+        };
+
+        window.adminToggleSelectAll = function() {
+            const all = document.querySelectorAll('.player-check');
+            const allChecked = [...all].every(cb => cb.checked);
+            document.querySelectorAll('.player-check').forEach(cb => cb.checked = !allChecked);
+            document.getElementById('checkAll').checked = !allChecked;
+            adminUpdateBatchDelBtn();
+        };
+
+        function adminUpdateBatchDelBtn() {
+            const checked = document.querySelectorAll('.player-check:checked').length;
+            const btn = document.getElementById('batchDelBtn');
+            btn.disabled = checked === 0;
+            btn.textContent = checked > 0 ? '\uD83D\uDDD1 批量删除 (' + checked + ')' : '\uD83D\uDDD1 批量删除';
+            document.getElementById('selectAllBtn').textContent = checked > 0 && checked === document.querySelectorAll('.player-check').length ? '\u2611 取消全选' : '\u2610 全选';
+        }
+
+        window.adminBatchDeletePlayers = async function() {
+            const checked = [...document.querySelectorAll('.player-check:checked')].map(cb => parseInt(cb.value));
+            if (checked.length === 0) { showToast('请先选择球员', 'error'); return; }
+            if (!confirm('确定删除选中的 ' + checked.length + ' 名球员？此操作不可撤销！')) return;
+            const result = await batchDeletePlayers(checked);
+            if (result.success) {
+                showToast('已删除 ' + result.count + ' 名球员', 'success');
+                document.getElementById('checkAll').checked = false;
+                adminLoadPlayers();
+            } else {
+                showToast('删除失败', 'error');
+            }
+        };
+
+        window.adminImportFile = async function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            // Simple CSV parse (no server upload in SPA)
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(l => l.trim());
+                let imported = 0;
+                for (const line of lines) {
+                    const parts = line.split(',').map(s => s.trim());
+                    if (parts.length >= 1 && parts[0]) {
+                        playerEditRows.push({ name: parts[0], country: parts[1] || '', ranking: parseInt(parts[2]) || 999 });
+                        imported++;
+                    }
+                }
+                if (imported > 0) {
+                    adminRenderPlayerEditRows();
+                    showToast('成功读取 ' + imported + ' 行数据，请核对后点击「批量保存」', 'success');
+                } else {
+                    showToast('未检测到有效数据', 'error');
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        };
+
+        window.adminEditPlayer = async function(id) {
+            const p = await getPlayer(id);
+            if (!p) return;
+            document.getElementById('peId').value = p.id;
+            document.getElementById('peName').value = p.name || '';
+            document.getElementById('peCountry').value = p.country || '';
+            document.getElementById('peRanking').value = p.ranking < 999 ? p.ranking : '';
+            document.getElementById('playerEditModalTitle').textContent = '编辑球员';
+            openModal('playerEditModal');
+        };
+
+        window.adminSavePlayerEdit = async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('peId').value;
+            const result = await updatePlayer(parseInt(id), {
+                name: document.getElementById('peName').value.trim(),
+                country: document.getElementById('peCountry').value.trim(),
+                ranking: parseInt(document.getElementById('peRanking').value) || 999
+            });
+            if (result.success) {
+                closeModal('playerEditModal');
+                showToast('球员已更新', 'success');
+                adminLoadPlayers();
+            } else {
+                showToast('更新失败: ' + result.error, 'error');
+            }
+        };
+
+        window.adminDeletePlayer = async function(id) {
+            if (!confirm('确定删除此球员？')) return;
+            const result = await deletePlayer(id);
+            if (result.success) { showToast('球员已删除', 'success'); adminLoadPlayers(); }
+            else { showToast('删除失败: ' + result.error, 'error'); }
+        };
+
+        // ── Entry Management ──
+        async function adminLoadEntrySelect() {
+            const data = await getTournaments();
+            const select = document.getElementById('entryTournamentSelect');
+            select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + ' (' + escapeHtml(t.category) + ')</option>').join('') : '');
+        }
+
+        window.adminLoadEntryList = async function() {
+            const tid = document.getElementById('entryTournamentSelect').value;
+            if (!tid) { document.getElementById('entryCount').textContent = ''; return; }
+            const tournament = await getTournament(parseInt(tid));
+            const drawSize = tournament ? (tournament.draw_size || 0) : 0;
+            const players = await getTournamentPlayers(parseInt(tid));
+            const tbody = document.getElementById('entryTable');
+            const count = Array.isArray(players) ? players.length : 0;
+            document.getElementById('entryCount').textContent = '共 ' + count + ' 名球员 / ' + drawSize + '签';
+            if (players.error || !Array.isArray(players) || players.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
+                return;
+            }
+            tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag('', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td>' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正选') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
+        };
+
+        window.adminOpenEntryModal = async function() {
+            const tid = document.getElementById('entryTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            entryAllPlayersCache = await getPlayers();
+            if (!Array.isArray(entryAllPlayersCache)) entryAllPlayersCache = [];
+            document.getElementById('ePlayerId').value = '';
+            document.getElementById('ePlayerSearch').value = '';
+            document.getElementById('ePlayerSelected').style.display = 'none';
+            adminRenderEntryPlayerDropdown(entryAllPlayersCache);
+            openModal('entryModal');
+        };
+
+        function adminRenderEntryPlayerDropdown(players) {
+            const dropdown = document.getElementById('entryPlayerDropdown');
+            if (!players || players.length === 0) { dropdown.innerHTML = '<div class="player-search-empty">未找到匹配球员</div>'; return; }
+            dropdown.innerHTML = players.map(p => '<div class="player-search-item" data-pid="' + p.id + '" data-pname="' + escapeHtml(p.name) + '" onmousedown="adminSelectEntryPlayer(this.dataset.pid, this.dataset.pname)"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><div class="player-search-item-info"><strong>' + escapeHtml(p.name) + '</strong><span>' + escapeHtml(p.country || '') + ' ' + (p.ranking < 999 ? '#' + p.ranking : '') + '</span></div></div>').join('');
+        }
+
+        window.adminFilterEntryPlayers = function() {
+            const keyword = (document.getElementById('ePlayerSearch').value || '').trim().toLowerCase();
+            document.getElementById('ePlayerId').value = '';
+            document.getElementById('ePlayerSelected').style.display = 'none';
+            if (!keyword) { adminRenderEntryPlayerDropdown(entryAllPlayersCache); return; }
+            const filtered = entryAllPlayersCache.filter(p => {
+                return (p.name || '').toLowerCase().includes(keyword) || (p.country || '').toLowerCase().includes(keyword) || String(p.ranking || '').includes(keyword);
+            });
+            adminRenderEntryPlayerDropdown(filtered);
+        };
+
+        window.adminShowEntryPlayerDropdown = function() { document.getElementById('entryPlayerDropdown').style.display = 'block'; };
+        window.adminHideEntryPlayerDropdown = function() { document.getElementById('entryPlayerDropdown').style.display = 'none'; };
+
+        window.adminSelectEntryPlayer = function(id, name) {
+            document.getElementById('ePlayerId').value = id;
+            document.getElementById('ePlayerSearch').value = name;
+            document.getElementById('ePlayerSelectedName').textContent = name;
+            document.getElementById('ePlayerSelected').style.display = 'block';
+            adminHideEntryPlayerDropdown();
+        };
+
+        window.adminSaveEntry = async function(e) {
+            e.preventDefault();
+            const tid = document.getElementById('entryTournamentSelect').value;
+            const playerId = document.getElementById('ePlayerId').value;
+            if (!playerId) { showToast('请从列表中选择一名球员', 'error'); return; }
+            const result = await addTournamentPlayer(parseInt(tid), { player_id: parseInt(playerId), seed: 0, entry_type: document.getElementById('eEntryType').value });
+            if (result.success) {
+                closeModal('entryModal');
+                await recalcSeeds(parseInt(tid));
+                showToast('球员已添加，种子已自动计算', 'success');
+                adminLoadEntryList();
+            } else {
+                showToast('添加失败: ' + (result.error || '未知错误'), 'error');
+            }
+        };
+
+        window.adminEditEntry = function(playerId, playerName, entryType) {
+            document.getElementById('eePlayerId').value = playerId;
+            document.getElementById('eePlayerName').value = playerName || '';
+            document.getElementById('eeEntryType').value = entryType || 'main';
+            openModal('entryEditModal');
+        };
+
+        window.adminSaveEntryEdit = async function(e) {
+            e.preventDefault();
+            const playerId = document.getElementById('eePlayerId').value;
+            const tid = document.getElementById('entryTournamentSelect').value;
+            await updateTournamentPlayer(parseInt(tid), parseInt(playerId), { seed: 0, entry_type: document.getElementById('eeEntryType').value });
+            closeModal('entryEditModal');
+            await recalcSeeds(parseInt(tid));
+            showToast('已更新，种子已自动重算', 'success');
+            adminLoadEntryList();
+        };
+
+        window.adminRemoveEntry = async function(playerId) {
+            if (!confirm('确定移除该球员？')) return;
+            const tid = document.getElementById('entryTournamentSelect').value;
+            await removeTournamentPlayer(parseInt(tid), parseInt(playerId));
+            await recalcSeeds(parseInt(tid));
+            showToast('已移除，种子已自动重算', 'success');
+            adminLoadEntryList();
+        };
+
+        window.adminRecalcSeeds = async function() {
+            const tid = document.getElementById('entryTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            const result = await recalcSeeds(parseInt(tid));
+            if (result.success) { showToast('种子已重算，共 ' + result.seeded + ' 名种子球员', 'success'); adminLoadEntryList(); }
+            else { showToast('重算失败', 'error'); }
+        };
+
+        // ── Match Management ──
+        async function adminLoadMatchSelect() {
+            const data = await getTournaments();
+            const select = document.getElementById('matchTournamentSelect');
+            select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + '</option>').join('') : '');
+        }
+
+        window.adminLoadMatchList = async function() {
+            const tid = document.getElementById('matchTournamentSelect').value;
+            if (!tid) return;
+            const matches = await getMatches(parseInt(tid));
+            const tbody = document.getElementById('matchTable');
+            if (!Array.isArray(matches) || matches.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px;">暂无比赛，请先生成签表或手动添加</td></tr>';
+                return;
+            }
+            tbody.innerHTML = matches.map(m => {
+                const score = m.score || '';
+                const reason = m.guess_reason || '';
+                let scoreDisplay = score || '-';
+                if (!score) {
+                    const aT = m.guess_a_total || 0;
+                    const bT = m.guess_b_total || 0;
+                    if (aT > 0 || bT > 0) scoreDisplay = aT + ' - ' + bT;
+                }
+                if (scoreDisplay !== '-' && reason) scoreDisplay += ' (' + reason + ')';
+                return '<tr><td>' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + escapeHtml(m.p1_name || 'TBD') + '</td><td>' + escapeHtml(m.p2_name || 'TBD') + '</td><td>' + scoreDisplay + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td><button class="btn btn-outline btn-sm" onclick="adminEditMatch(' + m.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteMatch(' + m.id + ')">删除</button></td></tr>';
+            }).join('');
+        };
+
+        window.adminOpenMatchModal = async function(mid) {
+            const tid = document.getElementById('matchTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            document.getElementById('matchForm').reset();
+            document.getElementById('mId').value = '';
+            document.getElementById('mRound').value = '';
+            document.getElementById('mOrder').value = '1';
+            document.getElementById('mPlayer1').value = '';
+            document.getElementById('mPlayer2').value = '';
+            document.getElementById('matchupP1').textContent = '球员1';
+            document.getElementById('matchupP2').textContent = '球员2';
+            document.getElementById('geHeadA').textContent = '球员1';
+            document.getElementById('geHeadB').textContent = '球员2';
+            document.getElementById('geTotalA').textContent = '0';
+            document.getElementById('geTotalB').textContent = '0';
+            document.getElementById('mGuessWinner').value = '';
+            document.getElementById('mGuessReason').value = '';
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById('gaPs' + i).value = 0;
+                document.getElementById('gbPs' + i).value = 0;
+                document.getElementById('gaPred' + i).value = '';
+                document.getElementById('gbPred' + i).value = '';
+            }
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById('gaPs' + i).addEventListener('input', adminCalcTotals);
+                document.getElementById('gbPs' + i).addEventListener('input', adminCalcTotals);
+            }
+
+            if (mid) {
+                const allMatches = await getMatches(parseInt(tid));
+                const m = Array.isArray(allMatches) ? allMatches.find(x => x.id === mid) : null;
+                if (m) {
+                    document.getElementById('mId').value = m.id;
+                    document.getElementById('mRound').value = m.round;
+                    document.getElementById('mOrder').value = m.match_order;
+                    document.getElementById('mPlayer1').value = m.player1_id || '';
+                    document.getElementById('mPlayer2').value = m.player2_id || '';
+                    document.getElementById('mStatus').value = m.status || 'scheduled';
+                    const p1Name = m.p1_name || 'TBD';
+                    const p2Name = m.p2_name || 'TBD';
+                    document.getElementById('matchupP1').textContent = p1Name;
+                    document.getElementById('matchupP2').textContent = p2Name;
+                    document.getElementById('geHeadA').textContent = p1Name;
+                    document.getElementById('geHeadB').textContent = p2Name;
+                    const aPreds = (m.guess_a_tb || '').split(',');
+                    const bPreds = (m.guess_b_tb || '').split(',');
+                    const aScores = (m.guess_a_tb_score || '').split(',');
+                    const bScores = (m.guess_b_tb_score || '').split(',');
+                    for (let i = 1; i <= 5; i++) {
+                        document.getElementById('gaPred' + i).value = aPreds[i - 1] || '';
+                        document.getElementById('gbPred' + i).value = bPreds[i - 1] || '';
+                        document.getElementById('gaPs' + i).value = aScores[i - 1] || 0;
+                        document.getElementById('gbPs' + i).value = bScores[i - 1] || 0;
+                    }
+                    document.getElementById('geTotalA').textContent = m.guess_a_total || 0;
+                    document.getElementById('geTotalB').textContent = m.guess_b_total || 0;
+                    document.getElementById('mGuessWinner').value = m.guess_winner || '';
+                    document.getElementById('mGuessReason').value = m.guess_reason || '';
+                    document.getElementById('gwOption1').textContent = p1Name;
+                    document.getElementById('gwOption2').textContent = p2Name;
+                    document.getElementById('matchModalTitle').textContent = '编辑比赛';
+                }
+            } else {
+                document.getElementById('matchModalTitle').textContent = '添加比赛';
+            }
+            openModal('matchModal');
+        };
+
+        window.adminCalcTotals = function() {
+            let totalA = 0, totalB = 0;
+            for (let i = 1; i <= 5; i++) {
+                totalA += parseInt(document.getElementById('gaPs' + i).value) || 0;
+                totalB += parseInt(document.getElementById('gbPs' + i).value) || 0;
+            }
+            document.getElementById('geTotalA').textContent = totalA;
+            document.getElementById('geTotalB').textContent = totalB;
+            const elA = document.getElementById('geTotalA');
+            const elB = document.getElementById('geTotalB');
+            elA.style.background = totalA > totalB ? 'var(--accent-green)' : totalA < totalB ? '' : '';
+            elA.style.color = totalA > totalB ? 'white' : '';
+            elB.style.background = totalB > totalA ? 'var(--accent-green)' : totalB < totalA ? '' : '';
+            elB.style.color = totalB > totalA ? 'white' : '';
+        };
+
+        window.adminSaveMatch = async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('mId').value;
+            const tid = document.getElementById('matchTournamentSelect').value;
+            const status = document.getElementById('mStatus').value;
+            const p1Id = document.getElementById('mPlayer1').value ? parseInt(document.getElementById('mPlayer1').value) : null;
+            const p2Id = document.getElementById('mPlayer2').value ? parseInt(document.getElementById('mPlayer2').value) : null;
+            const aPreds = [1, 2, 3, 4, 5].map(i => document.getElementById('gaPred' + i).value.trim());
+            const bPreds = [1, 2, 3, 4, 5].map(i => document.getElementById('gbPred' + i).value.trim());
+            const aScores = [1, 2, 3, 4, 5].map(i => parseInt(document.getElementById('gaPs' + i).value) || 0);
+            const bScores = [1, 2, 3, 4, 5].map(i => parseInt(document.getElementById('gbPs' + i).value) || 0);
+            const aTotal = aScores.reduce((s, v) => s + v, 0);
+            const bTotal = bScores.reduce((s, v) => s + v, 0);
+            const guessWinner = document.getElementById('mGuessWinner').value;
+            const guessReason = document.getElementById('mGuessReason').value.trim();
+            let winnerId = null;
+            if (guessWinner === 'player1' && p1Id) winnerId = p1Id;
+            else if (guessWinner === 'player2' && p2Id) winnerId = p2Id;
+            else if (aTotal > bTotal && p1Id) winnerId = p1Id;
+            else if (bTotal > aTotal && p2Id) winnerId = p2Id;
+            const hasGuess = aPreds.some(p => p) || bPreds.some(p => p);
+            const autoStatus = (hasGuess && winnerId) ? 'completed' : status;
+            const data = {
+                tournament_id: parseInt(tid),
+                round: document.getElementById('mRound').value,
+                match_order: parseInt(document.getElementById('mOrder').value),
+                player1_id: p1Id,
+                player2_id: p2Id,
+                winner_id: winnerId,
+                status: autoStatus,
+                guess_a_tb: aPreds.join(','),
+                guess_b_tb: bPreds.join(','),
+                guess_a_total: aTotal,
+                guess_b_total: bTotal,
+                guess_a_tb_score: aScores.join(','),
+                guess_b_tb_score: bScores.join(','),
+                guess_winner: guessWinner,
+                guess_reason: guessReason,
+            };
+
+            let result;
+            if (id) {
+                result = await updateMatch(parseInt(id), data);
+            } else {
+                result = await createMatch(data);
+            }
+            if (result.success) {
+                closeModal('matchModal');
+                const msg = id ? (winnerId ? '比赛已更新，胜者已自动晋级到下一轮' : '比赛已更新') : '比赛已添加';
+                showToast(msg, 'success');
+                adminLoadMatchList();
+            } else {
+                showToast('操作失败: ' + (result.error || '未知错误'), 'error');
+            }
+        };
+
+        window.adminEditMatch = async function(mid) {
+            await adminOpenMatchModal(mid);
+        };
+
+        window.adminDeleteMatch = async function(mid) {
+            if (!confirm('确定删除此比赛？')) return;
+            // Delete match using supabase directly since there's no deleteMatch API
+            const { error } = await supabase.from('matches').delete().eq('id', mid);
+            if (!error) { showToast('比赛已删除', 'success'); adminLoadMatchList(); }
+            else { showToast('删除失败: ' + error.message, 'error'); }
+        };
+
+        window.adminGenerateDraw = async function() {
+            const tid = document.getElementById('matchTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            if (!confirm('确定生成签表？这将清除当前所有比赛数据！')) return;
+            const result = await generateDraw(parseInt(tid));
+            if (result.success) {
+                showToast('签表已生成！共创建 ' + result.matchesCreated + ' 场比赛，轮空种子已自动晋级', 'success');
+                adminLoadMatchList();
+            } else {
+                showToast('生成失败: ' + (result.error || '未知错误'), 'error');
+            }
+        };
+
+        window.adminAdvanceByes = async function() {
+            const tid = document.getElementById('matchTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            const tournament = await getTournament(parseInt(tid));
+            if (!tournament) return;
+            const rounds = getRounds(tournament.draw_size);
+            await autoAdvanceByes(parseInt(tid), rounds);
+            showToast('轮空晋级处理完成', 'success');
+            adminLoadMatchList();
+        };
+
+        // ── Daily Guess Management ──
+        async function adminLoadGuessSelect() {
+            const data = await getTournaments();
+            const select = document.getElementById('guessTournamentSelect');
+            select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + '</option>').join('') : '');
+        }
+
+        window.adminLoadDailyGuessList = async function() {
+            const tid = document.getElementById('guessTournamentSelect').value;
+            const tbody = document.getElementById('dailyGuessTable');
+            if (!tid) { tbody.innerHTML = '<tr><td colspan="14" class="text-center" style="padding:40px;">请先选择赛事</td></tr>'; return; }
+            const data = await getDailyGuesses(parseInt(tid));
+            if (!Array.isArray(data) || data.length === 0) { tbody.innerHTML = '<tr><td colspan="14" class="text-center" style="padding:40px;">暂无竞猜数据</td></tr>'; return; }
+            tbody.innerHTML = data.map(g => '<tr style="cursor:pointer;" onclick="adminEditGuess(' + g.id + ')"><td>' + g.id + '</td><td>' + (g.guess_date || '') + '</td><td>' + (g.deadline ? escapeHtml(g.deadline.replace('T', ' ')) : '-') + '</td><td>' + escapeHtml(g.tb1_match || '') + '</td><td>' + escapeHtml(g.tb1_result || '') + '</td><td>' + escapeHtml(g.tb2_match || '') + '</td><td>' + escapeHtml(g.tb2_result || '') + '</td><td>' + escapeHtml(g.tb3_match || '') + '</td><td>' + escapeHtml(g.tb3_result || '') + '</td><td>' + escapeHtml(g.tb4_match || '') + '</td><td>' + escapeHtml(g.tb4_result || '') + '</td><td>' + escapeHtml(g.tb5_match || '') + '</td><td>' + escapeHtml(g.tb5_result || '') + '</td><td><button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); adminDeleteGuess(' + g.id + ')">删除</button></td></tr>').join('');
+        };
+
+        window.adminOpenGuessModal = function(guessData) {
+            document.getElementById('guessForm').reset();
+            document.getElementById('gId').value = '';
+            if (guessData) {
+                document.getElementById('gId').value = guessData.id;
+                document.getElementById('gDate').value = guessData.guess_date || '';
+                document.getElementById('gDeadline').value = guessData.deadline || '';
+                for (let i = 1; i <= 5; i++) {
+                    document.getElementById('gTb' + i + 'Match').value = guessData['tb' + i + '_match'] || '';
+                    document.getElementById('gTb' + i + 'Result').value = guessData['tb' + i + '_result'] || '';
+                }
+                document.getElementById('guessModalTitle').textContent = '编辑竞猜';
+            } else {
+                document.getElementById('guessModalTitle').textContent = '新增竞猜';
+            }
+            openModal('guessModal');
+        };
+
+        window.adminSaveGuess = async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('gId').value;
+            const tid = document.getElementById('guessTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            const data = {
+                guess_date: document.getElementById('gDate').value,
+                deadline: document.getElementById('gDeadline').value,
+            };
+            for (let i = 1; i <= 5; i++) {
+                data['tb' + i + '_match'] = document.getElementById('gTb' + i + 'Match').value.trim();
+                data['tb' + i + '_result'] = document.getElementById('gTb' + i + 'Result').value.trim();
+            }
+            let result;
+            if (id) {
+                result = await updateDailyGuess(parseInt(id), data);
+            } else {
+                result = await createDailyGuess({ ...data, tournament_id: parseInt(tid) });
+            }
+            if (result.success) {
+                closeModal('guessModal');
+                showToast(id ? '竞猜已更新' : '竞猜已创建', 'success');
+                adminLoadDailyGuessList();
+            } else {
+                showToast('操作失败: ' + (result.error || '未知错误'), 'error');
+            }
+        };
+
+        window.adminEditGuess = async function(gid) {
+            const tid = document.getElementById('guessTournamentSelect').value;
+            if (!tid) return;
+            const data = await getDailyGuesses(parseInt(tid));
+            if (!Array.isArray(data)) return;
+            const guess = data.find(g => g.id === gid);
+            if (guess) adminOpenGuessModal(guess);
+        };
+
+        window.adminDeleteGuess = async function(gid) {
+            if (!confirm('确定删除此竞猜？')) return;
+            const result = await deleteDailyGuess(gid);
+            if (result.success) { showToast('竞猜已删除', 'success'); adminLoadDailyGuessList(); }
+            else { showToast('删除失败', 'error'); }
+        };
+
+        // ── Init: load tournaments panel ──
+        adminLoadTournaments();
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // Hash Router
+    // ══════════════════════════════════════════════════════════════
+    function router() {
+        const hash = window.location.hash.replace(/^#\/?/, '');
+
+        // Scroll to top on navigation
+        window.scrollTo(0, 0);
+
+        if (!hash || hash === '/') {
+            renderHome();
+        } else if (hash.match(/^tournament\/\d+$/)) {
+            const tid = hash.split('/')[1];
+            renderTournamentHome(tid);
+        } else if (hash.match(/^tournament\/\d+\/players$/)) {
+            const tid = hash.split('/')[1];
+            renderPlayers(tid);
+        } else if (hash.match(/^tournament\/\d+\/draw$/)) {
+            const tid = hash.split('/')[1];
+            renderDraw(tid);
+        } else if (hash.match(/^tournament\/\d+\/schedule$/)) {
+            const tid = hash.split('/')[1];
+            renderSchedule(tid);
+        } else if (hash.match(/^tournament\/\d+\/guesses$/)) {
+            const tid = hash.split('/')[1];
+            renderGuesses(tid);
+        } else if (hash === 'admin') {
+            renderAdmin();
+        } else if (hash === 'login') {
+            renderLogin();
+        } else {
+            app.innerHTML = '<div class="main-content"><section class="section"><div class="container"><div class="empty-state"><h3>页面未找到</h3><p>该页面不存在</p><a href="#/" class="btn btn-primary btn-sm">返回首页</a></div></div></section></div>';
+        }
+    }
+
+    window.addEventListener('hashchange', router);
+    // Initial route
+    router();
+
+    </script>
+</body>
+</html>

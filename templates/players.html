@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}参赛名单{% endblock %}
+
+{% block subnav %}
+<div class="tournament-subnav" id="subnav">
+    <div class="container">
+        <a href="/tournament/{{ tid }}">赛事主页</a>
+        <a href="/tournament/{{ tid }}/players" class="active">参赛名单</a>
+        <a href="/tournament/{{ tid }}/draw">签表</a>
+        <a href="/tournament/{{ tid }}/schedule">赛程赛果</a>
+        <a href="/tournament/{{ tid }}/guesses">竞猜</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="tournament-header" id="tournamentHeader">
+    <div class="container">
+        <div class="tournament-header-content">
+            <div class="tournament-category" id="tCat">加载中...</div>
+            <h1 id="tName">参赛名单</h1>
+            <div class="tournament-header-meta" id="tMeta"></div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h3>球员名单</h3>
+                <span id="playerCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">序号</th>
+                            <th>球员</th>
+                            <th>国家/地区</th>
+                            <th style="width:80px;">排名</th>
+                            <th style="width:70px;">种子</th>
+                            <th style="width:100px;">入围类型</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playerTableBody">
+                        <tr><td colspan="6" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const tid = {{ tid }};
+
+(async function() {
+    const t = await api(`/api/tournaments/${tid}`);
+    if (!t.error) {
+        document.getElementById('tCat').textContent = t.category;
+        document.getElementById('tName').textContent = '参赛名单';
+        document.getElementById('tMeta').innerHTML = `
+            <span>📍 ${t.location}</span>
+            <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
+            <span>📅 ${formatDateRange(t.start_date, t.end_date)}</span>
+        `;
+    }
+
+    const players = await api(`/api/tournaments/${tid}/players`);
+    if (players.error || !Array.isArray(players)) {
+        document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="6" class="text-center">加载失败</td></tr>';
+        return;
+    }
+
+    document.getElementById('playerCount').textContent = `共 ${players.length} 名球员`;
+
+    if (players.length === 0) {
+        document.getElementById('playerTableBody').innerHTML =
+            '<tr><td colspan="6"><div class="empty-state"><h3>暂无球员</h3><p>暂未添加参赛球员</p></div></td></tr>';
+        return;
+    }
+
+    document.getElementById('playerTableBody').innerHTML = players.map((p, idx) => `
+        <tr>
+            <td>${idx + 1}</td>
+            <td>
+                <div class="player-row">
+                    <div class="player-avatar">${(p.name[0] || '').toUpperCase()}</div>
+                    <strong>${p.name}</strong>
+                </div>
+            </td>
+            <td>${countryFlag('', p.country)} ${p.country}</td>
+            <td>${p.ranking < 999 ? `#${p.ranking}` : '-'}</td>
+            <td>
+                ${p.t_seed > 0
+                    ? `<span class="seed-badge">${p.t_seed}</span>`
+                    : '<span class="seed-badge empty">-</span>'}
+            </td>
+            <td>${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选'}</td>
+        </tr>
+    `).join('');
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% block title %}比赛签表{% endblock %}
+
+{% block subnav %}
+<div class="tournament-subnav" id="subnav">
+    <div class="container">
+        <a href="/tournament/{{ tid }}">赛事主页</a>
+        <a href="/tournament/{{ tid }}/players">参赛名单</a>
+        <a href="/tournament/{{ tid }}/draw" class="active">签表</a>
+        <a href="/tournament/{{ tid }}/schedule">赛程赛果</a>
+        <a href="/tournament/{{ tid }}/guesses">竞猜</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="tournament-header" id="tournamentHeader">
+    <div class="container">
+        <div class="tournament-header-content">
+            <div class="tournament-category" id="tCat">加载中...</div>
+            <h1 id="tName">比赛签表</h1>
+            <div class="tournament-header-meta" id="tMeta"></div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="card draw-card">
+            <div class="card-header flex-between">
+                <div style="display:flex; gap:16px; align-items:center;">
+                    <h3 id="bracketTitle">对阵签表</h3>
+                    <div class="view-toggle" id="viewToggle" style="display:none;">
+                        <button class="view-btn active" data-view="full">完整签表</button>
+                        <button class="view-btn" data-view="compact">16强起</button>
+                    </div>
+                </div>
+                <span id="drawLegend" style="font-size:0.75rem; color:var(--gray-500);"></span>
+                <button class="btn btn-sm" onclick="downloadBracket()" style="margin-left:12px;">📷 下载图片</button>
+            </div>
+            <div class="card-body">
+                <div class="bracket-container" id="bracketContainer">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+<script>
+const tid = {{ tid }};
+const roundLabels = {
+    'R128': 'R128', 'R64': 'R64', 'R32': 'R32', 'R16': 'R16',
+    'QF': '1/4决赛', 'SF': '半决赛', 'F': '决赛'
+};
+const compactStartRound = 'R16';
+
+let allMatches = [];
+let playerMap = {};
+let currentView = 'full';
+
+// 布局常量
+const MATCH_HEIGHT = 52;   // 每场比赛高度
+const COL_WIDTH = 210;     // 列宽
+const COL_GAP = 56;        // 列间距（含连线空间）
+
+function renderMatch(m, playerMap) {
+    const p1Seed = playerMap[m.player1_id]?.t_seed || 0;
+    const p2Seed = playerMap[m.player2_id]?.t_seed || 0;
+    const isP1Seed = p1Seed > 0;
+    const isP2Seed = p2Seed > 0;
+
+    // 任何轮次的种子轮空（Bye）：一个有效球员 + 空位
+    if (m.status === 'bye') {
+        const topName = m.p1_name || '';
+        const bottomName = m.p2_name || '';
+        const topHtml = m.player1_id
+            ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + topName + '">' + (isP1Seed ? '<span class="seed-badge">' + p1Seed + '</span>' : '') + '<span>' + topName + '</span></div></div>'
+            : '<div class="bracket-player bye-label"><div class="bracket-player-name"><span>Bye</span></div></div>';
+        const bottomHtml = m.player2_id
+            ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + bottomName + '">' + (isP2Seed ? '<span class="seed-badge">' + p2Seed + '</span>' : '') + '<span>' + bottomName + '</span></div></div>'
+            : '<div class="bracket-player bye-label"><div class="bracket-player-name"><span>Bye</span></div></div>';
+        return topHtml + bottomHtml;
+    }
+
+    const p1Class = m.winner_id === m.player1_id ? 'winner' : (m.winner_id && m.winner_id !== m.player1_id ? 'loser' : '');
+    const p2Class = m.winner_id === m.player2_id ? 'winner' : (m.winner_id && m.winner_id !== m.player2_id ? 'loser' : '');
+
+    const p1Full = (m.p1_name || '—');
+    const p2Full = (m.p2_name || '—');
+    return '<div class="bracket-player ' + p1Class + '">'
+        + '<div class="bracket-player-name" title="' + p1Full + '">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '') + '<span>' + p1Full + '</span></div>'
+        + '</div>'
+        + '<div class="bracket-player ' + p2Class + '">'
+        + '<div class="bracket-player-name" title="' + p2Full + '">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span>' : '') + '<span>' + p2Full + '</span></div>'
+        + '</div>';
+}
+
+function buildBracket(matches, playerMap, startRound) {
+    const roundOrderAll = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+    const roundsMap = {};
+    matches.forEach(function(m) {
+        if (!roundsMap[m.round]) roundsMap[m.round] = [];
+        roundsMap[m.round].push(m);
+    });
+
+    let roundOrder = roundOrderAll.filter(function(r) { return roundsMap[r]; });
+    if (startRound) {
+        var idx = roundOrder.indexOf(startRound);
+        if (idx >= 0) roundOrder = roundOrder.slice(idx);
+    }
+
+    var roundData = roundOrder.map(function(r) {
+        return roundsMap[r].sort(function(a, b) { return a.match_order - b.match_order; });
+    });
+
+    var numCols = roundData.length;
+    var firstCount = roundData[0].length;
+    var totalH = firstCount * MATCH_HEIGHT;
+    var totalW = numCols * (COL_WIDTH + COL_GAP) - COL_GAP;
+
+    var html = '';
+
+    // ── 构建 SVG 连线 + 比分 ──
+    var svgParts = [];
+    for (var ci = 0; ci < numCols - 1; ci++) {
+        var curMatches = roundData[ci];
+        var nxtMatches = roundData[ci + 1];
+        var curCnt = curMatches.length;
+        var nxtCnt = nxtMatches.length;
+        var ratio = curCnt / nxtCnt;
+
+        var xCurRight = (ci + 1) * (COL_WIDTH + COL_GAP) - COL_GAP;
+        var xNxtLeft = (ci + 1) * (COL_WIDTH + COL_GAP);
+        var xMid = xCurRight + (COL_GAP / 2);
+
+        for (var ni = 0; ni < nxtCnt; ni++) {
+            var nxtSpan = totalH / nxtCnt;
+            var nxtCenterY = ni * nxtSpan + nxtSpan / 2;
+
+            var f1 = ni * ratio;
+            var f2 = ni * ratio + ratio - 1;
+
+            var curSpan = totalH / curCnt;
+            var y1 = f1 * curSpan + curSpan / 2;
+            var y2 = f2 * curSpan + curSpan / 2;
+
+            // 上一轮的两场比赛
+            var m1 = curMatches[f1];
+            var m2 = curMatches[f2];
+
+            // 连线
+            svgParts.push('<path d="M' + xCurRight + ',' + y1
+                + ' L' + xMid + ',' + y1
+                + ' L' + xMid + ',' + nxtCenterY
+                + ' L' + xNxtLeft + ',' + nxtCenterY
+                + '" fill="none" stroke="#c4b0d8" stroke-width="1.2" />');
+
+            svgParts.push('<path d="M' + xCurRight + ',' + y2
+                + ' L' + xMid + ',' + y2
+                + ' L' + xMid + ',' + nxtCenterY
+                + '" fill="none" stroke="#c4b0d8" stroke-width="1.2" />');
+
+            // 比分文字 — 放在每条连线的中段，上下错开
+            var scoreX = xMid + (xNxtLeft - xMid) * 0.45;
+
+            if (m1 && m1.status === 'completed') {
+                var s1 = (m1.guess_a_total || 0) + '-' + (m1.guess_b_total || 0);
+                var r1 = m1.guess_reason || '';
+                var scoreY1 = y1 + (nxtCenterY - y1) * 0.45;
+                // 比分
+                svgParts.push('<text x="' + scoreX + '" y="' + scoreY1 + '" text-anchor="middle" '
+                    + 'font-size="10" fill="#5B2D8E" font-weight="700" style="pointer-events:none;">'
+                    + s1 + '</text>');
+                // 原因（换行显示）
+                if (r1) {
+                    svgParts.push('<text x="' + scoreX + '" y="' + (scoreY1 + 13) + '" text-anchor="middle" '
+                        + 'font-size="8" fill="#7a5c9e" font-weight="500" style="pointer-events:none;">'
+                        + r1 + '</text>');
+                }
+            }
+            if (m2 && m2.status === 'completed') {
+                var s2 = (m2.guess_a_total || 0) + '-' + (m2.guess_b_total || 0);
+                var r2 = m2.guess_reason || '';
+                var scoreY2 = y2 + (nxtCenterY - y2) * 0.55;
+                // 比分
+                svgParts.push('<text x="' + scoreX + '" y="' + scoreY2 + '" text-anchor="middle" '
+                    + 'font-size="10" fill="#5B2D8E" font-weight="700" style="pointer-events:none;">'
+                    + s2 + '</text>');
+                // 原因（换行显示）
+                if (r2) {
+                    svgParts.push('<text x="' + scoreX + '" y="' + (scoreY2 + 13) + '" text-anchor="middle" '
+                        + 'font-size="8" fill="#7a5c9e" font-weight="500" style="pointer-events:none;">'
+                        + r2 + '</text>');
+                }
+            }
+        }
+    }
+
+    // ── 输出 HTML ──
+    html += '<div class="bracket-wrap" style="position:relative; width:' + totalW + 'px;">';
+
+    // 轮次标题行
+    html += '<div class="bracket-headers" style="display:flex; gap:' + COL_GAP + 'px; margin-bottom:6px;">';
+    for (var ri = 0; ri < roundOrder.length; ri++) {
+        html += '<div class="bracket-round-header" style="width:' + COL_WIDTH + 'px; flex-shrink:0;">' + (roundLabels[roundOrder[ri]] || roundOrder[ri]) + '</div>';
+    }
+    html += '</div>';
+
+    // 主体区域（含SVG连线 + 比赛卡）
+    html += '<div class="bracket-body" style="position:relative; width:' + totalW + 'px; height:' + totalH + 'px;">';
+
+    // SVG 连线层
+    html += '<svg class="bracket-lines" width="' + totalW + '" height="' + totalH + '" style="position:absolute; top:0; left:0; overflow:visible; pointer-events:none; z-index:0;">';
+    html += svgParts.join('');
+    html += '</svg>';
+
+    // 比赛卡片层
+    for (var ci2 = 0; ci2 < numCols; ci2++) {
+        var rm = roundData[ci2];
+        var mc = rm.length;
+        var colX = ci2 * (COL_WIDTH + COL_GAP);
+        var mSpan = totalH / mc;
+
+        for (var mi = 0; mi < mc; mi++) {
+            var m = rm[mi];
+            var mTop = mi * mSpan + (mSpan - MATCH_HEIGHT) / 2;
+            html += '<div class="bracket-match-wrapper" style="position:absolute; left:' + colX + 'px; top:' + mTop + 'px; width:' + COL_WIDTH + 'px; height:' + MATCH_HEIGHT + 'px; z-index:1;">';
+            html += '<div class="bracket-match" style="height:100%;">' + renderMatch(m, playerMap) + '</div>';
+            html += '</div>';
+        }
+    }
+
+    html += '</div>'; // bracket-body
+    html += '</div>'; // bracket-wrap
+
+    return html;
+}
+
+(function() {
+    api('/api/tournaments/' + tid).then(function(t) {
+        if (!t.error) {
+            document.getElementById('tCat').textContent = t.category;
+            document.getElementById('tName').textContent = '比赛签表';
+            document.getElementById('tMeta').innerHTML =
+                '<span>📍 ' + t.location + '</span>'
+                + '<span><span class="surface-tag ' + surfaceClass(t.surface) + '">' + surfaceLabel(t.surface) + '</span></span>'
+                + '<span>📅 ' + formatDateRange(t.start_date, t.end_date) + '</span>';
+
+            if (t.draw_size >= 64) {
+                document.getElementById('viewToggle').style.display = 'flex';
+            }
+        }
+    }).then(function() {
+        return api('/api/tournaments/' + tid + '/matches');
+    }).then(function(data) {
+        allMatches = data;
+        if (data.error || !Array.isArray(data) || data.length === 0) {
+            document.getElementById('bracketContainer').innerHTML =
+                '<div class="empty-state"><h3>签表尚未生成</h3><p>暂未生成签表</p></div>';
+            return;
+        }
+        return api('/api/tournaments/' + tid + '/players');
+    }).then(function(players) {
+        if (Array.isArray(players)) {
+            players.forEach(function(p) { playerMap[p.id] = p; });
+        }
+
+        function renderView(view) {
+            currentView = view;
+            if (view === 'compact') {
+                document.getElementById('bracketTitle').textContent = '对阵签表（16强起）';
+                document.getElementById('bracketContainer').innerHTML = buildBracket(allMatches, playerMap, compactStartRound);
+            } else {
+                document.getElementById('bracketTitle').textContent = '对阵签表';
+                document.getElementById('bracketContainer').innerHTML = buildBracket(allMatches, playerMap, null);
+            }
+            var realMatches = allMatches.filter(function(m) { return m.status !== 'bye'; });
+            var done = realMatches.filter(function(m) { return m.status === 'completed'; }).length;
+            document.getElementById('drawLegend').textContent = '共 ' + realMatches.length + ' 场比赛 | ' + done + ' 场已完成';
+
+            // 重新绑定按钮
+            document.querySelectorAll('.view-btn').forEach(function(btn) {
+                btn.onclick = function() {
+                    document.querySelectorAll('.view-btn').forEach(function(b) { b.classList.remove('active'); });
+                    this.classList.add('active');
+                    renderView(this.dataset.view);
+                };
+            });
+        }
+
+        renderView('full');
+    });
+})();
+
+function downloadBracket() {
+    const node = document.getElementById('bracketContainer');
+    if (!node) return;
+    const btn = document.querySelector('.card-header button');
+    if (btn) btn.textContent = '生成中...';
+    domtoimage.toPng(node, { bgcolor: '#ffffff', quality: 1 })
+        .then(function(dataUrl) {
+            const link = document.createElement('a');
+            link.download = '签表_' + document.getElementById('tName').textContent + '.png';
+            link.href = dataUrl;
+            link.click();
+            if (btn) btn.textContent = '📷 下载图片';
+        })
+        .catch(function(err) {
+            console.error('导出失败', err);
+            alert('导出失败，请尝试使用浏览器截图功能');
+            if (btn) btn.textContent = '📷 下载图片';
+        });
+}
+</script>
+{% endblock %}

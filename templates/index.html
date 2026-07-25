@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}WTA模拟赛事 - 首页{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="tournament-header">
+    <div class="container">
+        <div class="tournament-header-content">
+            <h1>赛事列表</h1>
+            <div class="tournament-header-meta">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tournament List -->
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <h2>所有赛事</h2>
+                <p>点击赛事卡片查看详情</p>
+            </div>
+        </div>
+
+        <div class="tournament-grid" id="tournamentGrid">
+            <div class="loading">加载中...</div>
+        </div>
+
+        <div class="empty-state" id="emptyState" style="display:none;">
+            <h3>暂无赛事</h3>
+            <p>暂未创建赛事</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(async function() {
+    const data = await api('/api/tournaments');
+    const grid = document.getElementById('tournamentGrid');
+    const empty = document.getElementById('emptyState');
+
+    if (data.error || !Array.isArray(data) || data.length === 0) {
+        grid.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+
+    grid.innerHTML = data.map(t => `
+        <a href="/tournament/${t.id}" class="tournament-card">
+            <div class="tournament-card-header">
+                <div class="category-badge">${t.category}</div>
+                <h3>${t.name_cn || t.name}</h3>
+            </div>
+            <div class="tournament-card-body">
+                <div class="tournament-card-info">
+                    <span>📍 ${t.location}</span>
+                    <span>
+                        <span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span>
+                    </span>
+                </div>
+                <div class="tournament-card-info">
+                    <span>📅 ${formatDateRange(t.start_date, t.end_date)}</span>
+                    <span>👥 ${t.draw_size}签</span>
+                </div>
+                <div class="tournament-card-actions">
+                    <span class="btn btn-outline btn-sm">查看详情 →</span>
+                </div>
+            </div>
+        </a>
+    `).join('');
+})();
+</script>
+{% endblock %}

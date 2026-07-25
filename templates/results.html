@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}比赛结果{% endblock %}
+
+{% block subnav %}
+<div class="tournament-subnav" id="subnav">
+    <div class="container">
+        <a href="/tournament/{{ tid }}">赛事主页</a>
+        <a href="/tournament/{{ tid }}/players">参赛名单</a>
+        <a href="/tournament/{{ tid }}/draw">签表</a>
+        <a href="/tournament/{{ tid }}/schedule">赛程赛果</a>
+        <a href="/tournament/{{ tid }}/guesses">竞猜</a>
+        <a href="/tournament/{{ tid }}/results" class="active">赛果</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="tournament-header" id="tournamentHeader">
+    <div class="container">
+        <div class="tournament-header-content">
+            <div class="tournament-category" id="tCat">加载中...</div>
+            <h1 id="tName">比赛结果</h1>
+            <div class="tournament-header-meta" id="tMeta"></div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="card">
+            <div class="card-header flex-between">
+                <h3>赛果</h3>
+                <span id="resultCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+            </div>
+            <div class="card-body">
+                <div class="round-filter" id="roundFilter"></div>
+                <div id="resultsList">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const tid = {{ tid }};
+
+// ── Toggle expand/collapse ──
+(function() {
+    document.addEventListener('click', function(e) {
+        const header = e.target.closest('.match-card-toggle');
+        if (!header) return;
+        const card = header.closest('.match-card');
+        card.classList.toggle('collapsed');
+        const icon = header.querySelector('.toggle-icon');
+        if (icon) icon.textContent = card.classList.contains('collapsed') ? '▸' : '▾';
+    });
+})();
+
+(async function() {
+    const t = await api(`/api/tournaments/${tid}`);
+    if (!t.error) {
+        document.getElementById('tCat').textContent = t.category;
+        document.getElementById('tName').textContent = '比赛结果';
+        document.getElementById('tMeta').innerHTML = `
+            <span>📍 ${t.location}</span>
+            <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
+            <span>📅 ${formatDateRange(t.start_date, t.end_date)}</span>
+        `;
+    }
+
+    const matches = await api(`/api/tournaments/${tid}/matches`);
+    if (matches.error || !Array.isArray(matches)) return;
+
+    const completed = matches.filter(m => m.status === 'completed');
+    document.getElementById('resultCount').textContent = `共 ${completed.length} 场已完成比赛`;
+
+    const rounds = [...new Set(completed.map(m => m.round))];
+    const roundLabels = {
+        'R128': 'R128', 'R64': 'R64', 'R32': 'R32', 'R16': 'R16',
+        'QF': '1/4决赛', 'SF': '半决赛', 'F': '决赛'
+    };
+
+    document.getElementById('roundFilter').innerHTML = `
+        <button class="round-filter-btn active" onclick="filterResults('all')">全部</button>
+        ${rounds.map(r => `<button class="round-filter-btn" onclick="filterResults('${r}')">${roundLabels[r] || r}</button>`).join('')}
+    `;
+
+    // ── Render guess table ──
+    function renderGuess(m) {
+        const p1Name = m.p1_name || '球员1';
+        const p2Name = m.p2_name || '球员2';
+        const aPreds = (m.guess_a_tb || '').split(',');
+        const bPreds = (m.guess_b_tb || '').split(',');
+        const aScores = (m.guess_a_tb_score || '').split(',');
+        const bScores = (m.guess_b_tb_score || '').split(',');
+        const aTotal = m.guess_a_total || 0;
+        const bTotal = m.guess_b_total || 0;
+        const guessWinner = m.guess_winner || '';
+        const guessReason = m.guess_reason || '';
+
+        const hasData = aPreds.some(v => v && v.trim()) || bPreds.some(v => v && v.trim())
+                     || aScores.some(v => v && v.trim()) || bScores.some(v => v && v.trim());
+        if (!hasData && aTotal === 0 && bTotal === 0) return '';
+
+        function predACell(val) {
+            if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
+            return `<span class="gc-a-text">${escapeHtml(val.trim())}</span>`;
+        }
+        function predBCell(val) {
+            if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
+            return `<span class="gc-b-text">${escapeHtml(val.trim())}</span>`;
+        }
+        function scoreACell(val) {
+            const n = parseInt(val) || 0;
+            if (!val || val.trim() === '') return '<span class="gc-score-zero">0</span>';
+            return `<span class="gc-a-score">${n}</span>`;
+        }
+        function scoreBCell(val) {
+            const n = parseInt(val) || 0;
+            if (!val || val.trim() === '') return '<span class="gc-score-zero">0</span>';
+            return `<span class="gc-b-score">${n}</span>`;
+        }
+
+        let rows = '';
+        for (let i = 0; i < 5; i++) {
+            rows += `<tr>
+                <td class="gt-label">TB${i + 1}</td>
+                <td class="gt-a">${predACell(aPreds[i])}</td>
+                <td class="gt-score">${scoreACell(aScores[i])}</td>
+                <td class="gt-score">${scoreBCell(bScores[i])}</td>
+                <td class="gt-b">${predBCell(bPreds[i])}</td>
+            </tr>`;
+        }
+
+        return `
+            <div class="match-guess">
+                <table class="gt-table">
+                    <thead>
+                        <tr>
+                            <th class="gt-th-label"></th>
+                            <th class="gt-th-a">${escapeHtml(p1Name)}</th>
+                            <th class="gt-th-score">得分</th>
+                            <th class="gt-th-score">得分</th>
+                            <th class="gt-th-b">${escapeHtml(p2Name)}</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}
+                        <tr class="gt-total-row">
+                            <td class="gt-label" style="font-weight:700;">总分</td>
+                            <td class="gt-a">${(aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : ''}</td>
+                            <td class="gt-score gt-total ${aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')}">${aTotal}</td>
+                            <td class="gt-score gt-total ${bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')}">${bTotal}</td>
+                            <td class="gt-b">${(bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : ''}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    // ── Build unified score text ──
+    function buildScoreText(m) {
+        const score = m.score || '';
+        let display = '';
+        if (score) {
+            display = score;
+        } else {
+            const aTotal = m.guess_a_total || 0;
+            const bTotal = m.guess_b_total || 0;
+            if (aTotal > 0 || bTotal > 0) {
+                display = aTotal + ' - ' + bTotal;
+            }
+        }
+        if (!display) return '';
+        const reason = m.guess_reason || '';
+        if (reason) {
+            display += ' (' + reason + ')';
+        }
+        return display;
+    }
+
+    // ── Render results ──
+    function renderResults(filterRound) {
+        const filtered = filterRound === 'all'
+            ? completed
+            : completed.filter(m => m.round === filterRound);
+
+        if (filtered.length === 0) {
+            document.getElementById('resultsList').innerHTML =
+                '<div class="empty-state"><h3>暂无赛果</h3><p>该轮次暂无已完成的比赛</p></div>';
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(m => {
+            const scoreText = buildScoreText(m);
+
+            // 已完成默认收起
+            html += `
+                <div class="match-card collapsed">
+                    <div class="match-card-toggle">
+                        <div class="mc-toggle-top">
+                            <span class="match-round-badge">${roundLabels[m.round] || m.round}</span>
+                            <span class="match-status completed">已完成</span>
+                            ${scoreText ? '<span class="mc-quick-score">' + scoreText + '</span>' : ''}
+                            <span class="toggle-icon">▸</span>
+                        </div>
+                        <div class="mc-toggle-matchup">
+                            <div class="mc-player mc-player-left ${m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser'}">
+                                <div class="mc-player-col">
+                                    <span class="mc-player-name"><strong>${m.p1_name || 'TBD'}</strong>
+                                    ${m.winner_id === m.player1_id ? ' 🏆' : ''}</span>
+                                </div>
+                                ${m.p1_country ? countryFlag(m.p1_country, m.p1_country_name) : ''}
+                            </div>
+                            <div class="mc-vs-text">VS</div>
+                            <div class="mc-player mc-player-right ${m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser'}">
+                                ${m.p2_country ? countryFlag(m.p2_country, m.p2_country_name) : ''}
+                                <div class="mc-player-col">
+                                    <span class="mc-player-name"><strong>${m.p2_name || 'TBD'}</strong>
+                                    ${m.winner_id === m.player2_id ? ' 🏆' : ''}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mc-body">
+                        ${renderGuess(m)}
+                    </div>
+                </div>
+            `;
+        });
+
+        document.getElementById('resultsList').innerHTML = `<div class="match-grid">${html}</div>`;
+    }
+
+    window.filterResults = function(round) {
+        document.querySelectorAll('.round-filter-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        renderResults(round);
+    };
+
+    renderResults('all');
+})();
+</script>
+{% endblock %}

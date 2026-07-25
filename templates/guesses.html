@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}每日竞猜{% endblock %}
+
+{% block subnav %}
+<div class="tournament-subnav" id="subnav">
+    <div class="container">
+        <a href="/tournament/{{ tid }}">赛事主页</a>
+        <a href="/tournament/{{ tid }}/players">参赛名单</a>
+        <a href="/tournament/{{ tid }}/draw">签表</a>
+        <a href="/tournament/{{ tid }}/schedule">赛程赛果</a>
+        <a href="/tournament/{{ tid }}/guesses" class="active">竞猜</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="tournament-header" id="tournamentHeader">
+    <div class="container">
+        <div class="tournament-header-content">
+            <div class="tournament-category" id="tCat">加载中...</div>
+            <h1 id="tName">每日竞猜</h1>
+            <div class="tournament-header-meta" id="tMeta"></div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div id="guessList">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const tid = {{ tid }};
+
+(function() {
+    const path = window.location.pathname;
+    document.querySelectorAll('#subnav a').forEach(a => {
+        if (path.endsWith(a.getAttribute('href'))) {
+            a.classList.add('active');
+        } else {
+            a.classList.remove('active');
+        }
+    });
+})();
+
+(async function() {
+    const t = await api(`/api/tournaments/${tid}`);
+    if (!t.error) {
+        document.getElementById('tCat').textContent = t.category;
+        document.getElementById('tName').textContent = '每日竞猜';
+        document.getElementById('tMeta').innerHTML = `
+            <span>📍 ${t.location}</span>
+            <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
+            <span>📅 ${formatDateRange(t.start_date, t.end_date)}</span>
+        `;
+    }
+
+    const guesses = await api(`/api/tournaments/${tid}/daily-guesses`);
+    if (guesses.error || !Array.isArray(guesses) || guesses.length === 0) {
+        document.getElementById('guessList').innerHTML =
+            '<div class="empty-state"><h3>暂无竞猜内容</h3><p>竞猜内容将在后台录入后显示</p></div>';
+        return;
+    }
+
+    let html = '';
+    guesses.forEach(g => {
+        const date = g.guess_date || '未设置日期';
+        let rows = '';
+        let hasResult = false;
+        let hasAnyMatch = false;
+        let allResult = true;
+        for (let i = 1; i <= 5; i++) {
+            const match = g['tb' + i + '_match'] || '';
+            const result = g['tb' + i + '_result'] || '';
+            if (result) hasResult = true;
+            if (match) hasAnyMatch = true;
+            if (match && !result) allResult = false;
+            rows += `<tr>
+                <td class="dg-tb">TB${i}</td>
+                <td class="dg-match">${match ? escapeHtml(match) : '<span style="color:var(--gray-400)">-</span>'}</td>
+                <td class="dg-result">${result ? escapeHtml(result) : '<span style="color:var(--gray-400)">-</span>'}</td>
+            </tr>`;
+        }
+
+        const deadline = g.deadline || '';
+        const deadlineDate = deadline ? new Date(deadline) : null;
+        const now = new Date();
+        const isExpired = deadlineDate && deadlineDate <= now;
+        const hasDeadline = !!deadline;
+
+        // 有对阵但结果有空且已过截止时间 → 进行中；全部有结果 → 已出结果
+        // 未过截止时间 → 显示倒计时
+        let statusHtml;
+        if (allResult) {
+            statusHtml = '<span class="match-status completed">已出结果</span>';
+        } else if (hasAnyMatch && isExpired) {
+            statusHtml = '<span class="match-status live">进行中</span>';
+        } else if (hasDeadline && !isExpired) {
+            statusHtml = '<span class="dg-countdown" data-deadline="' + escapeHtml(deadline) + '">⏳ 截止倒计时加载中...</span>';
+        } else if (hasAnyMatch) {
+            statusHtml = '<span class="match-status live">进行中</span>';
+        } else {
+            statusHtml = '<span class="match-status scheduled">待进行</span>';
+        }
+
+        html += `
+        <div class="card dg-card">
+            <div class="card-header flex-between">
+                <div>
+                    <h3>📅 ${escapeHtml(date)}</h3>
+                    ${hasDeadline ? '<span class="dg-deadline">截止: ' + escapeHtml(deadline.replace('T', ' ')) + '</span>' : ''}
+                </div>
+                ${statusHtml}
+            </div>
+            <div class="card-body" style="padding:0;">
+                <table class="dg-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>对阵</th>
+                            <th>结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        </div>`;
+    });
+
+    document.getElementById('guessList').innerHTML = html;
+
+    // ── 倒计时更新 ──
+    let countdownRefreshed = false;
+    function updateCountdowns() {
+        document.querySelectorAll('.dg-countdown').forEach(el => {
+            const dl = el.getAttribute('data-deadline');
+            if (!dl) return;
+            const target = new Date(dl).getTime();
+            const now = Date.now();
+            const diff = target - now;
+            if (diff <= 0) {
+                // 倒计时到期，一次性刷新整个页面状态
+                if (!countdownRefreshed) {
+                    countdownRefreshed = true;
+                    setTimeout(() => { location.reload(); }, 2000);
+                }
+                return;
+            }
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            let text = '⏳ ';
+            if (d > 0) text += d + '天 ';
+            text += (h < 10 ? '0' : '') + h + ':';
+            text += (m < 10 ? '0' : '') + m + ':';
+            text += (s < 10 ? '0' : '') + s;
+            el.textContent = text;
+        });
+    }
+    updateCountdowns();
+    setInterval(updateCountdowns, 1000);
+})();
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.dg-card {
+    margin-bottom: 20px;
+}
+.dg-countdown {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    font-variant-numeric: tabular-nums;
+}
+.dg-deadline {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 2px;
+}
+.dg-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.dg-table thead {
+    background: var(--gray-100);
+}
+.dg-table th {
+    padding: 10px 16px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--gray-600);
+    text-align: left;
+    border-bottom: 1px solid var(--gray-200);
+}
+.dg-table td {
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: middle;
+}
+.dg-table tbody tr:hover {
+    background: var(--purple-bg);
+}
+.dg-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.dg-tb {
+    font-weight: 700;
+    color: var(--purple);
+    width: 60px;
+}
+.dg-match {
+    color: var(--black);
+}
+.dg-result {
+    color: var(--accent-green);
+    font-weight: 600;
+}
+</style>
+{% endblock %}

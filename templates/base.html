@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WTA模拟赛事{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Main Nav -->
+    <nav class="main-nav">
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <img src="/static/logo.jpg" alt="网球联赛" class="logo-img">
+                <span class="logo-text">网球联赛</span>
+            </a>
+            <ul class="nav-links" id="navLinks">
+            </ul>
+            <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
+        </div>
+    </nav>
+
+    <!-- Sub Nav for tournament pages -->
+    {% block subnav %}{% endblock %}
+
+    <!-- Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="/static/js/main.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

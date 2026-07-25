@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}赛事详情{% endblock %}
+
+{% block subnav %}
+<div class="tournament-subnav" id="subnav">
+    <div class="container">
+        <a href="/tournament/{{ tid }}" class="active" data-tab="home">赛事主页</a>
+        <a href="/tournament/{{ tid }}/players" data-tab="players">参赛名单</a>
+        <a href="/tournament/{{ tid }}/draw" data-tab="draw">签表</a>
+        <a href="/tournament/{{ tid }}/schedule" data-tab="schedule">赛程赛果</a>
+        <a href="/tournament/{{ tid }}/guesses">竞猜</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Tournament Header -->
+<section class="tournament-header" id="tournamentHeader">
+    <div class="container">
+        <div class="tournament-header-content">
+            <div class="tournament-category" id="tCat">加载中...</div>
+            <h1 id="tName">加载中...</h1>
+            <div class="tournament-header-meta" id="tMeta"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Links -->
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2>赛事导航</h2>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px;" id="quickLinks">
+        </div>
+    </div>
+</section>
+
+<!-- Today Top Scores -->
+<section class="section" style="background: var(--purple-bg);">
+    <div class="container">
+        <div class="section-header">
+            <h2>今日最高分</h2>
+        </div>
+        <div id="recentMatches">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const tid = {{ tid }};
+
+// Highlight current subnav
+(function() {
+    const path = window.location.pathname;
+    document.querySelectorAll('#subnav a').forEach(a => {
+        if (path.endsWith(a.getAttribute('href'))) {
+            a.classList.add('active');
+        } else {
+            a.classList.remove('active');
+        }
+    });
+})();
+
+(async function loadTournament() {
+    const t = await api(`/api/tournaments/${tid}`);
+    if (t.error) {
+        document.getElementById('tName').textContent = '赛事未找到';
+        return;
+    }
+
+    document.title = `${t.name_cn || t.name} - WTA模拟赛事`;
+    document.getElementById('tCat').textContent = t.category;
+    document.getElementById('tName').textContent = t.name_cn || t.name;
+    document.getElementById('tMeta').innerHTML = `
+        <span>📍 ${t.location}</span>
+        <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
+        <span>📅 ${formatDateRange(t.start_date, t.end_date)}</span>
+        <span>👥 ${t.draw_size}签</span>
+    `;
+
+    // Quick links
+    document.getElementById('quickLinks').innerHTML = [
+        { icon: '👥', label: '参赛名单', href: `/tournament/${tid}/players`, desc: '查看所有参赛球员' },
+        { icon: '🏆', label: '比赛签表', href: `/tournament/${tid}/draw`, desc: '查看对阵签表' },
+        { icon: '📅', label: '赛程赛果', href: `/tournament/${tid}/schedule`, desc: '查看赛程和赛果' },
+        { icon: '🎯', label: '每日竞猜', href: `/tournament/${tid}/guesses`, desc: '查看每日竞猜内容' },
+    ].map(item => `
+        <a href="${item.href}" class="card" style="padding:20px; text-align:center; display:block;">
+            <div style="font-size:2rem; margin-bottom:8px;">${item.icon}</div>
+            <h3 style="font-size:1rem; font-weight:700; margin-bottom:4px; color:var(--purple-dark);">${item.label}</h3>
+            <p style="font-size:0.8125rem; color:var(--gray-500);">${item.desc}</p>
+        </a>
+    `).join('');
+
+    // Recent matches
+    const matches = await api(`/api/tournaments/${tid}/matches`);
+    const recent = Array.isArray(matches) ? matches.filter(m => m.status === 'completed').slice(-4).reverse() : [];
+
+    function renderGuess(m) {
+        if (!m.guess_team_a && !m.guess_team_b) return '';
+        const aName = m.guess_team_a || '-';
+        const bName = m.guess_team_b || '-';
+        const p1Name = m.p1_name || '球员1';
+        const p2Name = m.p2_name || '球员2';
+        const aTb = (m.guess_a_tb || '').split(',').map(Number);
+        const bTb = (m.guess_b_tb || '').split(',').map(Number);
+        // 新增：解析每位竞猜者的比分预测
+        const aScores = (m.guess_a_tb_score || '').split(',');
+        const bScores = (m.guess_b_tb_score || '').split(',');
+        const aTotal = m.guess_a_total || 0;
+        const bTotal = m.guess_b_total || 0;
+
+        function tbCell(val, isA) {
+            if (!val || val === 0) return '<span style="color:var(--gray-400)">-</span>';
+            const cls = isA ? 'guess-correct-a' : 'guess-correct-b';
+            return `<span class="${cls}">${val === 1 ? escapeHtml(p1Name) : escapeHtml(p2Name)}</span>`;
+        }
+
+        // 生成比分单元格：有比分显示绿色比分文本，无比分显示占位符
+        function scoreCell(scoreVal) {
+            if (!scoreVal || scoreVal.trim() === '') return '<span style="color:var(--gray-400)">-</span>';
+            return `<span class="guess-score-text">${escapeHtml(scoreVal.trim())}</span>`;
+        }
+
+        let rows = '';
+        for (let i = 0; i < 5; i++) {
+            // 第一行：TB标签 + A选择的胜者 + B选择的胜者
+            rows += `<tr>
+                <td class="guess-tb-label">TB${i + 1}</td>
+                <td>${tbCell(aTb[i], true)}</td>
+                <td>${tbCell(bTb[i], false)}</td>
+            </tr>`;
+            // 第二行：空标签 + A预测比分 + B预测比分
+            rows += `<tr class="guess-score-row">
+                <td class="guess-tb-label"></td>
+                <td>${scoreCell(aScores[i])}</td>
+                <td>${scoreCell(bScores[i])}</td>
+            </tr>`;
+        }
+
+        return `
+            <div class="match-guess">
+                <table class="match-guess-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>${escapeHtml(aName)}</th>
+                            <th>${escapeHtml(bName)}</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}
+                        <tr class="guess-total-row">
+                            <td class="guess-tb-label" style="font-weight:700;">总分</td>
+                            <td class="guess-total ${aTotal > bTotal ? 'guess-winner' : ''}">${aTotal}</td>
+                            <td class="guess-total ${bTotal > aTotal ? 'guess-winner' : ''}">${bTotal}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    const roundLabels = {
+        'R128': 'R128', 'R64': 'R64', 'R32': 'R32', 'R16': 'R16',
+        'QF': '1/4决赛', 'SF': '半决赛', 'F': '决赛'
+    };
+
+    // 提取所有球员得分记录并排序，带上轮次信息
+    const scores = [];
+    recent.forEach(m => {
+        const isP1Winner = m.winner_id === m.player1_id;
+        const isP2Winner = m.winner_id === m.player2_id;
+        if (m.p1_name && (m.guess_a_total || 0) > 0) {
+            scores.push({ name: m.p1_name, score: m.guess_a_total || 0, isWinner: !!isP1Winner, round: m.round });
+        }
+        if (m.p2_name && (m.guess_b_total || 0) > 0) {
+            scores.push({ name: m.p2_name, score: m.guess_b_total || 0, isWinner: !!isP2Winner, round: m.round });
+        }
+    });
+    scores.sort((a, b) => b.score - a.score);
+    const maxScore = scores.length > 0 ? scores[0].score : 0;
+    const topScores = scores.filter(s => s.score === maxScore);
+
+    const recentHtml = scores.length === 0
+        ? '<div class="empty-state"><h3>暂无比赛结果</h3><p>比赛开始后将在这里显示今日最高分</p></div>'
+        : `<div class="top-score-hero-list">${topScores.map((s, i) => `
+            <div class="top-score-hero ${s.isWinner ? 'top-score-hero-win' : 'top-score-hero-lose'}">
+                <div class="top-score-hero-meta">
+                    <span class="match-round-badge">${roundLabels[s.round] || s.round}</span>
+                </div>
+                <div class="top-score-hero-main">
+                    <span class="top-score-hero-name">${escapeHtml(s.name)}</span>
+                    <span class="top-score-hero-tag ${s.isWinner ? 'top-score-tag-win' : 'top-score-tag-lose'}">${s.isWinner ? '胜' : '败'}</span>
+                </div>
+                <span class="top-score-hero-val">${s.score}</span>
+            </div>
+        `).join('')}</div>`;
+
+    document.getElementById('recentMatches').innerHTML = recentHtml;
+})();
+</script>
+{% endblock %}

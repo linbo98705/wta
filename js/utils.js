@@ -79,20 +79,12 @@ function categoryClass(category) {
     return '';
 }
 
-// ── 国旗 Emoji ──────────────────────────────
+// ── 国旗图片 ──────────────────────────────
+// 使用 flagcdn.com 提供 PNG 国旗图片（Windows 不支持国旗 emoji）
 function countryFlag(code, name) {
-    if (!code) {
-        return '<span class="player-flag">\u{1F310}</span>';
-    }
-    try {
-        const flag = code.toUpperCase()
-            .split('')
-            .map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65))
-            .join('');
-        return `<span title="${name || code}" style="font-size:1.1em">${flag}</span>`;
-    } catch {
-        return `<span class="player-flag">${escapeHtml(code)}</span>`;
-    }
+    if (!code) return '';
+    const cc = code.toUpperCase();
+    return `<img src="https://flagcdn.com/20x15/${cc}.png" alt="${escapeHtml(name || code)}" title="${escapeHtml(name || code)}" style="width:20px;height:15px;vertical-align:middle;margin-right:4px;border:1px solid var(--gray-200);border-radius:2px;" loading="lazy" onerror="this.style.display='none'">`;
 }
 
 // ── HTML 转义 ───────────────────────────────

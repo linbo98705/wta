@@ -131,7 +131,15 @@ img { max-width: 100%; height: auto; }
 .nav-links a:hover,
 .nav-links a.active {
     color: white;
-    background: rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    box-shadow: 0 0 12px rgba(255,255,255,0.15);
+}
+
+.nav-links a.active {
+    background: rgba(255,255,255,0.25);
+    font-weight: 700;
+    box-shadow: 0 0 16px rgba(255,255,255,0.2), inset 0 0 0 1.5px rgba(255,255,255,0.3);
 }
 
 .mobile-menu-btn {
@@ -166,12 +174,19 @@ img { max-width: 100%; height: auto; }
     letter-spacing: 0.03em;
     border-bottom: 3px solid transparent;
     transition: all var(--transition);
+    position: relative;
 }
 
-.tournament-subnav a:hover,
+.tournament-subnav a:hover {
+    color: var(--purple);
+    background: rgba(91,45,142,0.04);
+}
+
 .tournament-subnav a.active {
     color: var(--purple);
+    font-weight: 700;
     border-bottom-color: var(--purple);
+    background: rgba(91,45,142,0.06);
 }
 
 /* ── Tournament Header ─────────────────── */

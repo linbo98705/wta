@@ -376,7 +376,7 @@
                         <strong>${escapeHtml(p.name)}</strong>
                     </div>
                 </td>
-                <td>${countryFlag('', p.country)} ${escapeHtml(p.country)}</td>
+                <td>${countryFlag(p.country_code || '', p.country)} ${escapeHtml(p.country)}</td>
                 <td>${p.ranking < 999 ? '#' + p.ranking : '-'}</td>
                 <td>
                     ${p.t_seed > 0
@@ -1261,7 +1261,7 @@
                 adminUpdateBatchDelBtn();
                 return;
             }
-            tbody.innerHTML = players.map(p => '<tr><td><input type="checkbox" class="player-check" value="' + p.id + '" onchange="adminUpdateBatchDelBtn()"></td><td>' + p.id + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag('', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditPlayer(' + p.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeletePlayer(' + p.id + ')">删除</button></td></tr>').join('');
+            tbody.innerHTML = players.map(p => '<tr><td><input type="checkbox" class="player-check" value="' + p.id + '" onchange="adminUpdateBatchDelBtn()"></td><td>' + p.id + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditPlayer(' + p.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeletePlayer(' + p.id + ')">删除</button></td></tr>').join('');
             adminUpdateBatchDelBtn();
         }
 
@@ -1396,7 +1396,7 @@
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
                 return;
             }
-            tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag('', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td>' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正选') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
+            tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td>' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正选') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
         };
 
         window.adminOpenEntryModal = async function() {

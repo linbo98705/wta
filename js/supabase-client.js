@@ -12,8 +12,9 @@
 const SUPABASE_URL = 'https://opyihggmivpsexcyqlzn.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_k5myUaoogQpT7IsSLs6k1g_In4NU5Zs';
 
-// ── 初始化客户端 ────────────────────────────
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ── 初始化客户端（CDN 加载的 supabase 是库对象，createClient 才是实例）────────────────
+// CDN 的 window.supabase = { createClient, ... }，不能用 const 再次声明
+window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── 认证状态管理 ────────────────────────────
 // 管理员登录状态持久化到 sessionStorage

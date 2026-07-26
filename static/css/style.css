@@ -1790,3 +1790,68 @@ textarea.form-control {
         grid-template-columns: 1fr;
     }
 }
+
+/* ── Mobile: 竞猜内容换行 ────────────────── */
+@media (max-width: 480px) {
+    .gt-table {
+        font-size: 0.75rem;
+        table-layout: fixed;
+    }
+    .gt-table th {
+        padding: 6px 4px;
+        font-size: 0.6875rem;
+    }
+    .gt-table td {
+        padding: 4px 4px;
+        word-break: break-word;
+        word-wrap: break-word;
+    }
+    .gt-th-label,
+    .gt-label {
+        width: 30px;
+        font-size: 0.625rem;
+    }
+    .gt-th-a, .gt-th-b {
+        font-size: 0.75rem;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.3;
+    }
+    .gt-th-score,
+    .gt-score {
+        width: 34px;
+        font-size: 0.6875rem;
+    }
+    .gt-a, .gt-b {
+        white-space: normal;
+        word-wrap: break-word;
+        word-break: break-word;
+        line-height: 1.3;
+    }
+    .gc-a-text, .gc-b-text {
+        display: inline-block;
+        word-break: break-word;
+    }
+    .gc-a-score, .gc-b-score {
+        padding: 1px 4px;
+        min-width: 20px;
+        font-size: 0.6875rem;
+    }
+    .gt-total {
+        font-size: 0.875rem;
+        padding: 4px 0 !important;
+    }
+    .gt-winner {
+        padding: 2px 4px !important;
+    }
+    .gt-reason {
+        white-space: normal;
+        word-break: break-word;
+        max-width: 100%;
+        font-size: 0.6875rem;
+        line-height: 1.3;
+    }
+    .gt-reason-a, .gt-reason-b {
+        max-width: 100%;
+    }
+}

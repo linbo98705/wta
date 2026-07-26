@@ -910,8 +910,21 @@ img { max-width: 100%; height: auto; }
 }
 
 /* Prediction content colors */
-.gc-a-text { color: #2e7d32; font-weight: 500; }
-.gc-b-text { color: #1565c0; font-weight: 500; }
+.gc-pred-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    line-height: 1.3;
+}
+.gc-a-text { color: #2e7d32; font-weight: 500; display: block; }
+.gc-b-text { color: #1565c0; font-weight: 500; display: block; }
+.gc-a-score-text, .gc-b-score-text {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    white-space: nowrap;
+}
 .gc-a-score {
     display: inline-block;
     background: #e8f5e9;

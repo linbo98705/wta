@@ -678,9 +678,31 @@ img { max-width: 100%; height: auto; }
 
 .mc-toggle-matchup {
     display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0 4px;
+}
+
+.mc-names-row {
+    display: flex;
     align-items: center;
     gap: 16px;
-    padding: 8px 0 4px;
+}
+
+.mc-scores-row {
+    display: flex;
+    align-items: center;
+    padding: 2px 0;
+}
+
+.mc-scores-row .mc-score-left {
+    flex: 1;
+    text-align: center;
+}
+
+.mc-scores-row .mc-score-right {
+    flex: 1;
+    text-align: center;
 }
 
 .mc-quick-score {
@@ -1853,5 +1875,23 @@ textarea.form-control {
     }
     .gt-reason-a, .gt-reason-b {
         max-width: 100%;
+    }
+
+    /* 对阵球员名字最多6字，超出省略 */
+    .mc-player-name {
+        flex-shrink: 1;
+        max-width: 6em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .mc-names-row {
+        gap: 8px;
+    }
+    .mc-vs-text {
+        font-size: 0.9rem;
+    }
+    .mc-scores-row .mc-player-score {
+        font-size: 1rem;
     }
 }

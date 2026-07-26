@@ -678,31 +678,9 @@ img { max-width: 100%; height: auto; }
 
 .mc-toggle-matchup {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px 0 4px;
-}
-
-.mc-names-row {
-    display: flex;
     align-items: center;
     gap: 16px;
-}
-
-.mc-scores-row {
-    display: flex;
-    align-items: center;
-    padding: 2px 0;
-}
-
-.mc-scores-row .mc-score-left {
-    flex: 1;
-    text-align: center;
-}
-
-.mc-scores-row .mc-score-right {
-    flex: 1;
-    text-align: center;
+    padding: 8px 0 4px;
 }
 
 .mc-quick-score {
@@ -1815,44 +1793,65 @@ textarea.form-control {
 
 /* ── Mobile: 竞猜内容换行 ────────────────── */
 @media (max-width: 480px) {
+    /* 表格改为 block，使 tr 可用 grid 布局 */
     .gt-table {
+        display: block;
         font-size: 0.75rem;
-        table-layout: fixed;
     }
+    .gt-table thead,
+    .gt-table tbody {
+        display: block;
+    }
+    /* 每行用 grid 拆成两行：竞猜内容在上，比分在下 */
+    .gt-table tr {
+        display: grid;
+        grid-template-columns: 28px 1fr 1fr;
+        grid-template-rows: auto auto;
+        align-items: center;
+        column-gap: 4px;
+        padding: 5px 4px;
+        border-bottom: 1px solid var(--gray-200);
+    }
+    /* 列1=标签（跨两行）, 列2=A侧, 列3=B侧 */
+    .gt-table tr > *:nth-child(1) { grid-column: 1; grid-row: 1 / span 2; }
+    .gt-table tr > *:nth-child(2) { grid-column: 2; grid-row: 1; }
+    .gt-table tr > *:nth-child(5) { grid-column: 3; grid-row: 1; }
+    .gt-table tr > *:nth-child(3) { grid-column: 2; grid-row: 2; }
+    .gt-table tr > *:nth-child(4) { grid-column: 3; grid-row: 2; }
+
     .gt-table th {
-        padding: 6px 4px;
+        padding: 5px 3px;
         font-size: 0.6875rem;
     }
     .gt-table td {
-        padding: 4px 4px;
-        word-break: break-word;
-        word-wrap: break-word;
+        padding: 3px 3px;
     }
     .gt-th-label,
     .gt-label {
-        width: 30px;
         font-size: 0.625rem;
+        text-align: center;
     }
-    .gt-th-a, .gt-th-b {
+    /* 竞猜内容（选手）最多6字，超出省略 */
+    .gt-th-a, .gt-th-b,
+    .gt-a, .gt-b {
         font-size: 0.75rem;
-        white-space: normal;
-        word-break: break-word;
-        line-height: 1.3;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .gt-th-score,
     .gt-score {
-        width: 34px;
         font-size: 0.6875rem;
-    }
-    .gt-a, .gt-b {
-        white-space: normal;
-        word-wrap: break-word;
-        word-break: break-word;
-        line-height: 1.3;
+        text-align: center;
     }
     .gc-a-text, .gc-b-text {
         display: inline-block;
-        word-break: break-word;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: middle;
     }
     .gc-a-score, .gc-b-score {
         padding: 1px 4px;
@@ -1867,31 +1866,13 @@ textarea.form-control {
         padding: 2px 4px !important;
     }
     .gt-reason {
-        white-space: normal;
-        word-break: break-word;
         max-width: 100%;
         font-size: 0.6875rem;
-        line-height: 1.3;
-    }
-    .gt-reason-a, .gt-reason-b {
-        max-width: 100%;
-    }
-
-    /* 对阵球员名字最多6字，超出省略 */
-    .mc-player-name {
-        flex-shrink: 1;
-        max-width: 6em;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    .mc-names-row {
-        gap: 8px;
-    }
-    .mc-vs-text {
-        font-size: 0.9rem;
-    }
-    .mc-scores-row .mc-player-score {
-        font-size: 1rem;
+    .gt-reason-a, .gt-reason-b {
+        max-width: 100%;
     }
 }

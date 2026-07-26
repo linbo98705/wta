@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WTA模拟赛事</title>
-    <link rel="stylesheet" href="static/css/style.css?v=6">
+    <link rel="stylesheet" href="static/css/style.css?v=7">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -567,13 +567,30 @@
                          || aScores.some(v => v && v.trim()) || bScores.some(v => v && v.trim());
             if (!hasData && aTotal === 0 && bTotal === 0) return '';
 
+            function splitNameScore(text) {
+                if (!text || !text.trim()) return { name: '', score: '' };
+                const trimmed = text.trim();
+                var match = trimmed.match(/^(.+?)\s+(\d[\d\-.\s]*)$/);
+                if (match) {
+                    return { name: match[1].trim(), score: match[2].trim() };
+                }
+                return { name: trimmed, score: '' };
+            }
             function predACell(val) {
                 if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
-                return '<span class="gc-a-text">' + escapeHtml(val.trim()) + '</span>';
+                var parts = splitNameScore(val);
+                return '<div class="gc-pred-wrap">' +
+                       '<span class="gc-a-text">' + escapeHtml(parts.name) + '</span>' +
+                       (parts.score ? '<span class="gc-a-score-text">' + escapeHtml(parts.score) + '</span>' : '') +
+                       '</div>';
             }
             function predBCell(val) {
                 if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
-                return '<span class="gc-b-text">' + escapeHtml(val.trim()) + '</span>';
+                var parts = splitNameScore(val);
+                return '<div class="gc-pred-wrap">' +
+                       '<span class="gc-b-text">' + escapeHtml(parts.name) + '</span>' +
+                       (parts.score ? '<span class="gc-b-score-text">' + escapeHtml(parts.score) + '</span>' : '') +
+                       '</div>';
             }
             function scoreACell(val) {
                 if (!val || val.trim() === '') return '<span class="gc-score-zero">0</span>';

@@ -1791,68 +1791,54 @@ textarea.form-control {
     }
 }
 
-/* ── Mobile: 竞猜内容换行 ────────────────── */
+/* ── Mobile: 竞猜内容换行（名字+比分分行） ── */
 @media (max-width: 480px) {
-    /* 表格改为 block，使 tr 可用 grid 布局 */
     .gt-table {
-        display: block;
         font-size: 0.75rem;
     }
-    .gt-table thead,
-    .gt-table tbody {
-        display: block;
-    }
-    /* 每行用 grid 拆成两行：竞猜内容在上，比分在下 */
-    .gt-table tr {
-        display: grid;
-        grid-template-columns: 28px 1fr 1fr;
-        grid-template-rows: auto auto;
-        align-items: center;
-        column-gap: 4px;
-        padding: 5px 4px;
-        border-bottom: 1px solid var(--gray-200);
-    }
-    /* 列1=标签（跨两行）, 列2=A侧, 列3=B侧 */
-    .gt-table tr > *:nth-child(1) { grid-column: 1; grid-row: 1 / span 2; }
-    .gt-table tr > *:nth-child(2) { grid-column: 2; grid-row: 1; }
-    .gt-table tr > *:nth-child(5) { grid-column: 3; grid-row: 1; }
-    .gt-table tr > *:nth-child(3) { grid-column: 2; grid-row: 2; }
-    .gt-table tr > *:nth-child(4) { grid-column: 3; grid-row: 2; }
-
     .gt-table th {
         padding: 5px 3px;
         font-size: 0.6875rem;
     }
     .gt-table td {
-        padding: 3px 3px;
+        padding: 4px 3px;
     }
     .gt-th-label,
     .gt-label {
         font-size: 0.625rem;
-        text-align: center;
-    }
-    /* 竞猜内容（选手）最多6字，超出省略 */
-    .gt-th-a, .gt-th-b,
-    .gt-a, .gt-b {
-        font-size: 0.75rem;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        width: 28px;
     }
     .gt-th-score,
     .gt-score {
+        width: 32px;
         font-size: 0.6875rem;
-        text-align: center;
     }
+
+    /* 竞猜内容：名字和比分分行显示 */
+    .gc-pred-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+        line-height: 1.3;
+    }
+    /* 名字最多6字，超出省略 */
     .gc-a-text, .gc-b-text {
-        display: inline-block;
-        max-width: 100%;
+        display: block;
+        max-width: 6em;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        vertical-align: middle;
+        font-size: 0.75rem;
     }
+    /* 比分在名字下方 */
+    .gc-a-score-text, .gc-b-score-text {
+        display: block;
+        font-size: 0.6875rem;
+        color: var(--gray-600);
+        white-space: nowrap;
+    }
+
     .gc-a-score, .gc-b-score {
         padding: 1px 4px;
         min-width: 20px;

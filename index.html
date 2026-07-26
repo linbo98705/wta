@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WTA模拟赛事</title>
-    <link rel="stylesheet" href="static/css/style.css?v=9">
+    <link rel="stylesheet" href="static/css/style.css?v=10">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -554,10 +554,13 @@
         function renderGuessSchedule(m) {
             const p1Name = m.p1_name || '球员1';
             const p2Name = m.p2_name || '球员2';
-            const aNames = (m.guess_a_tb || '').split(',');
-            const bNames = (m.guess_b_tb || '').split(',');
-            const aScoreTexts = (m.guess_a_score_text || '').split(',');
-            const bScoreTexts = (m.guess_b_score_text || '').split(',');
+            // guess_a_tb 格式: "name1|score1,name2|score2,..." 旧数据可能只有 "name1,name2,..."
+            const aEntries = (m.guess_a_tb || '').split(',');
+            const bEntries = (m.guess_b_tb || '').split(',');
+            const aNames = aEntries.map(e => { const p = (e || '').split('|'); return p[0] || ''; });
+            const bNames = bEntries.map(e => { const p = (e || '').split('|'); return p[0] || ''; });
+            const aScoreTexts = aEntries.map(e => { const p = (e || '').split('|'); return p[1] || ''; });
+            const bScoreTexts = bEntries.map(e => { const p = (e || '').split('|'); return p[1] || ''; });
             const aScores = (m.guess_a_tb_score || '').split(',');
             const bScores = (m.guess_b_tb_score || '').split(',');
             const aTotal = m.guess_a_total || 0;
@@ -1596,17 +1599,18 @@
                     document.getElementById('matchupP2').textContent = p2Name;
                     document.getElementById('geHeadA').textContent = p1Name;
                     document.getElementById('geHeadB').textContent = p2Name;
-                    const aNames = (m.guess_a_tb || '').split(',');
-                    const bNames = (m.guess_b_tb || '').split(',');
-                    const aScoreTexts = (m.guess_a_score_text || '').split(',');
-                    const bScoreTexts = (m.guess_b_score_text || '').split(',');
+                    // guess_a_tb 格式: "name1|score1,name2|score2,..."
+                    const aEntries = (m.guess_a_tb || '').split(',');
+                    const bEntries = (m.guess_b_tb || '').split(',');
                     const aScores = (m.guess_a_tb_score || '').split(',');
                     const bScores = (m.guess_b_tb_score || '').split(',');
                     for (let i = 1; i <= 5; i++) {
-                        document.getElementById('gaName' + i).value = aNames[i - 1] || '';
-                        document.getElementById('gbName' + i).value = bNames[i - 1] || '';
-                        document.getElementById('gaScore' + i).value = aScoreTexts[i - 1] || '';
-                        document.getElementById('gbScore' + i).value = bScoreTexts[i - 1] || '';
+                        const aParts = (aEntries[i - 1] || '').split('|');
+                        const bParts = (bEntries[i - 1] || '').split('|');
+                        document.getElementById('gaName' + i).value = (aParts[0] || '').trim();
+                        document.getElementById('gbName' + i).value = (bParts[0] || '').trim();
+                        document.getElementById('gaScore' + i).value = (aParts[1] || '').trim();
+                        document.getElementById('gbScore' + i).value = (bParts[1] || '').trim();
                         document.getElementById('gaPs' + i).value = aScores[i - 1] || 0;
                         document.getElementById('gbPs' + i).value = bScores[i - 1] || 0;
                     }
@@ -1664,6 +1668,9 @@
             else if (bTotal > aTotal && p2Id) winnerId = p2Id;
             const hasGuess = aNames.some(p => p) || bNames.some(p => p) || aScoreTexts.some(p => p) || bScoreTexts.some(p => p);
             const autoStatus = (hasGuess && winnerId) ? 'completed' : status;
+            // 合并名字和比分：name|score 格式，用逗号分隔5个TB
+            const aTbCombined = aNames.map((n, i) => n + (aScoreTexts[i] ? '|' + aScoreTexts[i] : '')).join(',');
+            const bTbCombined = bNames.map((n, i) => n + (bScoreTexts[i] ? '|' + bScoreTexts[i] : '')).join(',');
             const data = {
                 tournament_id: parseInt(tid),
                 round: document.getElementById('mRound').value,
@@ -1672,10 +1679,8 @@
                 player2_id: p2Id,
                 winner_id: winnerId,
                 status: autoStatus,
-                guess_a_tb: aNames.join(','),
-                guess_b_tb: bNames.join(','),
-                guess_a_score_text: aScoreTexts.join(','),
-                guess_b_score_text: bScoreTexts.join(','),
+                guess_a_tb: aTbCombined,
+                guess_b_tb: bTbCombined,
                 guess_a_total: aTotal,
                 guess_b_total: bTotal,
                 guess_a_tb_score: aScores.join(','),

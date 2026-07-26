@@ -1292,15 +1292,47 @@ img { max-width: 100%; height: auto; }
 
 .guess-name-input {
     flex: 1;
+    min-width: 0;
     padding: 6px 10px;
     border: 1px solid var(--gray-300);
     border-radius: var(--radius-sm);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
 }
 
 .guess-name-input:focus {
     border-color: var(--purple);
     outline: none;
+}
+
+.ge-pred-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.ge-pred-group .guess-name-input {
+    width: 100%;
+}
+
+.guess-score-input {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    color: var(--gray-700);
+}
+
+.guess-score-input:focus {
+    border-color: var(--purple);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(91,45,142,0.1);
+}
+
+.guess-score-input::placeholder {
+    color: var(--gray-400);
+    font-size: 0.75rem;
 }
 
 .guess-predict-input {

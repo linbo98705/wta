@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WTA模拟赛事</title>
-    <link rel="stylesheet" href="static/css/style.css?v=8">
+    <link rel="stylesheet" href="static/css/style.css?v=9">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -554,8 +554,10 @@
         function renderGuessSchedule(m) {
             const p1Name = m.p1_name || '球员1';
             const p2Name = m.p2_name || '球员2';
-            const aPreds = (m.guess_a_tb || '').split(',');
-            const bPreds = (m.guess_b_tb || '').split(',');
+            const aNames = (m.guess_a_tb || '').split(',');
+            const bNames = (m.guess_b_tb || '').split(',');
+            const aScoreTexts = (m.guess_a_score_text || '').split(',');
+            const bScoreTexts = (m.guess_b_score_text || '').split(',');
             const aScores = (m.guess_a_tb_score || '').split(',');
             const bScores = (m.guess_b_tb_score || '').split(',');
             const aTotal = m.guess_a_total || 0;
@@ -563,43 +565,27 @@
             const guessWinner = m.guess_winner || '';
             const guessReason = m.guess_reason || '';
 
-            const hasData = aPreds.some(v => v && v.trim()) || bPreds.some(v => v && v.trim())
+            const hasData = aNames.some(v => v && v.trim()) || bNames.some(v => v && v.trim())
+                         || aScoreTexts.some(v => v && v.trim()) || bScoreTexts.some(v => v && v.trim())
                          || aScores.some(v => v && v.trim()) || bScores.some(v => v && v.trim());
             if (!hasData && aTotal === 0 && bTotal === 0) return '';
 
-            function splitNameScore(text) {
-                if (!text || !text.trim()) return { name: '', score: '' };
-                const trimmed = text.trim();
-                // 从最后一个空格分割；若末段包含数字则视为比分
-                var lastSpace = trimmed.lastIndexOf(' ');
-                if (lastSpace > 0) {
-                    var namePart = trimmed.substring(0, lastSpace).trim();
-                    var scorePart = trimmed.substring(lastSpace + 1).trim();
-                    if (/\d/.test(scorePart) && !/\d/.test(namePart)) {
-                        return { name: namePart, score: scorePart };
-                    }
-                }
-                // 回退：尝试匹配末尾的数字串（如 6-4 6-3）
-                var match = trimmed.match(/^(.+?)\s+(\d[\d\s\-\.]+)$/);
-                if (match) {
-                    return { name: match[1].trim(), score: match[2].trim() };
-                }
-                return { name: trimmed, score: '' };
-            }
-            function predACell(val) {
-                if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
-                var parts = splitNameScore(val);
+            function predACell(nameVal, scoreVal) {
+                var name = nameVal ? nameVal.trim() : '';
+                var score = scoreVal ? scoreVal.trim() : '';
+                if (!name && !score) return '<span class="gc-empty">-</span>';
                 return '<div class="gc-pred-wrap">' +
-                       '<span class="gc-a-text">' + escapeHtml(parts.name) + '</span>' +
-                       (parts.score ? '<span class="gc-a-score-text">' + escapeHtml(parts.score) + '</span>' : '') +
+                       '<span class="gc-a-text">' + (name ? escapeHtml(name) : '') + '</span>' +
+                       (score ? '<span class="gc-a-score-text">' + escapeHtml(score) + '</span>' : '') +
                        '</div>';
             }
-            function predBCell(val) {
-                if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
-                var parts = splitNameScore(val);
+            function predBCell(nameVal, scoreVal) {
+                var name = nameVal ? nameVal.trim() : '';
+                var score = scoreVal ? scoreVal.trim() : '';
+                if (!name && !score) return '<span class="gc-empty">-</span>';
                 return '<div class="gc-pred-wrap">' +
-                       '<span class="gc-b-text">' + escapeHtml(parts.name) + '</span>' +
-                       (parts.score ? '<span class="gc-b-score-text">' + escapeHtml(parts.score) + '</span>' : '') +
+                       '<span class="gc-b-text">' + (name ? escapeHtml(name) : '') + '</span>' +
+                       (score ? '<span class="gc-b-score-text">' + escapeHtml(score) + '</span>' : '') +
                        '</div>';
             }
             function scoreACell(val) {
@@ -613,7 +599,7 @@
 
             let rows = '';
             for (let i = 0; i < 5; i++) {
-                rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aPreds[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bPreds[i]) + '</td></tr>';
+                rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
             }
 
             return '<div class="match-guess"><table class="gt-table"><thead><tr><th class="gt-th-label"></th><th class="gt-th-a">' + escapeHtml(p1Name) + '</th><th class="gt-th-score">得分</th><th class="gt-th-score">得分</th><th class="gt-th-b">' + escapeHtml(p2Name) + '</th></tr></thead><tbody>' + rows + '<tr class="gt-total-row"><td class="gt-label" style="font-weight:700;">总分</td><td class="gt-a">' + ((aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : '') + '</td><td class="gt-score gt-total ' + (aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')) + '">' + aTotal + '</td><td class="gt-score gt-total ' + (bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')) + '">' + bTotal + '</td><td class="gt-b">' + ((bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : '') + '</td></tr></tbody></table></div>';
@@ -1110,11 +1096,11 @@
             <table class="guess-edit-table-5" id="guessEditTable">
                 <thead><tr><th class="ge-score-col">得分</th><th class="ge-predict-col" id="geHeadA">球员1</th><th class="ge-vs-col">VS</th><th class="ge-predict-col" id="geHeadB">球员2</th><th class="ge-score-col">得分</th></tr></thead>
                 <tbody>
-                    <tr><td><input type="number" class="guess-ps-input" id="gaPs1" value="0" min="0"></td><td><input type="text" class="guess-predict-input" id="gaPred1" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB1</td><td><input type="text" class="guess-predict-input" id="gbPred1" placeholder="球员名 比分"></td><td><input type="number" class="guess-ps-input" id="gbPs1" value="0" min="0"></td></tr>
-                    <tr><td><input type="number" class="guess-ps-input" id="gaPs2" value="0" min="0"></td><td><input type="text" class="guess-predict-input" id="gaPred2" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB2</td><td><input type="text" class="guess-predict-input" id="gbPred2" placeholder="球员名 比分"></td><td><input type="number" class="guess-ps-input" id="gbPs2" value="0" min="0"></td></tr>
-                    <tr><td><input type="number" class="guess-ps-input" id="gaPs3" value="0" min="0"></td><td><input type="text" class="guess-predict-input" id="gaPred3" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB3</td><td><input type="text" class="guess-predict-input" id="gbPred3" placeholder="球员名 比分"></td><td><input type="number" class="guess-ps-input" id="gbPs3" value="0" min="0"></td></tr>
-                    <tr><td><input type="number" class="guess-ps-input" id="gaPs4" value="0" min="0"></td><td><input type="text" class="guess-predict-input" id="gaPred4" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB4</td><td><input type="text" class="guess-predict-input" id="gbPred4" placeholder="球员名 比分"></td><td><input type="number" class="guess-ps-input" id="gbPs4" value="0" min="0"></td></tr>
-                    <tr><td><input type="number" class="guess-ps-input" id="gaPs5" value="0" min="0"></td><td><input type="text" class="guess-predict-input" id="gaPred5" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB5</td><td><input type="text" class="guess-predict-input" id="gbPred5" placeholder="球员名 比分"></td><td><input type="number" class="guess-ps-input" id="gbPs5" value="0" min="0"></td></tr>
+                    <tr><td><input type="number" class="guess-ps-input" id="gaPs1" value="0" min="0"></td><td><div class="ge-pred-group"><input type="text" class="guess-name-input" id="gaName1" placeholder="球员名"><input type="text" class="guess-score-input" id="gaScore1" placeholder="比分 如 6-4"></div></td><td class="ge-tb-cell">TB1</td><td><div class="ge-pred-group"><input type="text" class="guess-name-input" id="gbName1" placeholder="球员名"><input type="text" class="guess-score-input" id="gbScore1" placeholder="比分 如 6-4"></div></td><td><input type="number" class="guess-ps-input" id="gbPs1" value="0" min="0"></td></tr>
+                    <tr><td><input type="number" class="guess-ps-input" id="gaPs2" value="0" min="0"></td><td><div class="ge-pred-group"><input type="text" class="guess-name-input" id="gaName2" placeholder="球员名"><input type="text" class="guess-score-input" id="gaScore2" placeholder="比分 如 6-4"></div></td><td class="ge-tb-cell">TB2</td><td><div class="ge-pred-group"><input type="text" class="guess-name-input" id="gbName2" placeholder="球员名"><input type="text" class="guess-score-input" id="gbScore2" placeholder="比分 如 6-4"></div></td><td><input type="number" class="guess-ps-input" id="gbPs2" value="0" min="0"></td></tr>
+                    <tr><td><input type="number" class="guess-ps-input" id="gaPs3" value="0" min="0"></td><td><div class="ge-pred-group"><input type="text" class="guess-name-input" id="gaName3" placeholder="球员名"><input type="text" class="guess-score-input" id="gaScore3" placeholder="比分 如 6-4"></div></td><td class="ge-tb-cell">TB3</td><td><div class="ge-pred-group"><input type="text" class="guess-name-input" id="gbName3" placeholder="球员名"><input type="text" class="guess-score-input" id="gbScore3" placeholder="比分 如 6-4"></div></td><td><input type="number" class="guess-ps-input" id="gbPs3" value="0" min="0"></td></tr>
+                    <tr><td><input type="number" class="guess-ps-input" id="gaPs4" value="0" min="0"></td><td><div class="ge-pred-group"><input type="text" class="guess-name-input" id="gaName4" placeholder="球员名"><input type="text" class="guess-score-input" id="gaScore4" placeholder="比分 如 6-4"></div></td><td class="ge-tb-cell">TB4</td><td><div class="ge-pred-group"><input type="text" class="guess-name-input" id="gbName4" placeholder="球员名"><input type="text" class="guess-score-input" id="gbScore4" placeholder="比分 如 6-4"></div></td><td><input type="number" class="guess-ps-input" id="gbPs4" value="0" min="0"></td></tr>
+                    <tr><td><input type="number" class="guess-ps-input" id="gaPs5" value="0" min="0"></td><td><div class="ge-pred-group"><input type="text" class="guess-name-input" id="gaName5" placeholder="球员名"><input type="text" class="guess-score-input" id="gaScore5" placeholder="比分 如 6-4"></div></td><td class="ge-tb-cell">TB5</td><td><div class="ge-pred-group"><input type="text" class="guess-name-input" id="gbName5" placeholder="球员名"><input type="text" class="guess-score-input" id="gbScore5" placeholder="比分 如 6-4"></div></td><td><input type="number" class="guess-ps-input" id="gbPs5" value="0" min="0"></td></tr>
                 </tbody>
                 <tfoot><tr><td class="ge-total-cell"><span id="geTotalA">0</span></td><td colspan="3" class="ge-total-label">TOTAL POINTS</td><td class="ge-total-cell"><span id="geTotalB">0</span></td></tr></tfoot>
             </table>
@@ -1584,8 +1570,10 @@
             for (let i = 1; i <= 5; i++) {
                 document.getElementById('gaPs' + i).value = 0;
                 document.getElementById('gbPs' + i).value = 0;
-                document.getElementById('gaPred' + i).value = '';
-                document.getElementById('gbPred' + i).value = '';
+                document.getElementById('gaName' + i).value = '';
+                document.getElementById('gbName' + i).value = '';
+                document.getElementById('gaScore' + i).value = '';
+                document.getElementById('gbScore' + i).value = '';
             }
             for (let i = 1; i <= 5; i++) {
                 document.getElementById('gaPs' + i).addEventListener('input', adminCalcTotals);
@@ -1608,13 +1596,17 @@
                     document.getElementById('matchupP2').textContent = p2Name;
                     document.getElementById('geHeadA').textContent = p1Name;
                     document.getElementById('geHeadB').textContent = p2Name;
-                    const aPreds = (m.guess_a_tb || '').split(',');
-                    const bPreds = (m.guess_b_tb || '').split(',');
+                    const aNames = (m.guess_a_tb || '').split(',');
+                    const bNames = (m.guess_b_tb || '').split(',');
+                    const aScoreTexts = (m.guess_a_score_text || '').split(',');
+                    const bScoreTexts = (m.guess_b_score_text || '').split(',');
                     const aScores = (m.guess_a_tb_score || '').split(',');
                     const bScores = (m.guess_b_tb_score || '').split(',');
                     for (let i = 1; i <= 5; i++) {
-                        document.getElementById('gaPred' + i).value = aPreds[i - 1] || '';
-                        document.getElementById('gbPred' + i).value = bPreds[i - 1] || '';
+                        document.getElementById('gaName' + i).value = aNames[i - 1] || '';
+                        document.getElementById('gbName' + i).value = bNames[i - 1] || '';
+                        document.getElementById('gaScore' + i).value = aScoreTexts[i - 1] || '';
+                        document.getElementById('gbScore' + i).value = bScoreTexts[i - 1] || '';
                         document.getElementById('gaPs' + i).value = aScores[i - 1] || 0;
                         document.getElementById('gbPs' + i).value = bScores[i - 1] || 0;
                     }
@@ -1655,8 +1647,10 @@
             const status = document.getElementById('mStatus').value;
             const p1Id = document.getElementById('mPlayer1').value ? parseInt(document.getElementById('mPlayer1').value) : null;
             const p2Id = document.getElementById('mPlayer2').value ? parseInt(document.getElementById('mPlayer2').value) : null;
-            const aPreds = [1, 2, 3, 4, 5].map(i => document.getElementById('gaPred' + i).value.trim());
-            const bPreds = [1, 2, 3, 4, 5].map(i => document.getElementById('gbPred' + i).value.trim());
+            const aNames = [1, 2, 3, 4, 5].map(i => document.getElementById('gaName' + i).value.trim());
+            const bNames = [1, 2, 3, 4, 5].map(i => document.getElementById('gbName' + i).value.trim());
+            const aScoreTexts = [1, 2, 3, 4, 5].map(i => document.getElementById('gaScore' + i).value.trim());
+            const bScoreTexts = [1, 2, 3, 4, 5].map(i => document.getElementById('gbScore' + i).value.trim());
             const aScores = [1, 2, 3, 4, 5].map(i => parseInt(document.getElementById('gaPs' + i).value) || 0);
             const bScores = [1, 2, 3, 4, 5].map(i => parseInt(document.getElementById('gbPs' + i).value) || 0);
             const aTotal = aScores.reduce((s, v) => s + v, 0);
@@ -1668,7 +1662,7 @@
             else if (guessWinner === 'player2' && p2Id) winnerId = p2Id;
             else if (aTotal > bTotal && p1Id) winnerId = p1Id;
             else if (bTotal > aTotal && p2Id) winnerId = p2Id;
-            const hasGuess = aPreds.some(p => p) || bPreds.some(p => p);
+            const hasGuess = aNames.some(p => p) || bNames.some(p => p) || aScoreTexts.some(p => p) || bScoreTexts.some(p => p);
             const autoStatus = (hasGuess && winnerId) ? 'completed' : status;
             const data = {
                 tournament_id: parseInt(tid),
@@ -1678,8 +1672,10 @@
                 player2_id: p2Id,
                 winner_id: winnerId,
                 status: autoStatus,
-                guess_a_tb: aPreds.join(','),
-                guess_b_tb: bPreds.join(','),
+                guess_a_tb: aNames.join(','),
+                guess_b_tb: bNames.join(','),
+                guess_a_score_text: aScoreTexts.join(','),
+                guess_b_score_text: bScoreTexts.join(','),
                 guess_a_total: aTotal,
                 guess_b_total: bTotal,
                 guess_a_tb_score: aScores.join(','),

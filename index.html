@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WTA模拟赛事</title>
-    <link rel="stylesheet" href="static/css/style.css?v=2">
+    <link rel="stylesheet" href="static/css/style.css?v=3">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -69,9 +69,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- App Scripts -->
     <script src="js/supabase-client.js"></script>
-    <script src="js/utils.js?v=2"></script>
-    <script src="js/api.js?v=2"></script>
-    <script src="js/draw-engine.js?v=2"></script>
+    <script src="js/utils.js?v=3"></script>
+    <script src="js/api.js?v=3"></script>
+    <script src="js/draw-engine.js?v=3"></script>
 
     <script>
     // ══════════════════════════════════════════════════════════════
@@ -492,15 +492,32 @@
     </div>
 </section>`;
 
-        // Toggle expand/collapse
-        document.addEventListener('click', function handler(e) {
-            const header = e.target.closest('.match-card-toggle');
-            if (!header) return;
-            const card = header.closest('.match-card');
-            card.classList.toggle('collapsed');
-            const icon = header.querySelector('.toggle-icon');
-            if (icon) icon.textContent = card.classList.contains('collapsed') ? '\u25B8' : '\u25BE';
-        });
+        // Toggle expand/collapse — 用事件委托，避免重复绑定，兼容微信浏览器
+        if (!window._matchToggleBound) {
+            window._matchToggleBound = true;
+            document.addEventListener('click', function(e) {
+                // 兼容旧浏览器：手动查找 .match-card-toggle 父元素
+                var target = e.target;
+                var header = null;
+                while (target && target !== document) {
+                    if (target.classList && target.classList.contains('match-card-toggle')) {
+                        header = target;
+                        break;
+                    }
+                    target = target.parentNode;
+                }
+                if (!header) return;
+                var card = header.parentNode;
+                while (card && card !== document) {
+                    if (card.classList && card.classList.contains('match-card')) break;
+                    card = card.parentNode;
+                }
+                if (!card) return;
+                card.classList.toggle('collapsed');
+                var icon = header.querySelector('.toggle-icon');
+                if (icon) icon.textContent = card.classList.contains('collapsed') ? '\u25B8' : '\u25BE';
+            });
+        }
 
         const t = await getTournament(tid);
         if (t) {

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WTA模拟赛事</title>
-    <link rel="stylesheet" href="static/css/style.css?v=7">
+    <link rel="stylesheet" href="static/css/style.css?v=8">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -570,7 +570,17 @@
             function splitNameScore(text) {
                 if (!text || !text.trim()) return { name: '', score: '' };
                 const trimmed = text.trim();
-                var match = trimmed.match(/^(.+?)\s+(\d[\d\-.\s]*)$/);
+                // 从最后一个空格分割；若末段包含数字则视为比分
+                var lastSpace = trimmed.lastIndexOf(' ');
+                if (lastSpace > 0) {
+                    var namePart = trimmed.substring(0, lastSpace).trim();
+                    var scorePart = trimmed.substring(lastSpace + 1).trim();
+                    if (/\d/.test(scorePart) && !/\d/.test(namePart)) {
+                        return { name: namePart, score: scorePart };
+                    }
+                }
+                // 回退：尝试匹配末尾的数字串（如 6-4 6-3）
+                var match = trimmed.match(/^(.+?)\s+(\d[\d\s\-\.]+)$/);
                 if (match) {
                     return { name: match[1].trim(), score: match[2].trim() };
                 }

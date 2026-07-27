@@ -320,9 +320,14 @@
 <section class="section">
     <div class="container">
         <div class="card">
-            <div class="card-header">
-                <h3>球员名单</h3>
-                <span id="playerCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+            <div class="card-header flex-between">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <h3>球员名单</h3>
+                    <span id="playerCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+                </div>
+                <select class="form-control" id="frontPlayerCountryFilter" onchange="frontFilterPlayerList()" style="width:auto;">
+                    <option value="">所有国家</option>
+                </select>
             </div>
             <div style="overflow-x:auto;">
                 <table class="data-table">
@@ -362,14 +367,34 @@
             return;
         }
 
-        document.getElementById('playerCount').textContent = '共 ' + players.length + ' 名球员';
+        window._frontPlayersCache = players;
 
-        if (players.length === 0) {
-            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="6"><div class="empty-state"><h3>暂无球员</h3><p>暂未添加参赛球员</p></div></td></tr>';
+        var countrySel = document.getElementById('frontPlayerCountryFilter');
+        if (countrySel) {
+            var countries = [];
+            players.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
+            countries.sort();
+            countrySel.innerHTML = '<option value="">所有国家</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+        }
+
+        frontFilterPlayerList();
+    }
+
+    window.frontFilterPlayerList = function() {
+        const players = window._frontPlayersCache || [];
+        const countryFilter = document.getElementById('frontPlayerCountryFilter') ? document.getElementById('frontPlayerCountryFilter').value : '';
+        var filtered = players;
+        if (countryFilter) {
+            filtered = filtered.filter(function(p) { return (p.country || '') === countryFilter; });
+        }
+        document.getElementById('playerCount').textContent = '共 ' + filtered.length + ' / ' + players.length + ' 名球员';
+
+        if (filtered.length === 0) {
+            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="6"><div class="empty-state"><h3>暂无球员</h3><p>没有找到匹配的球员</p></div></td></tr>';
             return;
         }
 
-        document.getElementById('playerTableBody').innerHTML = players.map((p, idx) => `
+        document.getElementById('playerTableBody').innerHTML = filtered.map((p, idx) => `
             <tr>
                 <td>${idx + 1}</td>
                 <td>
@@ -388,7 +413,7 @@
                 <td>${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选'}</td>
             </tr>
         `).join('');
-    }
+    };
 
     // ══════════════════════════════════════════════════════════════
     // renderDraw(tid) - Draw Bracket
@@ -839,6 +864,7 @@
     let playerEditRows = [];
     let allPlayersCache = [];
     let entryAllPlayersCache = [];
+    let allEntryPlayersCache = [];
 
     async function renderAdmin() {
         const loggedIn = await isAdminLoggedIn();
@@ -906,10 +932,13 @@
                         <h3>现有球员</h3>
                         <span id="playerCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <div class="search-box">
                             <input type="text" id="playerSearchInput" class="form-control" placeholder="搜索姓名/国家/排名..." oninput="adminFilterPlayerList()" style="width:220px;">
                         </div>
+                        <select class="form-control" id="playerCountryFilter" onchange="adminFilterPlayerList()" style="width:auto;">
+                            <option value="">所有国家</option>
+                        </select>
                         <button class="btn btn-outline btn-sm" onclick="adminToggleSelectAll()" id="selectAllBtn">&#9744; 全选</button>
                         <button class="btn btn-danger btn-sm" onclick="adminBatchDeletePlayers()" id="batchDelBtn" disabled>&#128465; 批量删除</button>
                     </div>
@@ -931,8 +960,11 @@
                         <h3>报名管理</h3>
                         <span id="entryCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <select class="form-control" id="entryTournamentSelect" onchange="adminLoadEntryList()" style="width:auto;"><option value="">请选择赛事</option></select>
+                        <select class="form-control" id="entryCountryFilter" onchange="adminFilterEntryList()" style="width:auto;">
+                            <option value="">所有国家</option>
+                        </select>
                         <button class="btn btn-primary btn-sm" onclick="adminOpenEntryModal()">+ 添加球员</button>
                         <button class="btn btn-outline btn-sm" onclick="adminRecalcSeeds()">&#128260; 重算种子</button>
                     </div>
@@ -1286,12 +1318,19 @@
             const tbody = document.getElementById('playerTable');
             allPlayersCache = Array.isArray(data) ? data : [];
             document.getElementById('playerCount').textContent = allPlayersCache.length ? '共 ' + allPlayersCache.length + ' 名球员' : '';
+            var countrySel = document.getElementById('playerCountryFilter');
+            if (countrySel) {
+                var countries = [];
+                allPlayersCache.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
+                countries.sort();
+                countrySel.innerHTML = '<option value="">所有国家</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+            }
             if (allPlayersCache.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无球员</td></tr>';
                 adminUpdateBatchDelBtn();
                 return;
             }
-            adminRenderPlayerList(allPlayersCache);
+            adminFilterPlayerList();
         }
 
         window.adminRenderPlayerList = function(players) {
@@ -1307,14 +1346,16 @@
 
         window.adminFilterPlayerList = function() {
             const keyword = (document.getElementById('playerSearchInput').value || '').trim().toLowerCase();
-            if (!keyword) {
-                adminRenderPlayerList(allPlayersCache);
-                document.getElementById('playerCount').textContent = allPlayersCache.length ? '共 ' + allPlayersCache.length + ' 名球员' : '';
-                return;
+            const countryFilter = document.getElementById('playerCountryFilter') ? document.getElementById('playerCountryFilter').value : '';
+            var filtered = allPlayersCache;
+            if (countryFilter) {
+                filtered = filtered.filter(function(p) { return (p.country || '') === countryFilter; });
             }
-            const filtered = allPlayersCache.filter(p => {
-                return (p.name || '').toLowerCase().includes(keyword) || (p.country || '').toLowerCase().includes(keyword) || String(p.ranking || '').includes(keyword) || String(p.id || '').includes(keyword);
-            });
+            if (keyword) {
+                filtered = filtered.filter(function(p) {
+                    return (p.name || '').toLowerCase().includes(keyword) || (p.country || '').toLowerCase().includes(keyword) || String(p.ranking || '').includes(keyword) || String(p.id || '').includes(keyword);
+                });
+            }
             document.getElementById('playerCount').textContent = '找到 ' + filtered.length + ' / ' + allPlayersCache.length + ' 名球员';
             adminRenderPlayerList(filtered);
         };
@@ -1477,9 +1518,30 @@
             const tournament = await getTournament(parseInt(tid));
             const drawSize = tournament ? (tournament.draw_size || 0) : 0;
             const players = await getTournamentPlayers(parseInt(tid));
-            const tbody = document.getElementById('entryTable');
-            const count = Array.isArray(players) ? players.length : 0;
+            allEntryPlayersCache = Array.isArray(players) ? players : [];
+            const count = allEntryPlayersCache.length;
             document.getElementById('entryCount').textContent = '共 ' + count + ' 名球员 / ' + drawSize + '签';
+            var countrySel = document.getElementById('entryCountryFilter');
+            if (countrySel) {
+                var countries = [];
+                allEntryPlayersCache.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
+                countries.sort();
+                countrySel.innerHTML = '<option value="">所有国家</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+            }
+            adminFilterEntryList();
+        };
+
+        window.adminFilterEntryList = function() {
+            const countryFilter = document.getElementById('entryCountryFilter') ? document.getElementById('entryCountryFilter').value : '';
+            var filtered = allEntryPlayersCache;
+            if (countryFilter) {
+                filtered = filtered.filter(function(p) { return (p.country || '') === countryFilter; });
+            }
+            adminRenderEntryList(filtered);
+        };
+
+        window.adminRenderEntryList = function(players) {
+            const tbody = document.getElementById('entryTable');
             if (players.error || !Array.isArray(players) || players.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
                 return;

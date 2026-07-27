@@ -1328,16 +1328,22 @@
             const all = document.querySelectorAll('.player-check');
             const allChecked = [...all].every(cb => cb.checked);
             document.querySelectorAll('.player-check').forEach(cb => cb.checked = !allChecked);
-            document.getElementById('checkAll').checked = !allChecked;
+            const el = document.getElementById('checkAll');
+            if (el) el.checked = !allChecked;
             adminUpdateBatchDelBtn();
         };
 
         function adminUpdateBatchDelBtn() {
             const checked = document.querySelectorAll('.player-check:checked').length;
             const btn = document.getElementById('batchDelBtn');
-            btn.disabled = checked === 0;
-            btn.textContent = checked > 0 ? '\uD83D\uDDD1 批量删除 (' + checked + ')' : '\uD83D\uDDD1 批量删除';
-            document.getElementById('selectAllBtn').textContent = checked > 0 && checked === document.querySelectorAll('.player-check').length ? '\u2611 取消全选' : '\u2610 全选';
+            if (btn) {
+                btn.disabled = checked === 0;
+                btn.textContent = checked > 0 ? '\uD83D\uDDD1 批量删除 (' + checked + ')' : '\uD83D\uDDD1 批量删除';
+            }
+            const selBtn = document.getElementById('selectAllBtn');
+            if (selBtn) {
+                selBtn.textContent = checked > 0 && checked === document.querySelectorAll('.player-check').length ? '\u2611 取消全选' : '\u2610 全选';
+            }
         }
 
         window.adminBatchDeletePlayers = async function() {
@@ -1348,7 +1354,8 @@
                 const result = await batchDeletePlayers(checked);
                 if (result.success) {
                     showToast('已删除 ' + result.count + ' 名球员', 'success');
-                    document.getElementById('checkAll').checked = false;
+                    const el = document.getElementById('checkAll');
+                    if (el) el.checked = false;
                     adminLoadPlayers();
                 } else {
                     showToast('删除失败: ' + (result.error || '未知错误'), 'error');
@@ -1447,9 +1454,14 @@
 
         window.adminDeletePlayer = async function(id) {
             if (!confirm('确定删除此球员？')) return;
-            const result = await deletePlayer(id);
-            if (result.success) { showToast('球员已删除', 'success'); adminLoadPlayers(); }
-            else { showToast('删除失败: ' + result.error, 'error'); }
+            try {
+                const result = await deletePlayer(id);
+                if (result.success) { showToast('球员已删除', 'success'); adminLoadPlayers(); }
+                else { showToast('删除失败: ' + (result.error || '未知错误'), 'error'); }
+            } catch (err) {
+                console.error('删除球员异常:', err);
+                showToast('删除失败: ' + (err.message || '网络异常，请稍后重试'), 'error');
+            }
         };
 
         // ── Entry Management ──

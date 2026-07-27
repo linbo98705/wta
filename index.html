@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WTA模拟赛事</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="static/css/style.css?v=12">
     <style>
     /* ── Daily Guess Table Styles ── */
@@ -1167,13 +1168,13 @@
             <div class="form-group"><label>截止时间</label><input type="datetime-local" class="form-control" id="gDeadline" style="width: 260px;"></div>
             <div style="overflow-x:auto;">
                 <table class="data-table" style="margin-top: 8px;">
-                    <thead><tr><th style="width:60px;">TB</th><th>对阵 (如: 奥克佳布列娃 vs 多丹)</th><th>结果 (如: 奥克佳布列娃 6-3 6-3)</th></tr></thead>
+                    <thead><tr><th style="width:60px;">TB</th><th>对阵 (如: 奥克佳布列娃 vs 多丹)</th><th>胜者球员</th><th>比分 (如: 6-3 6-3)</th></tr></thead>
                     <tbody>
-                        <tr><td><input type="text" class="form-control" value="TB1" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb1Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb1Result" placeholder="胜者 比分"></td></tr>
-                        <tr><td><input type="text" class="form-control" value="TB2" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb2Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb2Result" placeholder="胜者 比分"></td></tr>
-                        <tr><td><input type="text" class="form-control" value="TB3" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb3Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb3Result" placeholder="胜者 比分"></td></tr>
-                        <tr><td><input type="text" class="form-control" value="TB4" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb4Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb4Result" placeholder="胜者 比分"></td></tr>
-                        <tr><td><input type="text" class="form-control" value="TB5" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb5Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb5Result" placeholder="胜者 比分"></td></tr>
+                        <tr><td><input type="text" class="form-control" value="TB1" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb1Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb1Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb1Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td><input type="text" class="form-control" value="TB2" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb2Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb2Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb2Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td><input type="text" class="form-control" value="TB3" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb3Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb3Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb3Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td><input type="text" class="form-control" value="TB4" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb4Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb4Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb4Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td><input type="text" class="form-control" value="TB5" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb5Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb5Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb5Score" placeholder="6-3 6-3"></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1892,7 +1893,27 @@
                 document.getElementById('gDeadline').value = guessData.deadline || '';
                 for (let i = 1; i <= 5; i++) {
                     document.getElementById('gTb' + i + 'Match').value = guessData['tb' + i + '_match'] || '';
-                    document.getElementById('gTb' + i + 'Result').value = guessData['tb' + i + '_result'] || '';
+                    var resultStr = guessData['tb' + i + '_result'] || '';
+                    var winner = '';
+                    var score = '';
+                    if (resultStr) {
+                        var parts = resultStr.split(' ');
+                        if (parts.length >= 2) {
+                            score = parts[parts.length - 1];
+                            if (/^\d/.test(score)) {
+                                winner = parts.slice(0, -1).join(' ');
+                            } else {
+                                winner = resultStr;
+                                score = '';
+                            }
+                        } else {
+                            winner = resultStr;
+                        }
+                    }
+                    var wEl = document.getElementById('gTb' + i + 'Winner');
+                    var sEl = document.getElementById('gTb' + i + 'Score');
+                    if (wEl) wEl.value = winner;
+                    if (sEl) sEl.value = score;
                 }
                 document.getElementById('guessModalTitle').textContent = '编辑竞猜';
             } else {
@@ -1912,7 +1933,9 @@
             };
             for (let i = 1; i <= 5; i++) {
                 data['tb' + i + '_match'] = document.getElementById('gTb' + i + 'Match').value.trim();
-                data['tb' + i + '_result'] = document.getElementById('gTb' + i + 'Result').value.trim();
+                var winner = (document.getElementById('gTb' + i + 'Winner') ? document.getElementById('gTb' + i + 'Winner').value : '').trim();
+                var score = (document.getElementById('gTb' + i + 'Score') ? document.getElementById('gTb' + i + 'Score').value : '').trim();
+                data['tb' + i + '_result'] = (winner + (score ? ' ' + score : '')).trim();
             }
             let result;
             if (id) {

@@ -71,10 +71,10 @@
     <!-- SheetJS (Excel 解析) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- App Scripts -->
-    <script src="js/supabase-client.js?v=5"></script>
-    <script src="js/utils.js?v=5"></script>
-    <script src="js/api.js?v=5"></script>
-    <script src="js/draw-engine.js?v=5"></script>
+    <script src="js/supabase-client.js?v=6"></script>
+    <script src="js/utils.js?v=6"></script>
+    <script src="js/api.js?v=6"></script>
+    <script src="js/draw-engine.js?v=6"></script>
 
     <script>
     // ══════════════════════════════════════════════════════════════
@@ -999,7 +999,10 @@
         <form id="playerEditForm" onsubmit="adminSavePlayerEdit(event)">
             <input type="hidden" id="peId">
             <div class="form-group"><label>姓名 *</label><input type="text" class="form-control" id="peName" required placeholder="球员姓名"></div>
-            <div class="form-group"><label>国家/地区</label><input type="text" class="form-control" id="peCountry" placeholder="如：中国"></div>
+            <div class="form-row">
+                <div class="form-group"><label>国家/地区</label><input type="text" class="form-control" id="peCountry" placeholder="如：中国"></div>
+                <div class="form-group"><label>国家代码</label><input type="text" class="form-control" id="peCountryCode" placeholder="2位字母，如：CN" maxlength="2" style="width:120px; text-transform:uppercase;"></div>
+            </div>
             <div class="form-group"><label>排名</label><input type="number" class="form-control" id="peRanking" min="1" placeholder="排名" style="width:160px;"></div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('playerEditModal')">取消</button>
@@ -1240,7 +1243,8 @@
 
         // ── Player CRUD ──
         window.adminAddPlayerRow = function(name, country, ranking) {
-            playerEditRows.push({ name: name || '', country: country || '', ranking: ranking || 999 });
+            var c = country || '';
+            playerEditRows.push({ name: name || '', country: c, country_code: getCountryCodeByName(c) || '', ranking: ranking || 999 });
             adminRenderPlayerEditRows();
         };
 
@@ -1251,6 +1255,9 @@
 
         window.adminUpdatePlayerRow = function(idx, field, value) {
             playerEditRows[idx][field] = value;
+            if (field === 'country') {
+                playerEditRows[idx]['country_code'] = getCountryCodeByName(value) || '';
+            }
         };
 
         window.adminRenderPlayerEditRows = function() {
@@ -1388,7 +1395,8 @@
                     if (!name) continue;
                     const country = String(row[1] || '').trim();
                     const ranking = parseInt(row[2]) || 999;
-                    playerEditRows.push({ name, country, ranking });
+                    const country_code = getCountryCodeByName(country) || '';
+                    playerEditRows.push({ name, country, country_code, ranking });
                     imported++;
                 }
                 if (imported > 0) {
@@ -1440,6 +1448,7 @@
             document.getElementById('peId').value = p.id;
             document.getElementById('peName').value = p.name || '';
             document.getElementById('peCountry').value = p.country || '';
+            document.getElementById('peCountryCode').value = p.country_code || getCountryCodeByName(p.country || '') || '';
             document.getElementById('peRanking').value = p.ranking < 999 ? p.ranking : '';
             document.getElementById('playerEditModalTitle').textContent = '编辑球员';
             openModal('playerEditModal');
@@ -1448,9 +1457,14 @@
         window.adminSavePlayerEdit = async function(e) {
             e.preventDefault();
             const id = document.getElementById('peId').value;
+            var countryCode = (document.getElementById('peCountryCode').value || '').trim().toUpperCase();
+            if (!countryCode) {
+                countryCode = getCountryCodeByName(document.getElementById('peCountry').value.trim() || '') || '';
+            }
             const result = await updatePlayer(parseInt(id), {
                 name: document.getElementById('peName').value.trim(),
                 country: document.getElementById('peCountry').value.trim(),
+                country_code: countryCode,
                 ranking: parseInt(document.getElementById('peRanking').value) || 999
             });
             if (result.success) {

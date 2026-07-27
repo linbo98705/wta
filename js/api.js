@@ -503,6 +503,7 @@ async function batchCreatePlayers(list) {
                 toUpdate.push({
                     id: existingId,
                     country: p.country || '',
+                    country_code: p.country_code || '',
                     ranking: p.ranking || 999,
                 });
                 ids.push(existingId);
@@ -519,7 +520,7 @@ async function batchCreatePlayers(list) {
 
         if (toUpdate.length > 0) {
             for (const u of toUpdate) {
-                await supabase.from('players').update({ country: u.country, ranking: u.ranking }).eq('id', u.id);
+                await supabase.from('players').update({ country: u.country, country_code: u.country_code, ranking: u.ranking }).eq('id', u.id);
             }
         }
 

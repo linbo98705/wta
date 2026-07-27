@@ -443,7 +443,6 @@
                     </div>
                 </div>
                 <span id="drawLegend" style="font-size:0.75rem; color:var(--gray-500);"></span>
-                <button class="btn btn-sm" onclick="downloadBracket()" style="margin-left:12px;">&#128247; 下载图片</button>
             </div>
             <div class="card-body">
                 <div class="bracket-container" id="bracketContainer">
@@ -454,38 +453,7 @@
     </div>
 </section>`;
 
-        // Load dom-to-image for download
-        if (typeof domtoimage === 'undefined') {
-            const s = document.createElement('script');
-            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js';
-            document.head.appendChild(s);
-        }
-
         await initDrawView(tid, 'bracketContainer');
-    }
-
-    function downloadBracket() {
-        if (typeof domtoimage === 'undefined') {
-            showToast('图片导出库尚未加载，请稍后重试', 'error');
-            return;
-        }
-        const node = document.getElementById('bracketContainer');
-        if (!node) return;
-        const btn = document.querySelector('.card-header button');
-        if (btn) btn.textContent = '生成中...';
-        domtoimage.toPng(node, { bgcolor: '#ffffff', quality: 1 })
-            .then(function(dataUrl) {
-                const link = document.createElement('a');
-                link.download = '签表_' + (document.getElementById('tName') ? document.getElementById('tName').textContent : '') + '.png';
-                link.href = dataUrl;
-                link.click();
-                if (btn) btn.textContent = '\uD83D\uDCF7 下载图片';
-            })
-            .catch(function(err) {
-                console.error('导出失败', err);
-                showToast('导出失败，请尝试使用浏览器截图功能', 'error');
-                if (btn) btn.textContent = '\uD83D\uDCF7 下载图片';
-            });
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -726,7 +694,7 @@
 
         const guesses = await getDailyGuesses(tid);
         if (!Array.isArray(guesses) || guesses.length === 0) {
-            document.getElementById('guessList').innerHTML = '<div class="empty-state"><h3>暂无竞猜内容</h3><p>竞猜内容将在后台录入后显示</p></div>';
+            document.getElementById('guessList').innerHTML = '';
             return;
         }
 

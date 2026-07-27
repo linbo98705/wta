@@ -327,7 +327,7 @@
                     <span id="playerCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
                 </div>
                 <select class="form-control" id="frontPlayerCountryFilter" onchange="frontFilterPlayerList()" style="width:auto;">
-                    <option value="">所有国家</option>
+                    <option value="">所有国家/地区</option>
                 </select>
             </div>
             <div style="overflow-x:auto;">
@@ -375,7 +375,7 @@
             var countries = [];
             players.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
             countries.sort();
-            countrySel.innerHTML = '<option value="">所有国家</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+            countrySel.innerHTML = '<option value="">所有国家/地区</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
         }
 
         frontFilterPlayerList();
@@ -903,10 +903,10 @@
                     </div>
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <div class="search-box">
-                            <input type="text" id="playerSearchInput" class="form-control" placeholder="搜索姓名/国家/排名..." oninput="adminFilterPlayerList()" style="width:220px;">
+                            <input type="text" id="playerSearchInput" class="form-control" placeholder="搜索姓名/国家地区/排名..." oninput="adminFilterPlayerList()" style="width:220px;">
                         </div>
                         <select class="form-control" id="playerCountryFilter" onchange="adminFilterPlayerList()" style="width:auto;">
-                            <option value="">所有国家</option>
+                            <option value="">所有国家/地区</option>
                         </select>
                         <button class="btn btn-outline btn-sm" onclick="adminToggleSelectAll()" id="selectAllBtn">&#9744; 全选</button>
                         <button class="btn btn-danger btn-sm" onclick="adminBatchDeletePlayers()" id="batchDelBtn" disabled>&#128465; 批量删除</button>
@@ -914,7 +914,7 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAll" onchange="adminToggleAllCheckboxes(this)"></th><th>ID</th><th>姓名</th><th>国家</th><th>排名</th><th>操作</th></tr></thead>
+                        <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAll" onchange="adminToggleAllCheckboxes(this)"></th><th>ID</th><th>姓名</th><th>国家/地区</th><th>排名</th><th>操作</th></tr></thead>
                         <tbody id="playerTable"></tbody>
                     </table>
                 </div>
@@ -932,7 +932,7 @@
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <select class="form-control" id="entryTournamentSelect" onchange="adminLoadEntryList()" style="width:auto;"><option value="">请选择赛事</option></select>
                         <select class="form-control" id="entryCountryFilter" onchange="adminFilterEntryList()" style="width:auto;">
-                            <option value="">所有国家</option>
+                            <option value="">所有国家/地区</option>
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="adminOpenEntryModal()">+ 添加球员</button>
                         <button class="btn btn-outline btn-sm" onclick="adminRecalcSeeds()">&#128260; 重算种子</button>
@@ -940,7 +940,7 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th>种子</th><th>球员</th><th>国家</th><th>排名</th><th>入围类型</th><th>操作</th></tr></thead>
+                        <thead><tr><th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th>入围类型</th><th>操作</th></tr></thead>
                         <tbody id="entryTable"><tr><td colspan="6" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
                     </table>
                 </div>
@@ -1001,7 +1001,7 @@
             <div class="form-group"><label>姓名 *</label><input type="text" class="form-control" id="peName" required placeholder="球员姓名"></div>
             <div class="form-row">
                 <div class="form-group"><label>国家/地区</label><input type="text" class="form-control" id="peCountry" placeholder="如：中国"></div>
-                <div class="form-group"><label>国家代码</label><input type="text" class="form-control" id="peCountryCode" placeholder="2位字母，如：CN" maxlength="2" style="width:120px; text-transform:uppercase;"></div>
+                <div class="form-group"><label>国家/地区代码</label><input type="text" class="form-control" id="peCountryCode" placeholder="2位字母，如：CN" maxlength="2" style="width:120px; text-transform:uppercase;"></div>
             </div>
             <div class="form-group"><label>排名</label><input type="number" class="form-control" id="peRanking" min="1" placeholder="排名" style="width:160px;"></div>
             <div class="modal-actions">
@@ -1052,7 +1052,7 @@
                 <label>选择球员*</label>
                 <input type="hidden" id="ePlayerId" required>
                 <div class="player-search-select" id="playerSearchSelect">
-                    <input type="text" class="form-control" id="ePlayerSearch" placeholder="搜索球员姓名/国家..." autocomplete="off" oninput="adminFilterEntryPlayers()" onfocus="adminShowEntryPlayerDropdown()" onblur="setTimeout(()=>adminHideEntryPlayerDropdown(),200)">
+                    <input type="text" class="form-control" id="ePlayerSearch" placeholder="搜索球员姓名/国家/地区..." autocomplete="off" oninput="adminFilterEntryPlayers()" onfocus="adminShowEntryPlayerDropdown()" onblur="setTimeout(()=>adminHideEntryPlayerDropdown(),200)">
                     <div class="player-search-dropdown" id="entryPlayerDropdown"></div>
                 </div>
                 <p id="ePlayerSelected" style="font-size:0.8125rem; color:var(--accent-green); margin-top:4px; display:none;">&#10003; 已选择: <span id="ePlayerSelectedName"></span></p>
@@ -1299,7 +1299,7 @@
                 var countries = [];
                 allPlayersCache.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
                 countries.sort();
-                countrySel.innerHTML = '<option value="">所有国家</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+                countrySel.innerHTML = '<option value="">所有国家/地区</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
             }
             if (allPlayersCache.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无球员</td></tr>';
@@ -1509,7 +1509,7 @@
                 var countries = [];
                 allEntryPlayersCache.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
                 countries.sort();
-                countrySel.innerHTML = '<option value="">所有国家</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+                countrySel.innerHTML = '<option value="">所有国家/地区</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
             }
             adminFilterEntryList();
         };

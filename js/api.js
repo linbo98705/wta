@@ -682,7 +682,6 @@ async function updateTournamentPlayer(tid, pid, data) {
  * @returns {Promise<Object>} { success, seeded, maxSeeds, error }
  */
 async function recalcSeeds(tid) {
-    // 获取赛事信息
     const tournament = await getTournament(tid);
     if (!tournament) {
         return { success: false, seeded: 0, maxSeeds: 0, error: 'Tournament not found' };
@@ -691,7 +690,6 @@ async function recalcSeeds(tid) {
     const drawSize = tournament.draw_size;
     const maxSeeds = getNumSeeds(drawSize);
 
-    // 获取所有参赛球员（按排名升序）
     const { data: tpRows, error: tpError } = await supabase
         .from('tournament_players')
         .select('id, player:player_id(ranking)')
@@ -701,7 +699,6 @@ async function recalcSeeds(tid) {
         return { success: false, seeded: 0, maxSeeds, error: tpError.message };
     }
 
-    // 按 ranking 升序排序
     const sorted = (tpRows || [])
         .map(r => ({
             tp_id: r.id,
@@ -709,21 +706,18 @@ async function recalcSeeds(tid) {
         }))
         .sort((a, b) => a.ranking - b.ranking);
 
-    // 先将所有种子清零
-    await supabase
-        .from('tournament_players')
-        .update({ seed: 0 })
-        .eq('tournament_id', tid);
-
-    // 给排名靠前的球员分配种子
+    const updates = [];
     let seeded = 0;
     for (const p of sorted) {
-        if (seeded >= maxSeeds) break;
-        seeded++;
-        await supabase
-            .from('tournament_players')
-            .update({ seed: seeded })
-            .eq('id', p.tp_id);
+        const newSeed = seeded < maxSeeds ? seeded + 1 : 0;
+        updates.push({ id: p.tp_id, seed: newSeed });
+        if (newSeed > 0) seeded++;
+    }
+
+    if (updates.length > 0) {
+        await Promise.all(
+            updates.map(u => supabase.from('tournament_players').update({ seed: u.seed }).eq('id', u.id))
+        );
     }
 
     return { success: true, seeded, maxSeeds, error: null };

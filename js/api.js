@@ -483,42 +483,52 @@ async function batchCreatePlayers(list) {
     let updated = 0;
 
     try {
+        const validNames = list.map(p => (p.name || '').trim()).filter(n => n);
+        const { data: existingRows } = await supabase
+            .from('players')
+            .select('id, name')
+            .in('name', validNames);
+
+        const existingMap = {};
+        (existingRows || []).forEach(r => { existingMap[r.name.toLowerCase()] = r.id; });
+
+        const toUpdate = [];
+        const toInsert = [];
+
         for (const p of list) {
             const name = (p.name || '').trim();
             if (!name) continue;
-
-            const { data: existing } = await supabase
-                .from('players')
-                .select('id')
-                .eq('name', name)
-                .maybeSingle();
-
-            if (existing) {
-                await supabase
-                    .from('players')
-                    .update({
-                        country: p.country || '',
-                        ranking: p.ranking || 999,
-                    })
-                    .eq('id', existing.id);
-                ids.push(existing.id);
+            const existingId = existingMap[name.toLowerCase()];
+            if (existingId) {
+                toUpdate.push({
+                    id: existingId,
+                    country: p.country || '',
+                    ranking: p.ranking || 999,
+                });
+                ids.push(existingId);
                 updated++;
             } else {
-                const { data: row } = await supabase
-                    .from('players')
-                    .insert({
-                        name: name,
-                        country: p.country || '',
-                        country_code: p.country_code || '',
-                        ranking: p.ranking || 999,
-                    })
-                    .select('id')
-                    .single();
-                if (row) {
-                    ids.push(row.id);
-                    created++;
-                }
+                toInsert.push({
+                    name: name,
+                    country: p.country || '',
+                    country_code: p.country_code || '',
+                    ranking: p.ranking || 999,
+                });
             }
+        }
+
+        if (toUpdate.length > 0) {
+            for (const u of toUpdate) {
+                await supabase.from('players').update({ country: u.country, ranking: u.ranking }).eq('id', u.id);
+            }
+        }
+
+        if (toInsert.length > 0) {
+            const { data: inserted } = await supabase
+                .from('players')
+                .insert(toInsert)
+                .select('id');
+            (inserted || []).forEach(r => { ids.push(r.id); created++; });
         }
 
         return { ids, count: ids.length, created, updated };

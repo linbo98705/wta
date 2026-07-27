@@ -1424,8 +1424,8 @@
             input.value = '';
         };
 
-        window.adminEditPlayer = async function(id) {
-            const p = await getPlayer(id);
+        window.adminEditPlayer = function(id) {
+            const p = allPlayersCache.find(x => x.id === id);
             if (!p) return;
             document.getElementById('peId').value = p.id;
             document.getElementById('peName').value = p.name || '';

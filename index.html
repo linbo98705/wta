@@ -339,7 +339,7 @@
                             <th>国家/地区</th>
                             <th style="width:80px;">排名</th>
                             <th style="width:70px;">种子</th>
-                            <th style="width:100px;">入围类型</th>
+                            <th id="playerEntryTypeHeader" style="width:100px;">入围类型</th>
                         </tr>
                     </thead>
                     <tbody id="playerTableBody">
@@ -395,6 +395,11 @@
             return;
         }
 
+        // 判断是否所有球员的入围类型都是正选
+        const allMainEntries = filtered.length > 0 && filtered.every(p => !p.entry_type || p.entry_type === 'main');
+        const entryHeader = document.getElementById('playerEntryTypeHeader');
+        if (entryHeader) entryHeader.style.display = allMainEntries ? 'none' : '';
+
         document.getElementById('playerTableBody').innerHTML = filtered.map((p, idx) => `
             <tr>
                 <td>${idx + 1}</td>
@@ -411,7 +416,7 @@
                         ? '<span class="seed-badge">' + p.t_seed + '</span>'
                         : '<span class="seed-badge empty">-</span>'}
                 </td>
-                <td>${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选'}</td>
+                ${allMainEntries ? '' : '<td>' + (p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选') + '</td>'}
             </tr>
         `).join('');
     };

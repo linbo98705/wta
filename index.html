@@ -72,7 +72,7 @@
     <!-- App Scripts -->
     <script src="js/supabase-client.js"></script>
     <script src="js/utils.js?v=4"></script>
-    <script src="js/api.js?v=3"></script>
+    <script src="js/api.js?v=4"></script>
     <script src="js/draw-engine.js?v=3"></script>
 
     <script>
@@ -1264,15 +1264,20 @@
         window.adminBatchSavePlayers = async function() {
             const valid = playerEditRows.filter(p => p.name.trim());
             if (valid.length === 0) { showToast('请至少输入一个球员姓名', 'error'); return; }
-            const result = await batchCreatePlayers(valid);
-            if (result.count > 0) {
-                const msg = result.updated > 0 ? '新增 ' + (result.created || 0) + ' 名，更新 ' + result.updated + ' 名球员' : '成功添加 ' + result.count + ' 名球员';
-                showToast(msg, 'success');
-                playerEditRows = [];
-                adminRenderPlayerEditRows();
-                adminLoadPlayers();
-            } else {
-                showToast('保存失败', 'error');
+            try {
+                const result = await batchCreatePlayers(valid);
+                if (result.count > 0) {
+                    const msg = result.updated > 0 ? '新增 ' + (result.created || 0) + ' 名，更新 ' + result.updated + ' 名球员' : '成功添加 ' + result.count + ' 名球员';
+                    showToast(msg, 'success');
+                    playerEditRows = [];
+                    adminRenderPlayerEditRows();
+                    adminLoadPlayers();
+                } else {
+                    showToast('保存失败: ' + (result.error || '未知错误'), 'error');
+                }
+            } catch (err) {
+                console.error('批量保存异常:', err);
+                showToast('保存失败: ' + (err.message || '网络异常，请稍后重试'), 'error');
             }
         };
 

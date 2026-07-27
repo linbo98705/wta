@@ -471,7 +471,7 @@ async function deletePlayer(id) {
 /**
  * 批量创建球员（跳过重名已存在的球员，更新其排名和国家信息）
  * @param {Array} list - 球员数据列表 [{ name, country, ranking, country_code }]
- * @returns {Promise<Object>} { ids, count, created, updated }
+ * @returns {Promise<Object>} { ids, count, created, updated, error }
  */
 async function batchCreatePlayers(list) {
     if (!Array.isArray(list) || list.length === 0) {
@@ -482,48 +482,50 @@ async function batchCreatePlayers(list) {
     let created = 0;
     let updated = 0;
 
-    for (const p of list) {
-        const name = (p.name || '').trim();
-        if (!name) continue;
+    try {
+        for (const p of list) {
+            const name = (p.name || '').trim();
+            if (!name) continue;
 
-        // 检查是否已存在同名球员
-        const { data: existing } = await supabase
-            .from('players')
-            .select('id')
-            .eq('name', name)
-            .maybeSingle();
-
-        if (existing) {
-            // 更新已有球员信息
-            await supabase
+            const { data: existing } = await supabase
                 .from('players')
-                .update({
-                    country: p.country || '',
-                    ranking: p.ranking || 999,
-                })
-                .eq('id', existing.id);
-            ids.push(existing.id);
-            updated++;
-        } else {
-            // 新增
-            const { data: row } = await supabase
-                .from('players')
-                .insert({
-                    name: name,
-                    country: p.country || '',
-                    country_code: p.country_code || '',
-                    ranking: p.ranking || 999,
-                })
                 .select('id')
-                .single();
-            if (row) {
-                ids.push(row.id);
-                created++;
+                .eq('name', name)
+                .maybeSingle();
+
+            if (existing) {
+                await supabase
+                    .from('players')
+                    .update({
+                        country: p.country || '',
+                        ranking: p.ranking || 999,
+                    })
+                    .eq('id', existing.id);
+                ids.push(existing.id);
+                updated++;
+            } else {
+                const { data: row } = await supabase
+                    .from('players')
+                    .insert({
+                        name: name,
+                        country: p.country || '',
+                        country_code: p.country_code || '',
+                        ranking: p.ranking || 999,
+                    })
+                    .select('id')
+                    .single();
+                if (row) {
+                    ids.push(row.id);
+                    created++;
+                }
             }
         }
-    }
 
-    return { ids, count: ids.length, created, updated };
+        return { ids, count: ids.length, created, updated };
+    } catch (err) {
+        console.error('批量创建球员异常:', err);
+        return { ids, count: ids.length, created, updated, error: err.message };
+    }
 }
 
 /**

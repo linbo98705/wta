@@ -1355,10 +1355,9 @@
         window.adminImportFile = async function(input) {
             const file = input.files[0];
             if (!file) return;
-            // Simple CSV parse (no server upload in SPA)
             const reader = new FileReader();
             reader.onload = async function(e) {
-                const text = e.target.result;
+                let text = e.target.result;
                 const lines = text.split('\n').filter(l => l.trim());
                 let imported = 0;
                 for (const line of lines) {
@@ -1375,7 +1374,25 @@
                     showToast('未检测到有效数据', 'error');
                 }
             };
-            reader.readAsText(file);
+            const utf8Reader = new FileReader();
+            utf8Reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const hasReplacement = text.includes('\uFFFD');
+                    if (!hasReplacement || file.name.toLowerCase().endsWith('.csv') === false) {
+                        reader.onload.call({ target: { result: text } });
+                    } else {
+                        const gbkReader = new FileReader();
+                        gbkReader.onload = function(e2) {
+                            reader.onload.call({ target: { result: e2.target.result } });
+                        };
+                        gbkReader.readAsText(file, 'GBK');
+                    }
+                } catch {
+                    reader.readAsText(file, 'UTF-8');
+                }
+            };
+            utf8Reader.readAsText(file, 'UTF-8');
             input.value = '';
         };
 

@@ -1535,9 +1535,12 @@
             const result = await addTournamentPlayer(parseInt(tid), { player_id: parseInt(playerId), seed: 0, entry_type: document.getElementById('eEntryType').value });
             if (result.success) {
                 closeModal('entryModal');
-                await recalcSeeds(parseInt(tid));
-                showToast('球员已添加，种子已自动计算', 'success');
+                showToast('球员已添加，正在计算种子...', 'success');
                 adminLoadEntryList();
+                recalcSeeds(parseInt(tid)).then(function(r) {
+                    adminLoadEntryList();
+                    if (r && r.success) { showToast('种子已自动计算（' + r.seeded + '名种子）', 'success'); }
+                }).catch(function(err) { console.error('后台重算种子失败:', err); });
             } else {
                 showToast('添加失败: ' + (result.error || '未知错误'), 'error');
             }
@@ -1556,18 +1559,24 @@
             const tid = document.getElementById('entryTournamentSelect').value;
             await updateTournamentPlayer(parseInt(tid), parseInt(playerId), { seed: 0, entry_type: document.getElementById('eeEntryType').value });
             closeModal('entryEditModal');
-            await recalcSeeds(parseInt(tid));
-            showToast('已更新，种子已自动重算', 'success');
+            showToast('已更新，正在重算种子...', 'success');
             adminLoadEntryList();
+            recalcSeeds(parseInt(tid)).then(function(r) {
+                adminLoadEntryList();
+                if (r && r.success) { showToast('种子已自动重算（' + r.seeded + '名种子）', 'success'); }
+            }).catch(function(err) { console.error('后台重算种子失败:', err); });
         };
 
         window.adminRemoveEntry = async function(playerId) {
             if (!confirm('确定移除该球员？')) return;
             const tid = document.getElementById('entryTournamentSelect').value;
             await removeTournamentPlayer(parseInt(tid), parseInt(playerId));
-            await recalcSeeds(parseInt(tid));
-            showToast('已移除，种子已自动重算', 'success');
+            showToast('已移除，正在重算种子...', 'success');
             adminLoadEntryList();
+            recalcSeeds(parseInt(tid)).then(function(r) {
+                adminLoadEntryList();
+                if (r && r.success) { showToast('种子已自动重算（' + r.seeded + '名种子）', 'success'); }
+            }).catch(function(err) { console.error('后台重算种子失败:', err); });
         };
 
         window.adminRecalcSeeds = async function() {

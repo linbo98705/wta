@@ -692,7 +692,7 @@ async function recalcSeeds(tid) {
 
     const { data: tpRows, error: tpError } = await supabase
         .from('tournament_players')
-        .select('id, player:player_id(ranking)')
+        .select('id, seed, player:player_id(ranking)')
         .eq('tournament_id', tid);
 
     if (tpError) {
@@ -702,15 +702,18 @@ async function recalcSeeds(tid) {
     const sorted = (tpRows || [])
         .map(r => ({
             tp_id: r.id,
+            old_seed: r.seed || 0,
             ranking: r.player?.ranking || 999,
         }))
         .sort((a, b) => a.ranking - b.ranking);
 
     const updates = [];
     let seeded = 0;
-    for (const p of sorted) {
+    for (let i = 0; i < sorted.length; i++) {
         const newSeed = seeded < maxSeeds ? seeded + 1 : 0;
-        updates.push({ id: p.tp_id, seed: newSeed });
+        if (newSeed !== sorted[i].old_seed) {
+            updates.push({ id: sorted[i].tp_id, seed: newSeed });
+        }
         if (newSeed > 0) seeded++;
     }
 
@@ -720,7 +723,7 @@ async function recalcSeeds(tid) {
         );
     }
 
-    return { success: true, seeded, maxSeeds, error: null };
+    return { success: true, seeded, maxSeeds, updated: updates.length, error: null };
 }
 
 // ═══════════════════════════════════════════════════════════

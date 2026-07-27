@@ -70,9 +70,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- SheetJS (Excel 解析) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- jsPDF + AutoTable (PDF 导出) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <!-- html2canvas (HTML 转 Canvas) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- App Scripts -->
@@ -332,8 +329,8 @@
                     <span id="playerCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
-                    <button class="btn btn-sm btn-outline" onclick="exportPlayersToPDF()" title="导出PDF">
-                        <span>&#128196;</span> 导出PDF
+                    <button class="btn btn-sm btn-outline" onclick="exportPlayersToPDF()" title="导出长图">
+                        <span>&#128247;</span> 导出长图
                     </button>
                     <select class="form-control" id="frontPlayerCountryFilter" onchange="frontFilterPlayerList()" style="width:auto;">
                         <option value="">所有国家/地区</option>
@@ -431,83 +428,77 @@
         `).join('');
     };
 
-    // ── 导出参赛名单为 PDF ──────────────────────────
+    // ── 导出参赛名单为长图 ──────────────────────────
     window.exportPlayersToPDF = async function() {
         const players = window._frontPlayersCache || [];
         if (players.length === 0) { showToast('没有球员数据可导出', 'error'); return; }
 
-        showToast('正在生成 PDF...', 'info');
+        showToast('正在生成长图...', 'info');
         try {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('landscape', 'mm', 'a4');
             const tid = window.location.hash.match(/tournament\/(\d+)/)?.[1];
             const t = tid ? await getTournament(tid) : null;
             const allMain = players.every(p => !p.entry_type || p.entry_type === 'main');
-            const rowsPerPage = 22;
 
-            // 临时容器
+            // 临时容器 - 包含标题和完整表格
             const container = document.createElement('div');
             container.style.position = 'fixed';
             container.style.left = '-9999px';
             container.style.top = '0';
             container.style.width = '900px';
             container.style.background = '#fff';
+            container.style.padding = '24px';
+            container.style.fontFamily = '"Microsoft YaHei","PingFang SC","Helvetica Neue",Arial,sans-serif';
             document.body.appendChild(container);
 
-            for (let page = 0; page < Math.ceil(players.length / rowsPerPage); page++) {
-                if (page > 0) pdf.addPage();
-
-                // 第一页标题
-                if (page === 0) {
-                    pdf.setFontSize(16);
-                    pdf.text(t ? t.name + ' - 参赛名单' : '参赛名单', 10, 14);
-                    if (t) {
-                        pdf.setFontSize(10);
-                        pdf.text(`${t.location || ''} | ${t.surface || ''} | ${formatDateRange(t.start_date, t.end_date)}`, 10, 20);
-                    }
-                }
-
-                // 构建临时表格 HTML
-                const pagePlayers = players.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
-                let html = '<table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;">';
-                html += '<thead><tr style="background:#5B2D8E;color:#fff;">';
-                html += '<th style="padding:8px 10px;border:1px solid #ddd;width:50px;">序号</th>';
-                html += '<th style="padding:8px 10px;border:1px solid #ddd;text-align:left;">球员</th>';
-                html += '<th style="padding:8px 10px;border:1px solid #ddd;text-align:left;">国家/地区</th>';
-                html += '<th style="padding:8px 10px;border:1px solid #ddd;width:70px;">排名</th>';
-                html += '<th style="padding:8px 10px;border:1px solid #ddd;width:60px;">种子</th>';
-                if (!allMain) html += '<th style="padding:8px 10px;border:1px solid #ddd;width:90px;">入围类型</th>';
-                html += '</tr></thead><tbody>';
-
-                pagePlayers.forEach((p, idx) => {
-                    const gi = page * rowsPerPage + idx;
-                    const bg = gi % 2 === 0 ? '#fff' : '#F7F3FA';
-                    html += `<tr style="background:${bg};">`;
-                    html += `<td style="padding:7px 10px;border:1px solid #ddd;text-align:center;">${gi + 1}</td>`;
-                    html += `<td style="padding:7px 10px;border:1px solid #ddd;">${escapeHtml(p.name)}</td>`;
-                    html += `<td style="padding:7px 10px;border:1px solid #ddd;">${escapeHtml(p.country || '')}</td>`;
-                    html += `<td style="padding:7px 10px;border:1px solid #ddd;text-align:center;">${p.ranking < 999 ? '#' + p.ranking : '-'}</td>`;
-                    html += `<td style="padding:7px 10px;border:1px solid #ddd;text-align:center;">${p.t_seed > 0 ? p.t_seed : '-'}</td>`;
-                    if (!allMain) html += `<td style="padding:7px 10px;border:1px solid #ddd;text-align:center;">${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选'}</td>`;
-                    html += '</tr>';
-                });
-                html += '</tbody></table>';
-
-                container.innerHTML = html;
-                const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', logging: false, width: 900 });
-                const imgData = canvas.toDataURL('image/png');
-                const pw = 277; // page width minus margins
-                const ph = canvas.height * pw / canvas.width;
-                const startY = page === 0 ? 25 : 10;
-                pdf.addImage(imgData, 'PNG', 10, startY, pw, ph);
+            // 标题区
+            let html = '<div style="margin-bottom:16px;">';
+            html += `<div style="font-size:22px;font-weight:700;color:#2D0A5E;">${escapeHtml(t ? t.name : '')} - 参赛名单</div>`;
+            if (t) {
+                const meta = [t.location, surfaceLabel(t.surface), formatDateRange(t.start_date, t.end_date)].filter(Boolean).join(' | ');
+                html += `<div style="font-size:13px;color:#666;margin-top:4px;">${escapeHtml(meta)}</div>`;
             }
+            html += `<div style="font-size:12px;color:#888;margin-top:4px;">共 ${players.length} 名球员</div>`;
+            html += '</div>';
 
+            // 表格
+            html += '<table style="width:100%;border-collapse:collapse;font-size:14px;">';
+            html += '<thead><tr style="background:#5B2D8E;color:#fff;">';
+            html += '<th style="padding:10px 12px;border:1px solid #ddd;width:50px;">序号</th>';
+            html += '<th style="padding:10px 12px;border:1px solid #ddd;text-align:left;">球员</th>';
+            html += '<th style="padding:10px 12px;border:1px solid #ddd;text-align:left;">国家/地区</th>';
+            html += '<th style="padding:10px 12px;border:1px solid #ddd;width:70px;">排名</th>';
+            html += '<th style="padding:10px 12px;border:1px solid #ddd;width:60px;">种子</th>';
+            if (!allMain) html += '<th style="padding:10px 12px;border:1px solid #ddd;width:90px;">入围类型</th>';
+            html += '</tr></thead><tbody>';
+
+            players.forEach((p, idx) => {
+                const bg = idx % 2 === 0 ? '#fff' : '#F7F3FA';
+                html += `<tr style="background:${bg};">`;
+                html += `<td style="padding:8px 12px;border:1px solid #ddd;text-align:center;">${idx + 1}</td>`;
+                html += `<td style="padding:8px 12px;border:1px solid #ddd;">${escapeHtml(p.name)}</td>`;
+                html += `<td style="padding:8px 12px;border:1px solid #ddd;">${escapeHtml(p.country || '')}</td>`;
+                html += `<td style="padding:8px 12px;border:1px solid #ddd;text-align:center;">${p.ranking < 999 ? '#' + p.ranking : '-'}</td>`;
+                html += `<td style="padding:8px 12px;border:1px solid #ddd;text-align:center;">${p.t_seed > 0 ? p.t_seed : '-'}</td>`;
+                if (!allMain) html += `<td style="padding:8px 12px;border:1px solid #ddd;text-align:center;">${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选'}</td>`;
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+
+            container.innerHTML = html;
+
+            const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', logging: false, width: 900, useCORS: true });
             document.body.removeChild(container);
-            pdf.save((t ? t.name + '_' : '') + '参赛名单.pdf');
-            showToast('PDF 导出成功', 'success');
+
+            // 下载为 PNG 长图
+            const link = document.createElement('a');
+            link.download = (t ? t.name + '_' : '') + '参赛名单.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            showToast('长图导出成功', 'success');
         } catch (err) {
-            console.error('PDF 导出失败:', err);
-            showToast('PDF 导出失败: ' + (err.message || ''), 'error');
+            console.error('导出失败:', err);
+            showToast('导出失败: ' + (err.message || ''), 'error');
         }
     };
 

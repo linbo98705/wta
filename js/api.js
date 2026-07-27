@@ -442,25 +442,30 @@ async function updatePlayer(id, data) {
  * @returns {Promise<Object>} { success, error }
  */
 async function deletePlayer(id) {
-    // 先删除关联数据（如果 RLS 策略不支持级联）
-    await supabase.from('tournament_players').delete().eq('player_id', id);
-    // 将比赛中引用该球员的字段置空
-    await supabase.from('matches')
-        .update({ player1_id: null, winner_id: null })
-        .eq('player1_id', id);
-    await supabase.from('matches')
-        .update({ player2_id: null, winner_id: null })
-        .eq('player2_id', id);
+    try {
+        // 先删除关联数据（如果 RLS 策略不支持级联）
+        await supabase.from('tournament_players').delete().eq('player_id', id);
+        // 将比赛中引用该球员的字段置空
+        await supabase.from('matches')
+            .update({ player1_id: null, winner_id: null })
+            .eq('player1_id', id);
+        await supabase.from('matches')
+            .update({ player2_id: null, winner_id: null })
+            .eq('player2_id', id);
 
-    const { error } = await supabase
-        .from('players')
-        .delete()
-        .eq('id', id);
+        const { error } = await supabase
+            .from('players')
+            .delete()
+            .eq('id', id);
 
-    if (error) {
-        return { success: false, error: error.message };
+        if (error) {
+            return { success: false, error: error.message };
+        }
+        return { success: true, error: null };
+    } catch (err) {
+        console.error('删除球员异常:', err);
+        return { success: false, error: err.message };
     }
-    return { success: true, error: null };
 }
 
 /**
@@ -524,35 +529,39 @@ async function batchCreatePlayers(list) {
 /**
  * 批量删除球员
  * @param {Array} idList - 球员 ID 数组
- * @returns {Promise<Object>} { success, count }
+ * @returns {Promise<Object>} { success, count, error }
  */
 async function batchDeletePlayers(idList) {
     if (!Array.isArray(idList) || idList.length === 0) {
         return { success: false, count: 0, error: '需要球员ID数组' };
     }
+    try {
+        // 清理关联数据
+        await supabase.from('tournament_players').delete().in('player_id', idList);
 
-    // 清理关联数据
-    await supabase.from('tournament_players').delete().in('player_id', idList);
+        // 清理比赛引用
+        for (const pid of idList) {
+            await supabase.from('matches')
+                .update({ player1_id: null, winner_id: null })
+                .eq('player1_id', pid);
+            await supabase.from('matches')
+                .update({ player2_id: null, winner_id: null })
+                .eq('player2_id', pid);
+        }
 
-    // 清理比赛引用
-    for (const pid of idList) {
-        await supabase.from('matches')
-            .update({ player1_id: null, winner_id: null })
-            .eq('player1_id', pid);
-        await supabase.from('matches')
-            .update({ player2_id: null, winner_id: null })
-            .eq('player2_id', pid);
+        const { error } = await supabase
+            .from('players')
+            .delete()
+            .in('id', idList);
+
+        if (error) {
+            return { success: false, count: idList.length, error: error.message };
+        }
+        return { success: true, count: idList.length };
+    } catch (err) {
+        console.error('批量删除球员异常:', err);
+        return { success: false, count: idList.length, error: err.message };
     }
-
-    const { error } = await supabase
-        .from('players')
-        .delete()
-        .in('id', idList);
-
-    if (error) {
-        return { success: false, count: idList.length, error: error.message };
-    }
-    return { success: true, count: idList.length };
 }
 
 // ═══════════════════════════════════════════════════════════

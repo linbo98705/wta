@@ -1337,13 +1337,18 @@
             const checked = [...document.querySelectorAll('.player-check:checked')].map(cb => parseInt(cb.value));
             if (checked.length === 0) { showToast('请先选择球员', 'error'); return; }
             if (!confirm('确定删除选中的 ' + checked.length + ' 名球员？此操作不可撤销！')) return;
-            const result = await batchDeletePlayers(checked);
-            if (result.success) {
-                showToast('已删除 ' + result.count + ' 名球员', 'success');
-                document.getElementById('checkAll').checked = false;
-                adminLoadPlayers();
-            } else {
-                showToast('删除失败', 'error');
+            try {
+                const result = await batchDeletePlayers(checked);
+                if (result.success) {
+                    showToast('已删除 ' + result.count + ' 名球员', 'success');
+                    document.getElementById('checkAll').checked = false;
+                    adminLoadPlayers();
+                } else {
+                    showToast('删除失败: ' + (result.error || '未知错误'), 'error');
+                }
+            } catch (err) {
+                console.error('批量删除异常:', err);
+                showToast('删除失败: ' + (err.message || '网络异常，请稍后重试'), 'error');
             }
         };
 

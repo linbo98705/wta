@@ -835,6 +835,11 @@
     // ══════════════════════════════════════════════════════════════
     // renderAdmin() - Admin Panel
     // ══════════════════════════════════════════════════════════════
+    // ── Global Admin State ──
+    let playerEditRows = [];
+    let allPlayersCache = [];
+    let entryAllPlayersCache = [];
+
     async function renderAdmin() {
         const loggedIn = await isAdminLoggedIn();
         if (!loggedIn) {
@@ -842,11 +847,6 @@
             showToast('请先登录管理员账号', 'error');
             return;
         }
-
-        // Admin state
-        let playerEditRows = [];
-        let allPlayersCache = [];
-        let entryAllPlayersCache = [];
 
         app.innerHTML = `
 <div class="admin-layout">
@@ -1176,7 +1176,7 @@
         };
 
         // ── Tournament CRUD ──
-        async function adminLoadTournaments() {
+        window.adminLoadTournaments = async function() {
             const data = await getTournaments();
             const tbody = document.getElementById('tournamentTable');
             if (!Array.isArray(data) || data.length === 0) {
@@ -1252,7 +1252,7 @@
             playerEditRows[idx][field] = value;
         };
 
-        function adminRenderPlayerEditRows() {
+        window.adminRenderPlayerEditRows = function() {
             const tbody = document.getElementById('playerEditBody');
             if (playerEditRows.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:20px;color:var(--gray-400);">点击「+ 添加行」开始输入球员</td></tr>';
@@ -1281,7 +1281,7 @@
             }
         };
 
-        async function adminLoadPlayers() {
+        window.adminLoadPlayers = async function() {
             const data = await getPlayers();
             const tbody = document.getElementById('playerTable');
             allPlayersCache = Array.isArray(data) ? data : [];
@@ -1294,7 +1294,7 @@
             adminRenderPlayerList(allPlayersCache);
         }
 
-        function adminRenderPlayerList(players) {
+        window.adminRenderPlayerList = function(players) {
             const tbody = document.getElementById('playerTable');
             if (!players || players.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;color:var(--gray-400);">未找到匹配的球员</td></tr>';
@@ -1333,7 +1333,7 @@
             adminUpdateBatchDelBtn();
         };
 
-        function adminUpdateBatchDelBtn() {
+        window.adminUpdateBatchDelBtn = function() {
             const checked = document.querySelectorAll('.player-check:checked').length;
             const btn = document.getElementById('batchDelBtn');
             if (btn) {
@@ -1465,7 +1465,7 @@
         };
 
         // ── Entry Management ──
-        async function adminLoadEntrySelect() {
+        window.adminLoadEntrySelect = async function() {
             const data = await getTournaments();
             const select = document.getElementById('entryTournamentSelect');
             select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + ' (' + escapeHtml(t.category) + ')</option>').join('') : '');
@@ -1499,7 +1499,7 @@
             openModal('entryModal');
         };
 
-        function adminRenderEntryPlayerDropdown(players) {
+        window.adminRenderEntryPlayerDropdown = function(players) {
             const dropdown = document.getElementById('entryPlayerDropdown');
             if (!players || players.length === 0) { dropdown.innerHTML = '<div class="player-search-empty">未找到匹配球员</div>'; return; }
             dropdown.innerHTML = players.map(p => '<div class="player-search-item" data-pid="' + p.id + '" data-pname="' + escapeHtml(p.name) + '" onmousedown="adminSelectEntryPlayer(this.dataset.pid, this.dataset.pname)"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><div class="player-search-item-info"><strong>' + escapeHtml(p.name) + '</strong><span>' + escapeHtml(p.country || '') + ' ' + (p.ranking < 999 ? '#' + p.ranking : '') + '</span></div></div>').join('');
@@ -1579,7 +1579,7 @@
         };
 
         // ── Match Management ──
-        async function adminLoadMatchSelect() {
+        window.adminLoadMatchSelect = async function() {
             const data = await getTournaments();
             const select = document.getElementById('matchTournamentSelect');
             select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + '</option>').join('') : '');
@@ -1797,7 +1797,7 @@
         };
 
         // ── Daily Guess Management ──
-        async function adminLoadGuessSelect() {
+        window.adminLoadGuessSelect = async function() {
             const data = await getTournaments();
             const select = document.getElementById('guessTournamentSelect');
             select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + '</option>').join('') : '');

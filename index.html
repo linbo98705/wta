@@ -1355,9 +1355,7 @@
         window.adminImportFile = async function(input) {
             const file = input.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                let text = e.target.result;
+            function parseText(text) {
                 const lines = text.split('\n').filter(l => l.trim());
                 let imported = 0;
                 for (const line of lines) {
@@ -1373,26 +1371,26 @@
                 } else {
                     showToast('未检测到有效数据', 'error');
                 }
-            };
-            const utf8Reader = new FileReader();
-            utf8Reader.onload = function(e) {
-                try {
+            }
+            try {
+                const reader = new FileReader();
+                reader.onload = function(e) {
                     const text = e.target.result;
-                    const hasReplacement = text.includes('\uFFFD');
-                    if (!hasReplacement || file.name.toLowerCase().endsWith('.csv') === false) {
-                        reader.onload.call({ target: { result: text } });
+                    if (text.indexOf('\uFFFD') === -1) {
+                        parseText(text);
                     } else {
-                        const gbkReader = new FileReader();
-                        gbkReader.onload = function(e2) {
-                            reader.onload.call({ target: { result: e2.target.result } });
+                        const reader2 = new FileReader();
+                        reader2.onload = function(e2) {
+                            parseText(e2.target.result);
                         };
-                        gbkReader.readAsText(file, 'GBK');
+                        reader2.readAsText(file, 'GBK');
                     }
-                } catch {
-                    reader.readAsText(file, 'UTF-8');
-                }
-            };
-            utf8Reader.readAsText(file, 'UTF-8');
+                };
+                reader.readAsText(file, 'UTF-8');
+            } catch (err) {
+                console.error('导入文件异常:', err);
+                showToast('导入失败: ' + (err.message || '未知错误'), 'error');
+            }
             input.value = '';
         };
 

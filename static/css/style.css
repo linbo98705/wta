@@ -294,10 +294,6 @@ img { max-width: 100%; height: auto; }
     padding: 20px;
 }
 
-.dg-card {
-    max-width: 900px;
-}
-
 .dg-table {
     width: 100%;
     border-collapse: collapse;
@@ -447,9 +443,20 @@ img { max-width: 100%; height: auto; }
 /* ── Tables ────────────────────────────── */
 .data-table {
     width: 100%;
-    max-width: 900px;
     border-collapse: collapse;
     font-size: 0.875rem;
+}
+
+/* 参赛名单卡片 */
+.card:has(.data-table) {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* 竞猜卡片 */
+.dg-card {
+    max-width: 900px;
+    margin: 0 auto;
 }
 
 .data-table th {

@@ -416,7 +416,7 @@
                         ? '<span class="seed-badge">' + p.t_seed + '</span>'
                         : '<span class="seed-badge empty">-</span>'}
                 </td>
-                <td>${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选'}</td>
+                <td>${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正赛'}</td>
             </tr>
         `).join('');
     };
@@ -1233,7 +1233,7 @@
                 </div>
                 <p id="ePlayerSelected" style="font-size:0.8125rem; color:var(--accent-green); margin-top:4px; display:none;">&#10003; 已选择: <span id="ePlayerSelectedName"></span></p>
             </div>
-            <div class="form-group"><label>入围类型</label><select class="form-control" id="eEntryType"><option value="main">正选</option><option value="wc">外卡 (WC)</option><option value="q">资格赛 (Q)</option></select></div>
+            <div class="form-group"><label>入围类型</label><select class="form-control" id="eEntryType"><option value="main">正赛</option><option value="wc">外卡 (WC)</option><option value="q">资格赛 (Q)</option></select></div>
             <p style="font-size:0.75rem; color:var(--gray-400);">种子排位将根据赛事签位和球员排名自动计算</p>
             <div class="modal-actions">
                 <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('entryModal')">取消</button>
@@ -1250,7 +1250,7 @@
         <form id="entryEditForm" onsubmit="adminSaveEntryEdit(event)">
             <input type="hidden" id="eePlayerId">
             <div class="form-group"><label>球员</label><input type="text" class="form-control" id="eePlayerName" readonly style="background:var(--gray-100);"></div>
-            <div class="form-group"><label>入围类型</label><select class="form-control" id="eeEntryType"><option value="main">正选</option><option value="wc">外卡 (WC)</option><option value="q">资格赛 (Q)</option></select></div>
+            <div class="form-group"><label>入围类型</label><select class="form-control" id="eeEntryType"><option value="main">正赛</option><option value="wc">外卡 (WC)</option><option value="q">资格赛 (Q)</option></select></div>
             <p style="font-size:0.75rem; color:var(--gray-400);">种子排位将根据赛事签位和球员排名自动计算</p>
             <div class="modal-actions">
                 <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('entryEditModal')">取消</button>
@@ -1730,7 +1730,7 @@
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
                 return;
             }
-            tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td>' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正选') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
+            tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td>' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正赛') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
         };
 
         window.adminOpenEntryModal = async function() {

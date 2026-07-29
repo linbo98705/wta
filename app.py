@@ -476,7 +476,7 @@ def api_recalc_seeds(tid):
     # 先将所有种子清零
     db.execute('UPDATE tournament_players SET seed=0 WHERE tournament_id=?', (tid,))
 
-    # 给排名靠前的球员分配种子（正选优先）
+    # 给排名靠前的球员分配种子（正赛优先）
     seeded_count = 0
     for p in players:
         if seeded_count >= max_seeds:

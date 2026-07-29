@@ -345,7 +345,7 @@
             <div class="form-group">
                 <label>入围类型</label>
                 <select class="form-control" id="eEntryType">
-                    <option value="main">正选</option>
+                    <option value="main">正赛</option>
                     <option value="wc">外卡 (WC)</option>
                     <option value="q">资格赛 (Q)</option>
                 </select>
@@ -375,7 +375,7 @@
             <div class="form-group">
                 <label>入围类型</label>
                 <select class="form-control" id="eeEntryType">
-                    <option value="main">正选</option>
+                    <option value="main">正赛</option>
                     <option value="wc">外卡 (WC)</option>
                     <option value="q">资格赛 (Q)</option>
                 </select>
@@ -1045,7 +1045,7 @@ async function loadEntryList() {
             </div></td>
             <td>${countryFlag('', p.country)} ${p.country}</td>
             <td>${p.ranking < 999 ? `#${p.ranking}` : '-'}</td>
-            <td>${p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正选'}</td>
+            <td>${p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正赛'}</td>
             <td>
                 <button class="btn btn-outline btn-sm" onclick="editEntry(${p.id},'${escapeHtml(p.name)}','${p.entry_type}')">编辑</button>
                 <button class="btn btn-danger btn-sm" onclick="removeEntry(${p.id})">移除</button>

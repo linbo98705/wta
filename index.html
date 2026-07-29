@@ -605,6 +605,7 @@
         if (!Array.isArray(matches)) return;
 
         const realMatches = matches.filter(m => m.status !== 'bye');
+        window._realMatches = realMatches;
         const rounds = [...new Set(realMatches.map(m => m.round))];
 
         let defaultRound = 'all';
@@ -733,7 +734,8 @@
         window.exportSelectedMatches = async function() {
             const selectedIds = Array.from(document.querySelectorAll('.match-select:checked')).map(c => c.dataset.matchId);
             if (selectedIds.length === 0) { showToast('请先选择要导出的比赛', 'error'); return; }
-            const selectedMatches = realMatches.filter(m => selectedIds.includes(String(m.id)));
+            const matchData = window._realMatches || [];
+            const selectedMatches = matchData.filter(m => selectedIds.includes(String(m.id)));
             if (selectedMatches.length === 0) { showToast('未找到选中的比赛数据', 'error'); return; }
 
             // 构建导出HTML
@@ -785,9 +787,9 @@
                 rowsHtml += '<div style="page-break-inside:avoid;margin-bottom:24px;padding:16px;border:1px solid #d1d5db;border-radius:10px;background:#fff;">' +
                     '<div style="font-weight:700;margin-bottom:12px;font-size:1rem;color:#1f2937;">' + round + ' · ' + status + '</div>' +
                     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:12px;background:#f9fafb;border-radius:8px;">' +
-                    '<div style="flex:1;text-align:center;font-size:0.95rem;' + (p1Win ? 'font-weight:700;color:#047857;' : '') + '">' + (p1Win ? '🏆 ' : '') + p1Name + '</div>' +
+                    '<div style="flex:1;text-align:center;font-size:0.95rem;' + (p1Win ? 'font-weight:700;color:#047857;' : '') + '">' + p1Name + '</div>' +
                     '<div style="font-weight:800;font-size:1.3rem;margin:0 16px;color:#1f2937;">' + s1 + ' : ' + s2 + '</div>' +
-                    '<div style="flex:1;text-align:center;font-size:0.95rem;' + (p2Win ? 'font-weight:700;color:#047857;' : '') + '">' + (p2Win ? '🏆 ' : '') + p2Name + '</div>' +
+                    '<div style="flex:1;text-align:center;font-size:0.95rem;' + (p2Win ? 'font-weight:700;color:#047857;' : '') + '">' + p2Name + '</div>' +
                     '</div>';
 
                 if (tbRows || aTotal > 0 || bTotal > 0) {

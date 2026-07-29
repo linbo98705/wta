@@ -447,13 +447,13 @@ img { max-width: 100%; height: auto; }
     font-size: 0.875rem;
 }
 
-/* 参赛名单卡片 */
-.card:has(.data-table) {
+/* 前端参赛名单卡片 */
+.player-list-card {
     max-width: 900px;
     margin: 0 auto;
 }
 
-/* 竞猜卡片 */
+/* 前端竞猜卡片 */
 .dg-card {
     max-width: 900px;
     margin: 0 auto;

@@ -1213,6 +1213,13 @@
             <input type="hidden" id="gId">
             <div class="form-group"><label>竞猜日期 *</label><input type="date" class="form-control" id="gDate" required style="width: 200px;"></div>
             <div class="form-group"><label>截止时间</label><input type="datetime-local" class="form-control" id="gDeadline" style="width: 260px;"></div>
+            <div class="form-group" style="margin-top:8px;">
+                <label style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>批量导入对阵（每行一条，格式：球员A vs 球员B，双打可用 / 分隔）</span>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="adminParseGuessMatches()">&#9881; 解析填充</button>
+                </label>
+                <textarea class="form-control" id="gBulkMatches" rows="5" placeholder="达尼丽娜/费尔南德斯 vs 汤千慧/徐一璠&#10;郑钦文 vs 艾拉&#10;卡林斯卡娅 vs 卡萨金娜" style="font-family:monospace; font-size:0.8125rem;"></textarea>
+            </div>
             <div style="overflow-x:auto;">
                 <table class="data-table" style="margin-top: 8px;">
                     <thead><tr><th style="width:60px;">TB</th><th>对阵 (如: 奥克佳布列娃 vs 多丹)</th><th>胜者球员</th><th>比分 (如: 6-3 6-3)</th></tr></thead>
@@ -1940,6 +1947,24 @@
             const data = await getDailyGuesses(parseInt(tid));
             if (!Array.isArray(data) || data.length === 0) { tbody.innerHTML = '<tr><td colspan="14" class="text-center" style="padding:40px;">暂无竞猜数据</td></tr>'; return; }
             tbody.innerHTML = data.map(g => '<tr style="cursor:pointer;" onclick="adminEditGuess(' + g.id + ')"><td>' + g.id + '</td><td>' + (g.guess_date || '') + '</td><td>' + (g.deadline ? escapeHtml(g.deadline.replace('T', ' ')) : '-') + '</td><td>' + escapeHtml(g.tb1_match || '') + '</td><td>' + escapeHtml(g.tb1_result || '') + '</td><td>' + escapeHtml(g.tb2_match || '') + '</td><td>' + escapeHtml(g.tb2_result || '') + '</td><td>' + escapeHtml(g.tb3_match || '') + '</td><td>' + escapeHtml(g.tb3_result || '') + '</td><td>' + escapeHtml(g.tb4_match || '') + '</td><td>' + escapeHtml(g.tb4_result || '') + '</td><td>' + escapeHtml(g.tb5_match || '') + '</td><td>' + escapeHtml(g.tb5_result || '') + '</td><td><button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); adminDeleteGuess(' + g.id + ')">删除</button></td></tr>').join('');
+        };
+
+        window.adminParseGuessMatches = function() {
+            const text = document.getElementById('gBulkMatches').value || '';
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l && l.toLowerCase().includes('vs'));
+            if (lines.length === 0) { showToast('未识别到有效的对阵行', 'error'); return; }
+            let filled = 0;
+            for (let i = 0; i < Math.min(lines.length, 5); i++) {
+                const line = lines[i];
+                const parts = line.split(/\s+(?:vs|VS|Vs)\s+/);
+                if (parts.length >= 2) {
+                    const p1 = parts[0].trim();
+                    const p2 = parts.slice(1).join(' vs ').trim();
+                    const matchField = document.getElementById('gTb' + (i + 1) + 'Match');
+                    if (matchField) { matchField.value = p1 + ' vs ' + p2; filled++; }
+                }
+            }
+            showToast('已填充 ' + filled + ' 条对阵到 TB1~TB' + filled, 'success');
         };
 
         window.adminOpenGuessModal = function(guessData) {

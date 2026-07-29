@@ -617,10 +617,9 @@
         }
 
         document.getElementById('roundFilter').innerHTML = `
-            <button class="round-filter-btn ${defaultRound === 'all' ? 'active' : ''}" onclick="filterMatches('all')">全部</button>
             ${rounds.map(r => '<button class="round-filter-btn ' + (defaultRound === r ? 'active' : '') + '" onclick="filterMatches(\'' + r + '\')">' + (_roundLabels[r] || r) + '</button>').join('')}
         `;
-        document.getElementById('matchCount').textContent = '共 ' + realMatches.length + ' 场比赛';
+        document.getElementById('matchCount').innerHTML = '<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="selectAllMatches" onchange="toggleSelectAllMatches(this)"> <span style="font-size:0.8125rem;color:var(--gray-600);">全选</span></label> &nbsp; <button class="btn btn-sm btn-outline" onclick="exportSelectedMatches()" style="padding:4px 10px;font-size:0.75rem;">&#128247; 导出赛果</button> &nbsp; 共 ' + realMatches.length + ' 场比赛';
 
         function renderGuessSchedule(m) {
             const p1Name = m.p1_name || '球员1';
@@ -715,7 +714,7 @@
                 const collapsedClass = ' collapsed';
                 const initIcon = '\u25B8';
 
-                html += '<div class="match-card' + collapsedClass + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p1_country_code || '', m.p1_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (isCompleted ? '<strong>' + escapeHtml(m.p1_name || 'TBD') + '</strong>' : escapeHtml(m.p1_name || 'TBD')) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p2_country_code || '', m.p2_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (isCompleted ? '<strong>' + escapeHtml(m.p2_name || 'TBD') + '</strong>' : escapeHtml(m.p2_name || 'TBD')) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + renderGuessSchedule(m) + '</div></div>';
+                html += '<div class="match-card' + collapsedClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="mc-select-wrap"><input type="checkbox" class="match-select" data-match-id="' + m.id + '" onclick="event.stopPropagation()"></span><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p1_country_code || '', m.p1_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (isCompleted ? '<strong>' + escapeHtml(m.p1_name || 'TBD') + '</strong>' : escapeHtml(m.p1_name || 'TBD')) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p2_country_code || '', m.p2_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (isCompleted ? '<strong>' + escapeHtml(m.p2_name || 'TBD') + '</strong>' : escapeHtml(m.p2_name || 'TBD')) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + renderGuessSchedule(m) + '</div></div>';
             });
 
             document.getElementById('matchList').innerHTML = '<div class="match-grid">' + html + '</div>';
@@ -725,6 +724,106 @@
             document.querySelectorAll('.round-filter-btn').forEach(b => b.classList.remove('active'));
             if (event && event.target) event.target.classList.add('active');
             renderMatches(round);
+        };
+
+        window.toggleSelectAllMatches = function(cb) {
+            document.querySelectorAll('.match-select').forEach(c => { c.checked = cb.checked; });
+        };
+
+        window.exportSelectedMatches = async function() {
+            const selectedIds = Array.from(document.querySelectorAll('.match-select:checked')).map(c => c.dataset.matchId);
+            if (selectedIds.length === 0) { showToast('请先选择要导出的比赛', 'error'); return; }
+            const selectedMatches = realMatches.filter(m => selectedIds.includes(String(m.id)));
+            if (selectedMatches.length === 0) { showToast('未找到选中的比赛数据', 'error'); return; }
+
+            // 构建导出HTML
+            let rowsHtml = '';
+            selectedMatches.forEach(m => {
+                const p1Name = m.p1_name || 'TBD';
+                const p2Name = m.p2_name || 'TBD';
+                const s1 = m.score1 != null ? m.score1 : '-';
+                const s2 = m.score2 != null ? m.score2 : '-';
+                const status = m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : '待进行';
+                const round = _roundLabels[m.round] || m.round;
+
+                // 解析竞猜内容
+                const aEntries = (m.guess_a_tb || '').split(',');
+                const bEntries = (m.guess_b_tb || '').split(',');
+                const aNames = aEntries.map(e => { const p = (e || '').split('|'); return p[0] || ''; });
+                const bNames = bEntries.map(e => { const p = (e || '').split('|'); return p[0] || ''; });
+                const aScoreTexts = aEntries.map(e => { const p = (e || '').split('|'); return p[1] || ''; });
+                const bScoreTexts = bEntries.map(e => { const p = (e || '').split('|'); return p[1] || ''; });
+                const aScores = (m.guess_a_tb_score || '').split(',');
+                const bScores = (m.guess_b_tb_score || '').split(',');
+                const aTotal = m.guess_a_total || 0;
+                const bTotal = m.guess_b_total || 0;
+                const guessReason = m.guess_reason || '';
+
+                let tbRows = '';
+                for (let i = 0; i < 5; i++) {
+                    const aName = aNames[i] || '';
+                    const bName = bNames[i] || '';
+                    const aScore = aScoreTexts[i] || '';
+                    const bScore = bScoreTexts[i] || '';
+                    const aPs = aScores[i] || '0';
+                    const bPs = bScores[i] || '0';
+                    if (!aName && !bName && !aScore && !bScore && aPs === '0' && bPs === '0') continue;
+                    tbRows += '<tr><td>TB' + (i + 1) + '</td><td>' + (aName ? aName + (aScore ? ' ' + aScore : '') : '-') + '</td><td>' + aPs + '</td><td>' + bPs + '</td><td>' + (bName ? bName + (bScore ? ' ' + bScore : '') : '-') + '</td></tr>';
+                }
+
+                rowsHtml += '<div style="page-break-inside:avoid;margin-bottom:20px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;">' +
+                    '<div style="font-weight:600;margin-bottom:8px;">' + round + ' · ' + status + '</div>' +
+                    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+                    '<div style="flex:1;text-align:center;">' + p1Name + '</div>' +
+                    '<div style="font-weight:700;font-size:1.1rem;margin:0 12px;">' + s1 + ' : ' + s2 + '</div>' +
+                    '<div style="flex:1;text-align:center;">' + p2Name + '</div>' +
+                    '</div>';
+
+                if (tbRows || aTotal > 0 || bTotal > 0) {
+                    rowsHtml += '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;">' +
+                        '<thead><tr style="background:#f9fafb;"><th style="padding:6px;border:1px solid #e5e7eb;width:50px;">TB</th>' +
+                        '<th style="padding:6px;border:1px solid #e5e7eb;">' + p1Name + '</th>' +
+                        '<th style="padding:6px;border:1px solid #e5e7eb;width:50px;">得分</th>' +
+                        '<th style="padding:6px;border:1px solid #e5e7eb;width:50px;">得分</th>' +
+                        '<th style="padding:6px;border:1px solid #e5e7eb;">' + p2Name + '</th></tr></thead>' +
+                        '<tbody>' + (tbRows || '<tr><td colspan="5" style="padding:8px;text-align:center;color:#9ca3af;">暂无竞猜数据</td></tr>') +
+                        '<tr style="font-weight:700;background:#f3f4f6;"><td>总分</td><td>' + (guessReason && aTotal >= bTotal ? guessReason : '') + '</td>' +
+                        '<td>' + aTotal + '</td><td>' + bTotal + '</td><td>' + (guessReason && bTotal > aTotal ? guessReason : '') + '</td></tr>' +
+                        '</tbody></table>';
+                }
+
+                rowsHtml += '</div>';
+            });
+
+            const exportHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>赛果导出</title>' +
+                '<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:20px;}h1{text-align:center;font-size:1.2rem;margin-bottom:16px;}</style>' +
+                '</head><body><h1>赛果导出</h1>' + rowsHtml + '</body></html>';
+
+            // 使用 html2canvas 生成长图
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = rowsHtml;
+            tempDiv.style.position = 'fixed';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '0';
+            tempDiv.style.background = '#fff';
+            tempDiv.style.padding = '20px';
+            tempDiv.style.minWidth = '500px';
+            document.body.appendChild(tempDiv);
+
+            try {
+                showToast('正在生成图片...', 'info');
+                const canvas = await html2canvas(tempDiv, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+                const link = document.createElement('a');
+                link.download = '赛果导出_' + new Date().toISOString().slice(0, 10) + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast('导出成功', 'success');
+            } catch (err) {
+                console.error('导出失败:', err);
+                showToast('导出失败: ' + (err.message || ''), 'error');
+            } finally {
+                document.body.removeChild(tempDiv);
+            }
         };
 
         renderMatches(defaultRound);

@@ -155,8 +155,10 @@ img { max-width: 100%; height: auto; }
 .tournament-subnav {
     background: var(--white);
     border-bottom: 1px solid var(--gray-200);
-    position: sticky;
-    top: 56px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     z-index: 999;
 }
 
@@ -193,7 +195,7 @@ img { max-width: 100%; height: auto; }
 .tournament-header {
     background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple) 100%);
     color: white;
-    padding: 48px 0;
+    padding: 96px 0 48px;
     position: relative;
     overflow: hidden;
 }

@@ -1178,6 +1178,14 @@
                 <div class="guess-matchup-vs">VS</div>
                 <div class="guess-matchup-player" id="matchupP2">球员2</div>
             </div>
+            <div class="form-group" style="margin-top: 12px;">
+                <label style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>📝 快速解析竞猜内容</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessText()">🔍 解析填充</button>
+                </label>
+                <textarea class="form-control" id="matchGuessTextInput" rows="4"
+                    placeholder="粘贴竞猜内容，每行一个TB。支持格式：&#10;郑钦文 6-3 6-4 vs 艾拉 3-6 4-6&#10;或者：TB1 郑钦文 6-3 6-4 | 艾拉 3-6 4-6&#10;比分自动计算为获胜盘数"></textarea>
+            </div>
             <table class="guess-edit-table-5" id="guessEditTable">
                 <thead><tr><th class="ge-score-col">得分</th><th class="ge-predict-col" id="geHeadA">球员1</th><th class="ge-vs-col">VS</th><th class="ge-predict-col" id="geHeadB">球员2</th><th class="ge-score-col">得分</th></tr></thead>
                 <tbody>
@@ -1835,6 +1843,51 @@
             elB.style.background = totalB > totalA ? 'var(--accent-green)' : totalB < totalA ? '' : '';
             elB.style.color = totalB > totalA ? 'white' : '';
         };
+
+        // 解析比赛竞猜文本（静态版本：名字和比分分开）
+        window.parseMatchGuessText = function() {
+            const text = document.getElementById('matchGuessTextInput').value.trim();
+            if (!text) { showToast('请先输入或粘贴竞猜内容', 'error'); return; }
+            const lines = text.split('\n').filter(l => l.trim());
+            let parsedCount = 0;
+            for (let i = 0; i < Math.min(lines.length, 5); i++) {
+                const tbIndex = i + 1;
+                let line = lines[i].trim().replace(/^TB\d+\s*/i, '');
+                let sideA = '', sideB = '';
+                if (line.includes(' vs ')) { const p = line.split(' vs '); sideA = p[0].trim(); sideB = p[1].trim(); }
+                else if (line.includes(' VS ')) { const p = line.split(' VS '); sideA = p[0].trim(); sideB = p[1].trim(); }
+                else if (line.includes('|')) { const p = line.split('|'); sideA = p[0].trim(); sideB = p[1].trim(); }
+                else { sideA = line; }
+                const aParts = extractNameAndScore(sideA);
+                const bParts = extractNameAndScore(sideB);
+                if (aParts.name) document.getElementById('gaName' + tbIndex).value = aParts.name;
+                if (aParts.score) document.getElementById('gaScore' + tbIndex).value = aParts.score;
+                if (bParts.name) document.getElementById('gbName' + tbIndex).value = bParts.name;
+                if (bParts.score) document.getElementById('gbScore' + tbIndex).value = bParts.score;
+                document.getElementById('gaPs' + tbIndex).value = aParts.wins;
+                document.getElementById('gbPs' + tbIndex).value = bParts.wins;
+                if (aParts.name || bParts.name) parsedCount++;
+            }
+            window.adminCalcTotals();
+            showToast(parsedCount > 0 ? `成功解析 ${parsedCount} 个TB的竞猜内容` : '未能解析到有效内容，请检查格式', parsedCount > 0 ? 'success' : 'error');
+        };
+
+        function extractNameAndScore(str) {
+            if (!str) return { name: '', score: '', wins: 0 };
+            const setPattern = /(\d)\s*[-–]\s*(\d)/g;
+            let wins = 0, match, scoreParts = [];
+            while ((match = setPattern.exec(str)) !== null) {
+                const s1 = parseInt(match[1]), s2 = parseInt(match[2]);
+                scoreParts.push(match[1] + '-' + match[2]);
+                if (s1 > s2) wins++;
+            }
+            let name = str;
+            if (scoreParts.length > 0) {
+                const firstScoreIdx = str.search(/\d\s*[-–]\s*\d/);
+                if (firstScoreIdx > 0) name = str.substring(0, firstScoreIdx).trim();
+            }
+            return { name: name, score: scoreParts.join(' '), wins: wins };
+        }
 
         window.adminSaveMatch = async function(e) {
             e.preventDefault();

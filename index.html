@@ -393,7 +393,7 @@
         if (countryFilter) {
             filtered = filtered.filter(function(p) { return (p.country || '') === countryFilter; });
         }
-        document.getElementById('playerCount').textContent = '共 ' + filtered.length + ' / ' + players.length + ' 名球员';
+        document.getElementById('playerCount').textContent = '共 ' + players.length + ' 名球员';
 
         if (filtered.length === 0) {
             document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="6"><div class="empty-state"><h3>暂无球员</h3><p>没有找到匹配的球员</p></div></td></tr>';
@@ -436,9 +436,11 @@
             const tableSection = document.querySelector('#app .section');
             if (!tableSection) { showToast('未找到参赛名单', 'error'); return; }
 
-            // 临时隐藏导出按钮和筛选器（不截入长图）
-            const cardHeader = tableSection.querySelector('.card-header');
-            if (cardHeader) cardHeader.style.display = 'none';
+            // 临时隐藏导出按钮和筛选器（不截入长图），保留标题和计数
+            const exportBtn = tableSection.querySelector('button[onclick="exportPlayersToPDF()"]');
+            const countryFilterEl = tableSection.querySelector('#frontPlayerCountryFilter');
+            if (exportBtn) exportBtn.style.display = 'none';
+            if (countryFilterEl) countryFilterEl.style.display = 'none';
 
             // 克隆到临时容器，保留网页原始样式
             const wrapper = document.createElement('div');
@@ -453,7 +455,8 @@
             wrapper.appendChild(tableSection.cloneNode(true));
 
             // 恢复原页面显示
-            if (cardHeader) cardHeader.style.display = '';
+            if (exportBtn) exportBtn.style.display = '';
+            if (countryFilterEl) countryFilterEl.style.display = '';
 
             const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
             document.body.removeChild(wrapper);

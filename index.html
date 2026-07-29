@@ -55,10 +55,10 @@
         <div class="container nav-container">
             <a href="#/" class="logo">
                 <img src="static/logo.jpg" alt="网球联赛" class="logo-img">
-                <span class="logo-text">网球联赛</span>
             </a>
             <ul class="nav-links" id="navLinks">
             </ul>
+            <div id="userNavArea" style="display:flex; align-items:center; gap:8px; margin-left:12px;"></div>
             <button class="mobile-menu-btn" onclick="toggleMenu()">&#9776;</button>
         </div>
     </nav>
@@ -70,8 +70,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- SheetJS (Excel 解析) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- html2canvas (HTML 转 Canvas) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=6"></script>
     <script src="js/utils.js?v=6"></script>
@@ -324,14 +322,13 @@
     <div class="container">
         <div class="card">
             <div class="card-header flex-between">
-                <div style="display:flex; gap:8px; align-items:center;">
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                     <h3>球员名单</h3>
                     <span id="playerCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+                    <span id="regStatusBadge" style="display:none; margin-left:8px;"></span>
                 </div>
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <button class="btn btn-sm btn-outline" onclick="exportPlayersToPDF()" title="导出长图">
-                        <span>&#128247;</span> 导出长图
-                    </button>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <div id="regBtnArea"></div>
                     <select class="form-control" id="frontPlayerCountryFilter" onchange="frontFilterPlayerList()" style="width:auto;">
                         <option value="">所有国家/地区</option>
                     </select>
@@ -346,7 +343,7 @@
                             <th>国家/地区</th>
                             <th style="width:80px;">排名</th>
                             <th style="width:70px;">种子</th>
-                            <th id="playerEntryTypeHeader" style="width:100px;">入围类型</th>
+                            <th style="width:100px;">入围类型</th>
                         </tr>
                     </thead>
                     <tbody id="playerTableBody">
@@ -356,7 +353,25 @@
             </div>
         </div>
     </div>
-</section>`;
+</section>
+
+<div class="modal-overlay" id="regModal">
+    <div class="modal">
+        <div class="modal-header"><h3>赛事报名</h3><button class="modal-close" onclick="closeModal('regModal')">&times;</button></div>
+        <form id="regForm" onsubmit="window.frontUserSubmitReg(event)">
+            <div class="form-group"><label>姓名 *</label><input type="text" class="form-control" id="regName" required placeholder="请输入您的姓名"></div>
+            <div class="form-row">
+                <div class="form-group"><label>国家/地区</label><input type="text" class="form-control" id="regCountry" placeholder="如：中国"></div>
+                <div class="form-group"><label>排名</label><input type="number" class="form-control" id="regRanking" min="1" placeholder="选填，如无则留空" style="width:160px;"></div>
+            </div>
+            <p style="font-size:0.8125rem; color:var(--gray-500); margin-top:4px;">提交后将自动创建您的球员档案并完成报名</p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('regModal')">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm">确认报名</button>
+            </div>
+        </form>
+    </div>
+</div>`;
 
         const t = await getTournament(tid);
         if (t) {
@@ -376,6 +391,7 @@
         }
 
         window._frontPlayersCache = players;
+        window._currentTournamentId = tid;
 
         var countrySel = document.getElementById('frontPlayerCountryFilter');
         if (countrySel) {
@@ -383,6 +399,22 @@
             players.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
             countries.sort();
             countrySel.innerHTML = '<option value="">所有国家/地区</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+        }
+
+        const user = getCurrentFrontUser();
+        const regBtnArea = document.getElementById('regBtnArea');
+        const regBadge = document.getElementById('regStatusBadge');
+        if (!user) {
+            regBtnArea.innerHTML = `<button class="btn btn-primary btn-sm" onclick="openBaiduLogin()">百度账号登录报名</button>`;
+        } else {
+            const check = await frontUserCheckRegistration(tid);
+            if (check.registered) {
+                regBadge.style.display = 'inline-block';
+                regBadge.innerHTML = '<span class="seed-badge" style="background:var(--accent-green); color:white;">&#10003; 已报名</span>';
+                regBtnArea.innerHTML = '';
+            } else {
+                regBtnArea.innerHTML = `<button class="btn btn-success btn-sm" onclick="window.frontUserOpenReg()">&#9998; 立即报名</button>`;
+            }
         }
 
         frontFilterPlayerList();
@@ -402,11 +434,6 @@
             return;
         }
 
-        // 判断是否所有球员的入围类型都是正选
-        const allMainEntries = filtered.length > 0 && filtered.every(p => !p.entry_type || p.entry_type === 'main');
-        const entryHeader = document.getElementById('playerEntryTypeHeader');
-        if (entryHeader) entryHeader.style.display = allMainEntries ? 'none' : '';
-
         document.getElementById('playerTableBody').innerHTML = filtered.map((p, idx) => `
             <tr>
                 <td>${idx + 1}</td>
@@ -423,82 +450,48 @@
                         ? '<span class="seed-badge">' + p.t_seed + '</span>'
                         : '<span class="seed-badge empty">-</span>'}
                 </td>
-                ${allMainEntries ? '' : '<td>' + (p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选') + '</td>'}
+                <td>${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选'}</td>
             </tr>
         `).join('');
     };
 
-    // ── 导出参赛名单为长图 ──────────────────────────
-    window.exportPlayersToPDF = async function() {
-        const players = window._frontPlayersCache || [];
-        if (players.length === 0) { showToast('没有球员数据可导出', 'error'); return; }
+    window.frontUserOpenReg = function() {
+        const user = getCurrentFrontUser();
+        if (!user) {
+            openBaiduLogin();
+            return;
+        }
+        document.getElementById('regName').value = '';
+        document.getElementById('regCountry').value = '';
+        document.getElementById('regRanking').value = '';
+        openModal('regModal');
+    };
 
-        showToast('正在生成长图...', 'info');
-        try {
-            const tid = window.location.hash.match(/tournament\/(\d+)/)?.[1];
-            const t = tid ? await getTournament(tid) : null;
-            const allMain = players.every(p => !p.entry_type || p.entry_type === 'main');
-
-            // 临时容器 - 包含标题和完整表格
-            const container = document.createElement('div');
-            container.style.position = 'fixed';
-            container.style.left = '-9999px';
-            container.style.top = '0';
-            container.style.width = '900px';
-            container.style.background = '#fff';
-            container.style.padding = '24px';
-            container.style.fontFamily = '"Microsoft YaHei","PingFang SC","Helvetica Neue",Arial,sans-serif';
-            document.body.appendChild(container);
-
-            // 标题区
-            let html = '<div style="margin-bottom:16px;">';
-            html += `<div style="font-size:22px;font-weight:700;color:#2D0A5E;">${escapeHtml(t ? t.name : '')} - 参赛名单</div>`;
-            if (t) {
-                const meta = [t.location, surfaceLabel(t.surface), formatDateRange(t.start_date, t.end_date)].filter(Boolean).join(' | ');
-                html += `<div style="font-size:13px;color:#666;margin-top:4px;">${escapeHtml(meta)}</div>`;
-            }
-            html += `<div style="font-size:12px;color:#888;margin-top:4px;">共 ${players.length} 名球员</div>`;
-            html += '</div>';
-
-            // 表格
-            html += '<table style="width:100%;border-collapse:collapse;font-size:14px;">';
-            html += '<thead><tr style="background:#5B2D8E;color:#fff;">';
-            html += '<th style="padding:10px 12px;border:1px solid #ddd;width:50px;">序号</th>';
-            html += '<th style="padding:10px 12px;border:1px solid #ddd;text-align:left;">球员</th>';
-            html += '<th style="padding:10px 12px;border:1px solid #ddd;text-align:left;">国家/地区</th>';
-            html += '<th style="padding:10px 12px;border:1px solid #ddd;width:70px;">排名</th>';
-            html += '<th style="padding:10px 12px;border:1px solid #ddd;width:60px;">种子</th>';
-            if (!allMain) html += '<th style="padding:10px 12px;border:1px solid #ddd;width:90px;">入围类型</th>';
-            html += '</tr></thead><tbody>';
-
-            players.forEach((p, idx) => {
-                const bg = idx % 2 === 0 ? '#fff' : '#F7F3FA';
-                html += `<tr style="background:${bg};">`;
-                html += `<td style="padding:8px 12px;border:1px solid #ddd;text-align:center;">${idx + 1}</td>`;
-                html += `<td style="padding:8px 12px;border:1px solid #ddd;">${escapeHtml(p.name)}</td>`;
-                html += `<td style="padding:8px 12px;border:1px solid #ddd;">${escapeHtml(p.country || '')}</td>`;
-                html += `<td style="padding:8px 12px;border:1px solid #ddd;text-align:center;">${p.ranking < 999 ? '#' + p.ranking : '-'}</td>`;
-                html += `<td style="padding:8px 12px;border:1px solid #ddd;text-align:center;">${p.t_seed > 0 ? p.t_seed : '-'}</td>`;
-                if (!allMain) html += `<td style="padding:8px 12px;border:1px solid #ddd;text-align:center;">${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选'}</td>`;
-                html += '</tr>';
-            });
-            html += '</tbody></table>';
-
-            container.innerHTML = html;
-
-            const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', logging: false, width: 900, useCORS: true });
-            document.body.removeChild(container);
-
-            // 下载为 PNG 长图
-            const link = document.createElement('a');
-            link.download = (t ? t.name + '_' : '') + '参赛名单.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-
-            showToast('长图导出成功', 'success');
-        } catch (err) {
-            console.error('导出失败:', err);
-            showToast('导出失败: ' + (err.message || ''), 'error');
+    window.frontUserSubmitReg = async function(e) {
+        e.preventDefault();
+        const tid = window._currentTournamentId;
+        if (!tid) return;
+        const playerData = {
+            name: document.getElementById('regName').value.trim(),
+            country: document.getElementById('regCountry').value.trim(),
+            ranking: parseInt(document.getElementById('regRanking').value) || 999,
+        };
+        if (!playerData.name) {
+            showToast('请填写姓名', 'error');
+            return;
+        }
+        const btn = document.querySelector('#regForm button[type="submit"]');
+        btn.textContent = '提交中...';
+        btn.disabled = true;
+        const result = await frontUserRegisterForTournament(tid, playerData);
+        if (result.success) {
+            closeModal('regModal');
+            showToast('报名成功！欢迎参加本次赛事', 'success');
+            renderPlayers(tid);
+        } else {
+            showToast('报名失败: ' + (result.error || '未知错误'), 'error');
+            btn.textContent = '确认报名';
+            btn.disabled = false;
         }
     };
 
@@ -2076,8 +2069,59 @@
     }
 
     window.addEventListener('hashchange', router);
-    // Initial route
-    router();
+
+    function renderUserNav() {
+        const area = document.getElementById('userNavArea');
+        if (!area) return;
+        const user = getCurrentFrontUser();
+        if (user) {
+            const avatar = user.avatar_url
+                ? '<img src="' + user.avatar_url + '" style="width:28px; height:28px; border-radius:50%;" alt="avatar">'
+                : '<div style="width:28px; height:28px; border-radius:50%; background:var(--purple); color:white; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">' + (user.username ? user.username[0].toUpperCase() : 'U') + '</div>';
+            area.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px; cursor:pointer; position:relative;" id="userMenuBtn">
+                    ${avatar}
+                    <span style="font-size:0.875rem; color:var(--black);">${escapeHtml(user.username)}</span>
+                </div>
+                <div id="userMenuDropdown" style="display:none; position:absolute; top:100%; right:0; background:white; border:1px solid var(--gray-200); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:1000; min-width:160px; margin-top:8px;">
+                    <div style="padding:8px 0;">
+                        <div style="padding:10px 16px; font-size:0.875rem; color:var(--gray-500); border-bottom:1px solid var(--gray-100);">${escapeHtml(user.username)}</div>
+                        <a href="#" onclick="frontUserDoLogout(); return false;" style="display:block; padding:10px 16px; font-size:0.875rem; color:var(--black); text-decoration:none;">退出登录</a>
+                    </div>
+                </div>`;
+            const btn = document.getElementById('userMenuBtn');
+            if (btn) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const dd = document.getElementById('userMenuDropdown');
+                    if (dd) dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+                });
+            }
+            document.addEventListener('click', function() {
+                const dd = document.getElementById('userMenuDropdown');
+                if (dd) dd.style.display = 'none';
+            });
+        } else {
+            area.innerHTML = `<button class="btn btn-primary btn-sm" onclick="openBaiduLogin()" style="display:flex; align-items:center; gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#2932E1"/><path d="M7 10C7 8.89543 7.89543 8 9 8H15C16.1046 8 17 8.89543 17 10V14C17 15.1046 16.1046 16 15 16H9C7.89543 16 7 15.1046 7 14V10Z" fill="white"/><circle cx="10" cy="12" r="1" fill="#2932E1"/><circle cx="14" cy="12" r="1" fill="#2932E1"/></svg>
+                百度账号登录
+            </button>`;
+        }
+    }
+
+    window.frontUserDoLogout = function() {
+        frontUserLogout();
+        renderUserNav();
+    };
+
+    (async function initApp() {
+        await handleBaiduRedirect();
+        renderUserNav();
+        onAuthStateChange(function() {
+            renderUserNav();
+        });
+        router();
+    })();
 
     </script>
 </body>

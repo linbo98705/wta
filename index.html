@@ -779,6 +779,7 @@
                         '<td style="padding:6px 8px;border:1px solid #d1d5db;' + (bWin ? 'background:#ecfdf5;color:#047857;font-weight:700;' : '') + '">' + (bName ? bName + (bScore ? ' <span style="color:#6b7280;font-weight:400;">' + bScore + '</span>' : '') : '-') + '</td></tr>';
                 }
 
+                const isCompleted = m.status === 'completed';
                 const p1Win = isCompleted && m.winner_id === m.player1_id;
                 const p2Win = isCompleted && m.winner_id === m.player2_id;
                 const guessP1Win = aTotal > bTotal || (aTotal === bTotal && m.guess_winner === 'player1');

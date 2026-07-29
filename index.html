@@ -1215,10 +1215,10 @@
             <div class="form-group"><label>截止时间</label><input type="datetime-local" class="form-control" id="gDeadline" style="width: 260px;"></div>
             <div class="form-group" style="margin-top:8px;">
                 <label style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>批量导入对阵（每行一条，格式：球员A vs 球员B，双打可用 / 分隔）</span>
+                    <span>批量导入（支持对阵、日期、截止时间一起粘贴）</span>
                     <button type="button" class="btn btn-sm btn-outline" onclick="adminParseGuessMatches()">&#9881; 解析填充</button>
                 </label>
-                <textarea class="form-control" id="gBulkMatches" rows="5" placeholder="达尼丽娜/费尔南德斯 vs 汤千慧/徐一璠&#10;郑钦文 vs 艾拉&#10;卡林斯卡娅 vs 卡萨金娜" style="font-family:monospace; font-size:0.8125rem;"></textarea>
+                <textarea class="form-control" id="gBulkMatches" rows="5" placeholder="达尼丽娜/费尔南德斯 vs 汤千慧/徐一璠&#10;郑钦文 vs 艾拉&#10;截止时间 7.28 23:00" style="font-family:monospace; font-size:0.8125rem;"></textarea>
             </div>
             <div style="overflow-x:auto;">
                 <table class="data-table" style="margin-top: 8px;">
@@ -1951,8 +1951,61 @@
 
         window.adminParseGuessMatches = function() {
             const text = document.getElementById('gBulkMatches').value || '';
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l && l.toLowerCase().includes('vs'));
-            if (lines.length === 0) { showToast('未识别到有效的对阵行', 'error'); return; }
+            const allLines = text.split('\n').map(l => l.trim()).filter(l => l);
+            const currentYear = new Date().getFullYear();
+
+            function parseDateStr(dateStr) {
+                let m = dateStr.match(/(\d{1,2})[.\-\/月](\d{1,2})/);
+                if (!m) return null;
+                const mm = String(m[1]).padStart(2, '0');
+                const dd = String(m[2]).padStart(2, '0');
+                return currentYear + '-' + mm + '-' + dd;
+            }
+
+            let parsedDate = null;
+            let parsedDeadline = null;
+
+            for (const line of allLines) {
+                const lower = line.toLowerCase();
+
+                if (!parsedDeadline) {
+                    const dlMatch = line.match(/(?:截止时间|截止|deadline)[：:\s]*(\d{1,2}[.\-\/月]\d{1,2})[\s,，]*(\d{1,2})[：:](\d{2})/i);
+                    if (dlMatch) {
+                        const d = parseDateStr(dlMatch[1]);
+                        if (d) {
+                            const hh = String(dlMatch[2]).padStart(2, '0');
+                            const mm = dlMatch[3];
+                            parsedDeadline = d + 'T' + hh + ':' + mm;
+                            parsedDate = d;
+                            continue;
+                        }
+                    }
+                }
+
+                if (!parsedDate) {
+                    const dm = line.match(/(?:日期|竞猜日期|date)[：:\s]*(\d{1,2}[.\-\/月]\d{1,2})/i);
+                    if (dm) {
+                        const d = parseDateStr(dm[1]);
+                        if (d) { parsedDate = d; continue; }
+                    }
+                    if (/^\d{1,2}[.\-\/月]\d{1,2}$/.test(line)) {
+                        const d = parseDateStr(line);
+                        if (d) { parsedDate = d; continue; }
+                    }
+                }
+            }
+
+            if (parsedDate) {
+                document.getElementById('gDate').value = parsedDate;
+            }
+            if (parsedDeadline) {
+                document.getElementById('gDeadline').value = parsedDeadline;
+            }
+
+            const lines = allLines.filter(l => l.toLowerCase().includes('vs'));
+            if (lines.length === 0 && !parsedDate && !parsedDeadline) {
+                showToast('未识别到有效的内容', 'error'); return;
+            }
             let filled = 0;
             for (let i = 0; i < Math.min(lines.length, 5); i++) {
                 const line = lines[i];
@@ -1964,7 +2017,11 @@
                     if (matchField) { matchField.value = p1 + ' vs ' + p2; filled++; }
                 }
             }
-            showToast('已填充 ' + filled + ' 条对阵到 TB1~TB' + filled, 'success');
+            const msgs = [];
+            if (parsedDate) msgs.push('日期 ' + parsedDate);
+            if (parsedDeadline) msgs.push('截止 ' + parsedDeadline.replace('T', ' '));
+            if (filled > 0) msgs.push(filled + ' 条对阵');
+            showToast('已填充: ' + msgs.join('，'), 'success');
         };
 
         window.adminOpenGuessModal = function(guessData) {

@@ -1968,22 +1968,25 @@ textarea.form-control {
         align-items: center;
         gap: 1px;
         line-height: 1.3;
+        max-width: none;
     }
-    /* 名字最多6字，超出省略 */
+    /* 名字完整显示，自动换行 */
     .gc-a-text, .gc-b-text {
         display: block;
-        max-width: 6em;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal;
+        word-break: break-all;
+        text-align: center;
         font-size: 0.75rem;
+        line-height: 1.3;
     }
-    /* 比分在名字下方 */
+    /* 比分在名字下方，支持换行 */
     .gc-a-score-text, .gc-b-score-text {
         display: block;
         font-size: 0.6875rem;
         color: var(--gray-600);
-        white-space: nowrap;
+        white-space: normal;
+        word-break: break-all;
+        text-align: center;
     }
 
     .gc-a-score, .gc-b-score {
@@ -2001,9 +2004,8 @@ textarea.form-control {
     .gt-reason {
         max-width: 100%;
         font-size: 0.6875rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal;
+        word-break: break-all;
     }
     .gt-reason-a, .gt-reason-b {
         max-width: 100%;

@@ -410,6 +410,16 @@
                 <div class="guess-matchup-player" id="matchupP2">球员2</div>
             </div>
 
+            <!-- 竞猜文本快捷解析 -->
+            <div class="form-group" style="margin-top: 12px;">
+                <label style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>📝 快速解析竞猜内容</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessText()">🔍 解析填充</button>
+                </label>
+                <textarea class="form-control" id="matchGuessTextInput" rows="4"
+                    placeholder="粘贴竞猜内容，每行一个TB。支持格式：&#10;郑钦文 6-3 6-4 vs 艾拉 3-6 4-6&#10;或者：TB1 郑钦文 6-3 6-4 | 艾拉 3-6 4-6&#10;比分自动计算为获胜盘数"></textarea>
+            </div>
+
             <!-- 竞猜编辑表格：5列 -->
             <table class="guess-edit-table-5" id="guessEditTable">
                 <thead>
@@ -1312,6 +1322,82 @@ function calcTotals() {
     elA.style.color = totalA > totalB ? 'white' : '';
     elB.style.background = totalB > totalA ? 'var(--accent-green)' : totalB < totalA ? '' : '';
     elB.style.color = totalB > totalA ? 'white' : '';
+}
+
+// ── 竞猜内容文本解析 ────────────────────
+function parseMatchGuessText() {
+    const text = document.getElementById('matchGuessTextInput').value.trim();
+    if (!text) {
+        showToast('请先输入或粘贴竞猜内容', 'error');
+        return;
+    }
+
+    const lines = text.split('\n').filter(l => l.trim());
+    let parsedCount = 0;
+
+    for (let i = 0; i < Math.min(lines.length, 5); i++) {
+        const line = lines[i].trim();
+        const tbIndex = i + 1;
+
+        // 尝试用 vs 或 | 分隔两边
+        let sideA = '', sideB = '';
+        if (line.includes(' vs ')) {
+            const parts = line.split(' vs ');
+            sideA = parts[0].trim();
+            sideB = parts[1].trim();
+        } else if (line.includes('|')) {
+            const parts = line.split('|');
+            sideA = parts[0].trim();
+            sideB = parts[1].trim();
+        } else if (line.includes(' VS ')) {
+            const parts = line.split(' VS ');
+            sideA = parts[0].trim();
+            sideB = parts[1].trim();
+        } else {
+            // 没有分隔符，尝试去掉 TBx 前缀后作为单边
+            sideA = line.replace(/^TB\d+\s*/i, '').trim();
+        }
+
+        // 去掉开头的 TBx 标记（如果有）
+        sideA = sideA.replace(/^TB\d+\s*/i, '').trim();
+        sideB = sideB.replace(/^TB\d+\s*/i, '').trim();
+
+        // 计算每边的得分（获胜盘数）
+        const scoreA = calcSetScore(sideA);
+        const scoreB = calcSetScore(sideB);
+
+        // 填充到输入框
+        if (sideA) document.getElementById('gaPred' + tbIndex).value = sideA;
+        if (sideB) document.getElementById('gbPred' + tbIndex).value = sideB;
+        document.getElementById('gaPs' + tbIndex).value = scoreA;
+        document.getElementById('gbPs' + tbIndex).value = scoreB;
+
+        if (sideA || sideB) parsedCount++;
+    }
+
+    // 更新总分
+    calcTotals();
+
+    if (parsedCount > 0) {
+        showToast(`成功解析 ${parsedCount} 个TB的竞猜内容`, 'success');
+    } else {
+        showToast('未能解析到有效内容，请检查格式', 'error');
+    }
+}
+
+// 计算获胜盘数：从比分字符串中提取盘分，比较大小计算赢了几盘
+function calcSetScore(prediction) {
+    if (!prediction) return 0;
+    // 匹配所有比分模式，如 6-3, 7-5, 6(5)-7, 6-7(4) 等
+    const setPattern = /(\d)\s*[-–]\s*(\d)/g;
+    let wins = 0;
+    let match;
+    while ((match = setPattern.exec(prediction)) !== null) {
+        const s1 = parseInt(match[1]);
+        const s2 = parseInt(match[2]);
+        if (s1 > s2) wins++;
+    }
+    return wins;
 }
 
 async function saveMatch(e) {

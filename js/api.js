@@ -396,7 +396,6 @@ async function createPlayer(data) {
             seed: data.seed || 0,
             photo_url: data.photo_url || '',
             bio: data.bio || '',
-            baidu_uid: data.baidu_uid || null,
         })
         .select('id')
         .single();
@@ -1350,86 +1349,3 @@ async function generateDraw(tid) {
     return { success: true, matchesCreated: toInsert.length };
 }
 
-// ═══════════════════════════════════════════════════════════════
-// 前端用户报名相关 API
-// ═══════════════════════════════════════════════════════════════
-
-async function getPlayerByBaiduUid(baiduUid) {
-    const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .eq('baidu_uid', baiduUid)
-        .maybeSingle();
-    if (error) {
-        console.error('根据百度UID查找球员失败:', error.message);
-        return null;
-    }
-    return data;
-}
-
-async function frontUserRegisterForTournament(tid, playerData) {
-    try {
-        const user = getCurrentFrontUser();
-        if (!user) {
-            return { success: false, error: '请先登录百度账号' };
-        }
-
-        let player = await getPlayerByBaiduUid(user.baidu_uid);
-
-        if (!player) {
-            if (!playerData || !playerData.name) {
-                return { success: false, error: '需要填写球员信息', needPlayerInfo: true };
-            }
-            const countryCode = playerData.country
-                ? getCountryCodeByName(playerData.country)
-                : '';
-            const createResult = await createPlayer({
-                name: playerData.name,
-                country: playerData.country || '',
-                country_code: countryCode,
-                ranking: playerData.ranking || 999,
-                photo_url: user.avatar_url || '',
-                baidu_uid: user.baidu_uid,
-            });
-            if (!createResult.success) {
-                return { success: false, error: createResult.error };
-            }
-            player = await getPlayer(createResult.id);
-        }
-
-        if (!player) {
-            return { success: false, error: '球员信息获取失败' };
-        }
-
-        const existingPlayers = await getTournamentPlayers(tid);
-        const alreadyIn = Array.isArray(existingPlayers)
-            && existingPlayers.some(p => p.id === player.id);
-        if (alreadyIn) {
-            return { success: false, error: '您已经报名参加该赛事' };
-        }
-
-        const result = await addTournamentPlayer(parseInt(tid), {
-            player_id: player.id,
-            seed: 0,
-            entry_type: 'main',
-        });
-
-        if (result.success) {
-            return { success: true, player: player, error: null };
-        }
-        return { success: false, error: result.error };
-    } catch (err) {
-        console.error('报名异常:', err);
-        return { success: false, error: err.message };
-    }
-}
-
-async function frontUserCheckRegistration(tid) {
-    const user = getCurrentFrontUser();
-    if (!user) return { registered: false, player: null };
-    const player = await getPlayerByBaiduUid(user.baidu_uid);
-    if (!player) return { registered: false, player: null };
-    const list = await getTournamentPlayers(tid);
-    const registered = Array.isArray(list) && list.some(p => p.id === player.id);
-    return { registered: registered, player: player };
-}

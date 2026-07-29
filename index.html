@@ -57,7 +57,6 @@
             </a>
             <ul class="nav-links" id="navLinks">
             </ul>
-            <div id="userNavArea" style="display:none;"></div>
             <button class="mobile-menu-btn" onclick="toggleMenu()">&#9776;</button>
         </div>
     </nav>
@@ -321,17 +320,13 @@
     <div class="container">
         <div class="card">
             <div class="card-header flex-between">
-                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <div style="display:flex; gap:8px; align-items:center;">
                     <h3>球员名单</h3>
                     <span id="playerCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
-                    <span id="regStatusBadge" style="display:none; margin-left:8px;"></span>
                 </div>
-                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                    <div id="regBtnArea"></div>
-                    <select class="form-control" id="frontPlayerCountryFilter" onchange="frontFilterPlayerList()" style="width:auto;">
-                        <option value="">所有国家/地区</option>
-                    </select>
-                </div>
+                <select class="form-control" id="frontPlayerCountryFilter" onchange="frontFilterPlayerList()" style="width:auto;">
+                    <option value="">所有国家/地区</option>
+                </select>
             </div>
             <div style="overflow-x:auto;">
                 <table class="data-table">
@@ -352,25 +347,7 @@
             </div>
         </div>
     </div>
-</section>
-
-<div class="modal-overlay" id="regModal">
-    <div class="modal">
-        <div class="modal-header"><h3>赛事报名</h3><button class="modal-close" onclick="closeModal('regModal')">&times;</button></div>
-        <form id="regForm" onsubmit="window.frontUserSubmitReg(event)">
-            <div class="form-group"><label>姓名 *</label><input type="text" class="form-control" id="regName" required placeholder="请输入您的姓名"></div>
-            <div class="form-row">
-                <div class="form-group"><label>国家/地区</label><input type="text" class="form-control" id="regCountry" placeholder="如：中国"></div>
-                <div class="form-group"><label>排名</label><input type="number" class="form-control" id="regRanking" min="1" placeholder="选填，如无则留空" style="width:160px;"></div>
-            </div>
-            <p style="font-size:0.8125rem; color:var(--gray-500); margin-top:4px;">提交后将自动创建您的球员档案并完成报名</p>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('regModal')">取消</button>
-                <button type="submit" class="btn btn-primary btn-sm">确认报名</button>
-            </div>
-        </form>
-    </div>
-</div>`;
+</section>`;
 
         const t = await getTournament(tid);
         if (t) {
@@ -390,7 +367,6 @@
         }
 
         window._frontPlayersCache = players;
-        window._currentTournamentId = tid;
 
         var countrySel = document.getElementById('frontPlayerCountryFilter');
         if (countrySel) {
@@ -398,22 +374,6 @@
             players.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
             countries.sort();
             countrySel.innerHTML = '<option value="">所有国家/地区</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
-        }
-
-        const user = getCurrentFrontUser();
-        const regBtnArea = document.getElementById('regBtnArea');
-        const regBadge = document.getElementById('regStatusBadge');
-        if (!user) {
-            regBtnArea.innerHTML = `<button class="btn btn-primary btn-sm" onclick="openBaiduLogin()">百度账号登录报名</button>`;
-        } else {
-            const check = await frontUserCheckRegistration(tid);
-            if (check.registered) {
-                regBadge.style.display = 'inline-block';
-                regBadge.innerHTML = '<span class="seed-badge" style="background:var(--accent-green); color:white;">&#10003; 已报名</span>';
-                regBtnArea.innerHTML = '';
-            } else {
-                regBtnArea.innerHTML = `<button class="btn btn-success btn-sm" onclick="window.frontUserOpenReg()">&#9998; 立即报名</button>`;
-            }
         }
 
         frontFilterPlayerList();
@@ -452,46 +412,6 @@
                 <td>${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正选'}</td>
             </tr>
         `).join('');
-    };
-
-    window.frontUserOpenReg = function() {
-        const user = getCurrentFrontUser();
-        if (!user) {
-            openBaiduLogin();
-            return;
-        }
-        document.getElementById('regName').value = '';
-        document.getElementById('regCountry').value = '';
-        document.getElementById('regRanking').value = '';
-        openModal('regModal');
-    };
-
-    window.frontUserSubmitReg = async function(e) {
-        e.preventDefault();
-        const tid = window._currentTournamentId;
-        if (!tid) return;
-        const playerData = {
-            name: document.getElementById('regName').value.trim(),
-            country: document.getElementById('regCountry').value.trim(),
-            ranking: parseInt(document.getElementById('regRanking').value) || 999,
-        };
-        if (!playerData.name) {
-            showToast('请填写姓名', 'error');
-            return;
-        }
-        const btn = document.querySelector('#regForm button[type="submit"]');
-        btn.textContent = '提交中...';
-        btn.disabled = true;
-        const result = await frontUserRegisterForTournament(tid, playerData);
-        if (result.success) {
-            closeModal('regModal');
-            showToast('报名成功！欢迎参加本次赛事', 'success');
-            renderPlayers(tid);
-        } else {
-            showToast('报名失败: ' + (result.error || '未知错误'), 'error');
-            btn.textContent = '确认报名';
-            btn.disabled = false;
-        }
     };
 
     // ══════════════════════════════════════════════════════════════
@@ -2069,59 +1989,8 @@
     }
 
     window.addEventListener('hashchange', router);
-
-    function renderUserNav() {
-        const area = document.getElementById('userNavArea');
-        if (!area) return;
-        const user = getCurrentFrontUser();
-        if (user) {
-            const avatar = user.avatar_url
-                ? '<img src="' + user.avatar_url + '" style="width:28px; height:28px; border-radius:50%;" alt="avatar">'
-                : '<div style="width:28px; height:28px; border-radius:50%; background:var(--purple); color:white; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">' + (user.username ? user.username[0].toUpperCase() : 'U') + '</div>';
-            area.innerHTML = `
-                <div style="display:flex; align-items:center; gap:8px; cursor:pointer; position:relative;" id="userMenuBtn">
-                    ${avatar}
-                    <span style="font-size:0.875rem; color:var(--black);">${escapeHtml(user.username)}</span>
-                </div>
-                <div id="userMenuDropdown" style="display:none; position:absolute; top:100%; right:0; background:white; border:1px solid var(--gray-200); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:1000; min-width:160px; margin-top:8px;">
-                    <div style="padding:8px 0;">
-                        <div style="padding:10px 16px; font-size:0.875rem; color:var(--gray-500); border-bottom:1px solid var(--gray-100);">${escapeHtml(user.username)}</div>
-                        <a href="#" onclick="frontUserDoLogout(); return false;" style="display:block; padding:10px 16px; font-size:0.875rem; color:var(--black); text-decoration:none;">退出登录</a>
-                    </div>
-                </div>`;
-            const btn = document.getElementById('userMenuBtn');
-            if (btn) {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const dd = document.getElementById('userMenuDropdown');
-                    if (dd) dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
-                });
-            }
-            document.addEventListener('click', function() {
-                const dd = document.getElementById('userMenuDropdown');
-                if (dd) dd.style.display = 'none';
-            });
-        } else {
-            area.innerHTML = `<button class="btn btn-primary btn-sm" onclick="openBaiduLogin()" style="display:flex; align-items:center; gap:6px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#2932E1"/><path d="M7 10C7 8.89543 7.89543 8 9 8H15C16.1046 8 17 8.89543 17 10V14C17 15.1046 16.1046 16 15 16H9C7.89543 16 7 15.1046 7 14V10Z" fill="white"/><circle cx="10" cy="12" r="1" fill="#2932E1"/><circle cx="14" cy="12" r="1" fill="#2932E1"/></svg>
-                百度账号登录
-            </button>`;
-        }
-    }
-
-    window.frontUserDoLogout = function() {
-        frontUserLogout();
-        renderUserNav();
-    };
-
-    (async function initApp() {
-        await handleBaiduRedirect();
-        renderUserNav();
-        onAuthStateChange(function() {
-            renderUserNav();
-        });
-        router();
-    })();
+    // Initial route
+    router();
 
     </script>
 </body>

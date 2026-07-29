@@ -294,6 +294,48 @@ img { max-width: 100%; height: auto; }
     padding: 20px;
 }
 
+.dg-card {
+    max-width: 900px;
+}
+
+.dg-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.dg-table th {
+    background: var(--purple-bg);
+    color: var(--purple-dark);
+    font-weight: 700;
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--purple);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.dg-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.dg-tb {
+    width: 60px;
+    font-weight: 700;
+    color: var(--purple);
+}
+
+.dg-match {
+    font-weight: 600;
+}
+
+.dg-deadline {
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+    margin-left: 12px;
+}
+
 /* ── Tournament Card ───────────────────── */
 .tournament-grid {
     display: grid;
@@ -405,6 +447,7 @@ img { max-width: 100%; height: auto; }
 /* ── Tables ────────────────────────────── */
 .data-table {
     width: 100%;
+    max-width: 900px;
     border-collapse: collapse;
     font-size: 0.875rem;
 }

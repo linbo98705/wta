@@ -449,8 +449,14 @@ img { max-width: 100%; height: auto; }
 
 /* 前端参赛名单卡片 */
 .player-list-card {
-    max-width: 900px;
+    width: 100%;
     margin: 0 auto;
+}
+
+@media (min-width: 769px) {
+    .player-list-card {
+        width: 85%;
+    }
 }
 
 /* 前端竞猜卡片 */

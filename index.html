@@ -765,30 +765,48 @@
                     const bName = bNames[i] || '';
                     const aScore = aScoreTexts[i] || '';
                     const bScore = bScoreTexts[i] || '';
-                    const aPs = aScores[i] || '0';
-                    const bPs = bScores[i] || '0';
-                    if (!aName && !bName && !aScore && !bScore && aPs === '0' && bPs === '0') continue;
-                    tbRows += '<tr><td>TB' + (i + 1) + '</td><td>' + (aName ? aName + (aScore ? ' ' + aScore : '') : '-') + '</td><td>' + aPs + '</td><td>' + bPs + '</td><td>' + (bName ? bName + (bScore ? ' ' + bScore : '') : '-') + '</td></tr>';
+                    const aPs = parseInt(aScores[i]) || 0;
+                    const bPs = parseInt(bScores[i]) || 0;
+                    if (!aName && !bName && !aScore && !bScore && aPs === 0 && bPs === 0) continue;
+                    const aWin = aPs > bPs;
+                    const bWin = bPs > aPs;
+                    tbRows += '<tr><td style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;background:#f9fafb;font-weight:600;">TB' + (i + 1) + '</td>' +
+                        '<td style="padding:6px 8px;border:1px solid #d1d5db;' + (aWin ? 'background:#ecfdf5;color:#047857;font-weight:700;' : '') + '">' + (aName ? aName + (aScore ? ' <span style="color:#6b7280;font-weight:400;">' + aScore + '</span>' : '') : '-') + '</td>' +
+                        '<td style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;font-weight:700;' + (aWin ? 'background:#ecfdf5;color:#047857;' : '') + '">' + aPs + '</td>' +
+                        '<td style="padding:6px 8px;border:1px solid #d1d5db;text-align:center;font-weight:700;' + (bWin ? 'background:#ecfdf5;color:#047857;' : '') + '">' + bPs + '</td>' +
+                        '<td style="padding:6px 8px;border:1px solid #d1d5db;' + (bWin ? 'background:#ecfdf5;color:#047857;font-weight:700;' : '') + '">' + (bName ? bName + (bScore ? ' <span style="color:#6b7280;font-weight:400;">' + bScore + '</span>' : '') : '-') + '</td></tr>';
                 }
 
-                rowsHtml += '<div style="page-break-inside:avoid;margin-bottom:20px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;">' +
-                    '<div style="font-weight:600;margin-bottom:8px;">' + round + ' · ' + status + '</div>' +
-                    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
-                    '<div style="flex:1;text-align:center;">' + p1Name + '</div>' +
-                    '<div style="font-weight:700;font-size:1.1rem;margin:0 12px;">' + s1 + ' : ' + s2 + '</div>' +
-                    '<div style="flex:1;text-align:center;">' + p2Name + '</div>' +
+                const p1Win = isCompleted && m.winner_id === m.player1_id;
+                const p2Win = isCompleted && m.winner_id === m.player2_id;
+                const guessP1Win = aTotal > bTotal || (aTotal === bTotal && m.guess_winner === 'player1');
+                const guessP2Win = bTotal > aTotal || (aTotal === bTotal && m.guess_winner === 'player2');
+
+                rowsHtml += '<div style="page-break-inside:avoid;margin-bottom:24px;padding:16px;border:1px solid #d1d5db;border-radius:10px;background:#fff;">' +
+                    '<div style="font-weight:700;margin-bottom:12px;font-size:1rem;color:#1f2937;">' + round + ' · ' + status + '</div>' +
+                    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:12px;background:#f9fafb;border-radius:8px;">' +
+                    '<div style="flex:1;text-align:center;font-size:0.95rem;' + (p1Win ? 'font-weight:700;color:#047857;' : '') + '">' + (p1Win ? '🏆 ' : '') + p1Name + '</div>' +
+                    '<div style="font-weight:800;font-size:1.3rem;margin:0 16px;color:#1f2937;">' + s1 + ' : ' + s2 + '</div>' +
+                    '<div style="flex:1;text-align:center;font-size:0.95rem;' + (p2Win ? 'font-weight:700;color:#047857;' : '') + '">' + (p2Win ? '🏆 ' : '') + p2Name + '</div>' +
                     '</div>';
 
                 if (tbRows || aTotal > 0 || bTotal > 0) {
-                    rowsHtml += '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;">' +
-                        '<thead><tr style="background:#f9fafb;"><th style="padding:6px;border:1px solid #e5e7eb;width:50px;">TB</th>' +
-                        '<th style="padding:6px;border:1px solid #e5e7eb;">' + p1Name + '</th>' +
-                        '<th style="padding:6px;border:1px solid #e5e7eb;width:50px;">得分</th>' +
-                        '<th style="padding:6px;border:1px solid #e5e7eb;width:50px;">得分</th>' +
-                        '<th style="padding:6px;border:1px solid #e5e7eb;">' + p2Name + '</th></tr></thead>' +
-                        '<tbody>' + (tbRows || '<tr><td colspan="5" style="padding:8px;text-align:center;color:#9ca3af;">暂无竞猜数据</td></tr>') +
-                        '<tr style="font-weight:700;background:#f3f4f6;"><td>总分</td><td>' + (guessReason && aTotal >= bTotal ? guessReason : '') + '</td>' +
-                        '<td>' + aTotal + '</td><td>' + bTotal + '</td><td>' + (guessReason && bTotal > aTotal ? guessReason : '') + '</td></tr>' +
+                    rowsHtml += '<div style="font-weight:600;margin-bottom:8px;color:#374151;">竞猜详情</div>' +
+                        '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;table-layout:fixed;">' +
+                        '<colgroup><col style="width:50px;"><col style="width:35%;"><col style="width:45px;"><col style="width:45px;"><col style="width:35%;"></colgroup>' +
+                        '<thead><tr style="background:#f3f4f6;">' +
+                        '<th style="padding:8px;border:1px solid #d1d5db;text-align:center;font-weight:700;">TB</th>' +
+                        '<th style="padding:8px;border:1px solid #d1d5db;text-align:center;font-weight:700;">' + p1Name + '</th>' +
+                        '<th style="padding:8px;border:1px solid #d1d5db;text-align:center;font-weight:700;">得分</th>' +
+                        '<th style="padding:8px;border:1px solid #d1d5db;text-align:center;font-weight:700;">得分</th>' +
+                        '<th style="padding:8px;border:1px solid #d1d5db;text-align:center;font-weight:700;">' + p2Name + '</th></tr></thead>' +
+                        '<tbody>' + (tbRows || '<tr><td colspan="5" style="padding:12px;text-align:center;color:#9ca3af;border:1px solid #d1d5db;">暂无竞猜数据</td></tr>') +
+                        '<tr style="font-weight:700;background:#e5e7eb;">' +
+                        '<td style="padding:8px;border:1px solid #d1d5db;text-align:center;">总分</td>' +
+                        '<td style="padding:8px;border:1px solid #d1d5db;' + (guessP1Win ? 'background:#ecfdf5;color:#047857;' : '') + '">' + (guessReason && guessP1Win ? '<span style="font-weight:600;">' + guessReason + '</span>' : '') + '</td>' +
+                        '<td style="padding:8px;border:1px solid #d1d5db;text-align:center;' + (guessP1Win ? 'background:#ecfdf5;color:#047857;' : '') + '">' + aTotal + '</td>' +
+                        '<td style="padding:8px;border:1px solid #d1d5db;text-align:center;' + (guessP2Win ? 'background:#ecfdf5;color:#047857;' : '') + '">' + bTotal + '</td>' +
+                        '<td style="padding:8px;border:1px solid #d1d5db;' + (guessP2Win ? 'background:#ecfdf5;color:#047857;' : '') + '">' + (guessReason && guessP2Win ? '<span style="font-weight:600;">' + guessReason + '</span>' : '') + '</td></tr>' +
                         '</tbody></table>';
                 }
 

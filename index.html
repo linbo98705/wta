@@ -1180,11 +1180,21 @@
             </div>
             <div class="form-group" style="margin-top: 12px;">
                 <label style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>📝 快速解析竞猜内容</span>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessText()">🔍 解析填充</button>
+                    <span>📝 快速解析竞猜内容（分开填写）</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessTextSeparate()">🔍 解析填充</button>
                 </label>
-                <textarea class="form-control" id="matchGuessTextInput" rows="4"
-                    placeholder="粘贴竞猜内容，每行一个TB。支持格式：&#10;郑钦文 6-3 6-4 vs 艾拉 3-6 4-6&#10;或者：TB1 郑钦文 6-3 6-4 | 艾拉 3-6 4-6&#10;比分自动计算为获胜盘数"></textarea>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelA">球员1</label>
+                        <textarea class="form-control" id="matchGuessTextInputA" rows="4"
+                            placeholder="每行一个TB，如：&#10;6-3 6-4&#10;7-5 6-2&#10;6-1 4-6 6-3"></textarea>
+                    </div>
+                    <div>
+                        <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelB">球员2</label>
+                        <textarea class="form-control" id="matchGuessTextInputB" rows="4"
+                            placeholder="每行一个TB，如：&#10;3-6 4-6&#10;5-7 2-6&#10;1-6 6-4 3-6"></textarea>
+                    </div>
+                </div>
             </div>
             <table class="guess-edit-table-5" id="guessEditTable">
                 <thead><tr><th class="ge-score-col">得分</th><th class="ge-predict-col" id="geHeadA">球员1</th><th class="ge-vs-col">VS</th><th class="ge-predict-col" id="geHeadB">球员2</th><th class="ge-score-col">得分</th></tr></thead>
@@ -1888,6 +1898,48 @@
             }
             return { name: name, score: scoreParts.join(' '), wins: wins };
         }
+
+        // 分开解析两个球员的竞猜内容
+        window.parseMatchGuessTextSeparate = function() {
+            const textA = document.getElementById('matchGuessTextInputA').value.trim();
+            const textB = document.getElementById('matchGuessTextInputB').value.trim();
+            if (!textA && !textB) { showToast('请先输入竞猜内容', 'error'); return; }
+
+            const p1Name = document.getElementById('matchupP1').textContent.trim();
+            const p2Name = document.getElementById('matchupP2').textContent.trim();
+            const linesA = textA.split('\n').filter(l => l.trim());
+            const linesB = textB.split('\n').filter(l => l.trim());
+            let parsedCount = 0;
+
+            for (let i = 0; i < 5; i++) {
+                const tbIndex = i + 1;
+                const lineA = linesA[i] ? linesA[i].trim().replace(/^TB\d+\s*/i, '') : '';
+                const lineB = linesB[i] ? linesB[i].trim().replace(/^TB\d+\s*/i, '') : '';
+
+                // 球员A：如果只填了比分，自动补球员名
+                if (lineA) {
+                    const parts = extractNameAndScore(lineA);
+                    const nameToUse = parts.name || p1Name;
+                    if (nameToUse && nameToUse !== '球员1') document.getElementById('gaName' + tbIndex).value = nameToUse;
+                    if (parts.score) document.getElementById('gaScore' + tbIndex).value = parts.score;
+                    document.getElementById('gaPs' + tbIndex).value = parts.wins;
+                }
+
+                // 球员B：如果只填了比分，自动补球员名
+                if (lineB) {
+                    const parts = extractNameAndScore(lineB);
+                    const nameToUse = parts.name || p2Name;
+                    if (nameToUse && nameToUse !== '球员2') document.getElementById('gbName' + tbIndex).value = nameToUse;
+                    if (parts.score) document.getElementById('gbScore' + tbIndex).value = parts.score;
+                    document.getElementById('gbPs' + tbIndex).value = parts.wins;
+                }
+
+                if (lineA || lineB) parsedCount++;
+            }
+
+            window.adminCalcTotals();
+            showToast(parsedCount > 0 ? `成功解析 ${parsedCount} 个TB的竞猜内容` : '未能解析到有效内容', parsedCount > 0 ? 'success' : 'error');
+        };
 
         window.adminSaveMatch = async function(e) {
             e.preventDefault();

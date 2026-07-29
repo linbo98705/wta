@@ -413,11 +413,21 @@
             <!-- 竞猜文本快捷解析 -->
             <div class="form-group" style="margin-top: 12px;">
                 <label style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>📝 快速解析竞猜内容</span>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessText()">🔍 解析填充</button>
+                    <span>📝 快速解析竞猜内容（分开填写）</span>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessTextSeparate()">🔍 解析填充</button>
                 </label>
-                <textarea class="form-control" id="matchGuessTextInput" rows="4"
-                    placeholder="粘贴竞猜内容，每行一个TB。支持格式：&#10;郑钦文 6-3 6-4 vs 艾拉 3-6 4-6&#10;或者：TB1 郑钦文 6-3 6-4 | 艾拉 3-6 4-6&#10;比分自动计算为获胜盘数"></textarea>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelA">球员1</label>
+                        <textarea class="form-control" id="matchGuessTextInputA" rows="4"
+                            placeholder="每行一个TB，如：&#10;郑钦文 6-3 6-4&#10;郑钦文 7-5 6-2&#10;郑钦文 6-1 4-6 6-3"></textarea>
+                    </div>
+                    <div>
+                        <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelB">球员2</label>
+                        <textarea class="form-control" id="matchGuessTextInputB" rows="4"
+                            placeholder="每行一个TB，如：&#10;艾拉 3-6 4-6&#10;艾拉 5-7 2-6&#10;艾拉 1-6 6-4 3-6"></textarea>
+                    </div>
+                </div>
             </div>
 
             <!-- 竞猜编辑表格：5列 -->
@@ -1324,56 +1334,50 @@ function calcTotals() {
     elB.style.color = totalB > totalA ? 'white' : '';
 }
 
-// ── 竞猜内容文本解析 ────────────────────
-function parseMatchGuessText() {
-    const text = document.getElementById('matchGuessTextInput').value.trim();
-    if (!text) {
-        showToast('请先输入或粘贴竞猜内容', 'error');
+// ── 竞猜内容文本解析（分开解析两个球员） ────────────────────
+function parseMatchGuessTextSeparate() {
+    const textA = document.getElementById('matchGuessTextInputA').value.trim();
+    const textB = document.getElementById('matchGuessTextInputB').value.trim();
+    if (!textA && !textB) {
+        showToast('请先输入竞猜内容', 'error');
         return;
     }
 
-    const lines = text.split('\n').filter(l => l.trim());
+    const p1Name = document.getElementById('matchupP1').textContent.trim();
+    const p2Name = document.getElementById('matchupP2').textContent.trim();
+    const linesA = textA.split('\n').filter(l => l.trim());
+    const linesB = textB.split('\n').filter(l => l.trim());
     let parsedCount = 0;
 
-    for (let i = 0; i < Math.min(lines.length, 5); i++) {
-        const line = lines[i].trim();
+    for (let i = 0; i < 5; i++) {
         const tbIndex = i + 1;
+        let lineA = linesA[i] ? linesA[i].trim().replace(/^TB\d+\s*/i, '') : '';
+        let lineB = linesB[i] ? linesB[i].trim().replace(/^TB\d+\s*/i, '') : '';
 
-        // 尝试用 vs 或 | 分隔两边
-        let sideA = '', sideB = '';
-        if (line.includes(' vs ')) {
-            const parts = line.split(' vs ');
-            sideA = parts[0].trim();
-            sideB = parts[1].trim();
-        } else if (line.includes('|')) {
-            const parts = line.split('|');
-            sideA = parts[0].trim();
-            sideB = parts[1].trim();
-        } else if (line.includes(' VS ')) {
-            const parts = line.split(' VS ');
-            sideA = parts[0].trim();
-            sideB = parts[1].trim();
-        } else {
-            // 没有分隔符，尝试去掉 TBx 前缀后作为单边
-            sideA = line.replace(/^TB\d+\s*/i, '').trim();
+        // 如果只填了比分，自动补球员名
+        if (lineA && !lineA.match(/[^\d\s\-–\/]/)) {
+            lineA = p1Name + ' ' + lineA;
+        }
+        if (lineB && !lineB.match(/[^\d\s\-–\/]/)) {
+            lineB = p2Name + ' ' + lineB;
         }
 
-        // 去掉开头的 TBx 标记（如果有）
-        sideA = sideA.replace(/^TB\d+\s*/i, '').trim();
-        sideB = sideB.replace(/^TB\d+\s*/i, '').trim();
+        const scoreA = calcSetScore(lineA);
+        const scoreB = calcSetScore(lineB);
 
-        // 计算每边的得分（获胜盘数）
-        const scoreA = calcSetScore(sideA);
-        const scoreB = calcSetScore(sideB);
-
-        // 填充到输入框
-        if (sideA) document.getElementById('gaPred' + tbIndex).value = sideA;
-        if (sideB) document.getElementById('gbPred' + tbIndex).value = sideB;
+        if (lineA) document.getElementById('gaPred' + tbIndex).value = lineA;
+        if (lineB) document.getElementById('gbPred' + tbIndex).value = lineB;
         document.getElementById('gaPs' + tbIndex).value = scoreA;
         document.getElementById('gbPs' + tbIndex).value = scoreB;
 
-        if (sideA || sideB) parsedCount++;
+        if (lineA || lineB) parsedCount++;
     }
+
+    // 更新标签与球员名一致
+    const labelA = document.getElementById('guessLabelA');
+    const labelB = document.getElementById('guessLabelB');
+    if (labelA && p1Name && p1Name !== '球员1') labelA.textContent = p1Name;
+    if (labelB && p2Name && p2Name !== '球员2') labelB.textContent = p2Name;
 
     // 更新总分
     calcTotals();

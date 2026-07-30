@@ -282,6 +282,7 @@ async function createTournament(data) {
             start_date: data.start_date,
             end_date: data.end_date,
             draw_size: data.draw_size || 32,
+            logo_url: data.logo_url || '',
         })
         .select('id')
         .single();
@@ -300,7 +301,7 @@ async function createTournament(data) {
  */
 async function updateTournament(id, data) {
     // 过滤有效字段
-    const allowed = ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active'];
+    const allowed = ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active', 'logo_url'];
     const updates = {};
     for (const k of allowed) {
         if (data[k] !== undefined) {

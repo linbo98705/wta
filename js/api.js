@@ -294,6 +294,40 @@ async function createTournament(data) {
 }
 
 /**
+ * 上传赛事 Logo 图片到 Supabase Storage
+ * @param {File} file - 图片文件
+ * @param {number} tournamentId - 赛事 ID（用于生成文件名）
+ * @returns {Promise<Object>} { success, url, error }
+ */
+async function uploadTournamentLogo(file, tournamentId) {
+    try {
+        // 生成文件名：tournament_{id}_{timestamp}.{ext}
+        const ext = file.name.split('.').pop();
+        const fileName = `tournament_${tournamentId}_${Date.now()}.${ext}`;
+
+        const { error } = await supabase.storage
+            .from('tournament-logos')
+            .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: true
+            });
+
+        if (error) {
+            return { success: false, url: null, error: error.message };
+        }
+
+        // 获取公开 URL
+        const { data: { publicUrl } } = supabase.storage
+            .from('tournament-logos')
+            .getPublicUrl(fileName);
+
+        return { success: true, url: publicUrl, error: null };
+    } catch (err) {
+        return { success: false, url: null, error: err.message };
+    }
+}
+
+/**
  * 更新赛事
  * @param {number} id - 赛事 ID
  * @param {Object} data - 要更新的字段

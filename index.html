@@ -1043,7 +1043,7 @@
             <div class="card">
                 <div class="card-header flex-between">
                     <h3>赛事管理</h3>
-                    <button class="btn btn-primary btn-sm" onclick="openModal('tournamentModal')">+ 创建赛事</button>
+                    <button class="btn btn-primary btn-sm" onclick="adminOpenCreateTournament()">+ 创建赛事</button>
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
@@ -1216,7 +1216,8 @@
                 <div class="form-group"><label>开始日期*</label><input type="date" class="form-control" id="tStartDate" required></div>
                 <div class="form-group"><label>结束日期*</label><input type="date" class="form-control" id="tEndDate" required></div>
             </div>
-            <div class="form-group"><label>赛事 Logo URL</label><input type="text" class="form-control" id="tLogoUrl" placeholder="如：https://example.com/logo.png"><p style="font-size:0.75rem; color:var(--gray-400); margin-top:4px;">输入图片 URL 地址，支持 PNG/JPG/SVG 格式</p></div>
+            <div class="form-group"><label>赛事 Logo</label><input type="file" class="form-control" id="tLogoFile" accept="image/png,image/jpeg,image/jpg,image/svg+xml" onchange="previewTournamentLogo(this)"><div id="tLogoPreview" style="margin-top:8px; display:none;"><img id="tLogoPreviewImg" style="max-height:80px; border-radius:8px; background:#fff; padding:4px;"></div><p style="font-size:0.75rem; color:var(--gray-400); margin-top:4px;">支持 PNG / JPG / SVG 格式，建议尺寸不小于 200x200</p></div>
+            <input type="hidden" id="tLogoUrl" value="">
             <div class="modal-actions">
                 <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('tournamentModal')">取消</button>
                 <button type="submit" class="btn btn-primary btn-sm">保存</button>
@@ -1397,9 +1398,36 @@
             tbody.innerHTML = data.map(t => '<tr><td>' + t.id + '</td><td><strong>' + escapeHtml(t.name_cn || t.name) + '</strong></td><td>' + escapeHtml(t.location) + '</td><td><span class="match-round-badge">' + escapeHtml(t.category) + '</span></td><td><span class="surface-tag ' + surfaceClass(t.surface) + '">' + surfaceLabel(t.surface) + '</span></td><td>' + t.start_date + ' ~ ' + t.end_date + '</td><td>' + t.draw_size + '签</td><td>' + (t.is_active ? '&#9989; 启用' : '&#10060; 停用') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditTournament(' + t.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteTournament(' + t.id + ')">删除</button></td></tr>').join('');
         }
 
+        window.adminOpenCreateTournament = function() {
+            document.getElementById('tournamentForm').reset();
+            document.getElementById('tId').value = '';
+            document.getElementById('tLogoUrl').value = '';
+            document.getElementById('tLogoPreview').style.display = 'none';
+            document.getElementById('tournamentModalTitle').textContent = '创建赛事';
+            openModal('tournamentModal');
+        };
+
+        window.previewTournamentLogo = function(input) {
+            const previewDiv = document.getElementById('tLogoPreview');
+            const previewImg = document.getElementById('tLogoPreviewImg');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewDiv.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                previewDiv.style.display = 'none';
+            }
+        };
+
         window.adminSaveTournament = async function(e) {
             e.preventDefault();
             const id = document.getElementById('tId').value;
+            const logoFile = document.getElementById('tLogoFile').files[0];
+            let logoUrl = document.getElementById('tLogoUrl').value.trim();
+
             const data = {
                 name: document.getElementById('tNameEn').value,
                 name_cn: document.getElementById('tNameCn').value,
@@ -1409,13 +1437,31 @@
                 draw_size: parseInt(document.getElementById('tDrawSize').value),
                 start_date: document.getElementById('tStartDate').value,
                 end_date: document.getElementById('tEndDate').value,
-                logo_url: document.getElementById('tLogoUrl').value.trim(),
             };
             let result;
             if (id) {
+                // 更新赛事：如果有新上传的 logo，先上传再更新
+                if (logoFile) {
+                    const uploadResult = await uploadTournamentLogo(logoFile, parseInt(id));
+                    if (!uploadResult.success) {
+                        showToast('Logo 上传失败: ' + uploadResult.error, 'error');
+                        return;
+                    }
+                    logoUrl = uploadResult.url;
+                }
+                data.logo_url = logoUrl;
                 result = await updateTournament(parseInt(id), data);
             } else {
+                // 创建赛事：先创建获取 ID，再上传 logo
                 result = await createTournament(data);
+                if (result.success && logoFile && result.id) {
+                    const uploadResult = await uploadTournamentLogo(logoFile, result.id);
+                    if (!uploadResult.success) {
+                        showToast('赛事已创建，但 Logo 上传失败: ' + uploadResult.error, 'warning');
+                    } else {
+                        await updateTournament(result.id, { logo_url: uploadResult.url });
+                    }
+                }
             }
             if (result.success) {
                 closeModal('tournamentModal');
@@ -1439,6 +1485,15 @@
             document.getElementById('tStartDate').value = t.start_date;
             document.getElementById('tEndDate').value = t.end_date;
             document.getElementById('tLogoUrl').value = t.logo_url || '';
+            // 显示现有 logo 预览
+            const previewDiv = document.getElementById('tLogoPreview');
+            const previewImg = document.getElementById('tLogoPreviewImg');
+            if (t.logo_url) {
+                previewImg.src = t.logo_url;
+                previewDiv.style.display = 'block';
+            } else {
+                previewDiv.style.display = 'none';
+            }
             document.getElementById('tournamentModalTitle').textContent = '编辑赛事';
             openModal('tournamentModal');
         };

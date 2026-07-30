@@ -179,6 +179,18 @@
         `).join('');
     }
 
+    // ── 渲染赛事 Logo ──
+    function renderTournamentLogo(tournament) {
+        if (!tournament || !tournament.logo_url) return;
+        const headerContent = document.querySelector('#app .tournament-header-content');
+        if (!headerContent) return;
+        if (headerContent.querySelector('.tournament-logo')) return;
+        const logoDiv = document.createElement('div');
+        logoDiv.className = 'tournament-logo';
+        logoDiv.innerHTML = `<img src="${escapeHtml(tournament.logo_url)}" alt="${escapeHtml(tournament.name_cn || tournament.name || '')}" style="max-height:80px; margin-bottom:16px; border-radius:8px; background:#fff; padding:8px;">`;
+        headerContent.insertBefore(logoDiv, headerContent.firstChild);
+    }
+
     // ══════════════════════════════════════════════════════════════
     // renderTournamentHome(tid) - Tournament Detail Home
     // ══════════════════════════════════════════════════════════════
@@ -225,6 +237,7 @@
         }
 
         document.title = `${t.name_cn || t.name} - 网球联赛`;
+        renderTournamentLogo(t);
         document.getElementById('tCat').textContent = t.category;
         document.getElementById('tName').textContent = t.name_cn || t.name;
         document.getElementById('tMeta').innerHTML = `
@@ -358,6 +371,7 @@
 
         const t = await getTournament(tid);
         if (t) {
+            renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
             document.getElementById('tName').textContent = '参赛名单';
             document.getElementById('tMeta').innerHTML = `
@@ -575,6 +589,7 @@
 
         const t = await getTournament(tid);
         if (t) {
+            renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
             document.getElementById('tName').textContent = '赛程赛果';
             document.getElementById('tMeta').innerHTML = `
@@ -863,6 +878,7 @@
 
         const t = await getTournament(tid);
         if (t) {
+            renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
             document.getElementById('tName').textContent = '每日竞猜';
             document.getElementById('tMeta').innerHTML = `

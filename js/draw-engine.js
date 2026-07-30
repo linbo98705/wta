@@ -266,6 +266,10 @@ async function initDrawView(tid, containerId, options = {}) {
     // 加载赛事信息
     const tournament = await getTournament(tid);
     if (tournament) {
+        // 渲染赛事 Logo
+        if (typeof renderTournamentLogo === 'function') {
+            renderTournamentLogo(tournament);
+        }
         const catEl = document.getElementById(headerCatId);
         const nameEl = document.getElementById(headerNameId);
         const metaEl = document.getElementById(headerMetaId);

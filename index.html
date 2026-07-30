@@ -185,9 +185,21 @@
         const headerContent = document.querySelector('#app .tournament-header-content');
         if (!headerContent) return;
         if (headerContent.querySelector('.tournament-logo')) return;
+
+        // 将现有子元素包裹到 tournament-header-info 中（仅第一次执行）
+        if (!headerContent.querySelector('.tournament-header-info')) {
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'tournament-header-info';
+            while (headerContent.firstChild) {
+                infoDiv.appendChild(headerContent.firstChild);
+            }
+            headerContent.appendChild(infoDiv);
+        }
+
         const logoDiv = document.createElement('div');
         logoDiv.className = 'tournament-logo';
-        logoDiv.innerHTML = `<img src="${escapeHtml(tournament.logo_url)}" alt="${escapeHtml(tournament.name_cn || tournament.name || '')}" style="max-height:80px; margin-bottom:16px; border-radius:8px; background:#fff; padding:8px;">`;
+        logoDiv.innerHTML = `<img src="${escapeHtml(tournament.logo_url)}" alt="${escapeHtml(tournament.name_cn || tournament.name || '')}">`;
+        // logo 放在左边，信息放在右边
         headerContent.insertBefore(logoDiv, headerContent.firstChild);
     }
 

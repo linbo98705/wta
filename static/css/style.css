@@ -214,6 +214,30 @@ img { max-width: 100%; height: auto; }
 .tournament-header-content {
     position: relative;
     z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+}
+
+.tournament-header-info {
+    flex: 1;
+}
+
+.tournament-logo {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tournament-logo img {
+    max-height: 120px;
+    max-width: 200px;
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
 .tournament-category {
@@ -1871,6 +1895,17 @@ textarea.form-control {
 
     .tournament-header h1 {
         font-size: 1.5rem;
+    }
+
+    .tournament-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+
+    .tournament-logo img {
+        max-height: 80px;
+        max-width: 140px;
     }
 
     .bracket {

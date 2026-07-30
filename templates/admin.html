@@ -312,6 +312,11 @@
                     <input type="date" class="form-control" id="tEndDate" required>
                 </div>
             </div>
+            <div class="form-group">
+                <label>赛事 Logo URL</label>
+                <input type="text" class="form-control" id="tLogoUrl" placeholder="如：https://example.com/logo.png">
+                <p style="font-size:0.75rem; color:var(--gray-400); margin-top:4px;">输入图片 URL 地址，支持 PNG/JPG/SVG 格式</p>
+            </div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('tournamentModal')">取消</button>
                 <button type="submit" class="btn btn-primary btn-sm">保存</button>
@@ -713,6 +718,7 @@ async function saveTournament(e) {
         draw_size: parseInt(document.getElementById('tDrawSize').value),
         start_date: document.getElementById('tStartDate').value,
         end_date: document.getElementById('tEndDate').value,
+        logo_url: document.getElementById('tLogoUrl').value.trim(),
     };
 
     let result;
@@ -743,6 +749,7 @@ async function editTournament(id) {
     document.getElementById('tDrawSize').value = t.draw_size;
     document.getElementById('tStartDate').value = t.start_date;
     document.getElementById('tEndDate').value = t.end_date;
+    document.getElementById('tLogoUrl').value = t.logo_url || '';
     document.getElementById('tournamentModalTitle').textContent = '编辑赛事';
     openModal('tournamentModal');
 }

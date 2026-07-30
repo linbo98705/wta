@@ -61,6 +61,7 @@ const tid = {{ tid }};
 (async function() {
     const t = await api(`/api/tournaments/${tid}`);
     if (!t.error) {
+        renderTournamentLogo(t);
         document.getElementById('tCat').textContent = t.category;
         document.getElementById('tName').textContent = '赛程赛果';
         document.getElementById('tMeta').innerHTML = `

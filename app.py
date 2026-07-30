@@ -233,11 +233,11 @@ def api_create_tournament():
     data = request.json
     db = get_db()
     db.execute('''INSERT INTO tournaments (name, name_cn, location, surface, category,
-                  start_date, end_date, draw_size)
-                  VALUES (?,?,?,?,?,?,?,?)''',
+                  start_date, end_date, draw_size, logo_url)
+                  VALUES (?,?,?,?,?,?,?,?,?)''',
                (data['name'], data['name_cn'], data['location'], data.get('surface', 'Hard'),
                 data.get('category', 'WTA 500'), data['start_date'], data['end_date'],
-                data.get('draw_size', 32)))
+                data.get('draw_size', 32), data.get('logo_url', '')))
     db.commit()
     return jsonify({'id': db.execute('SELECT last_insert_rowid()').fetchone()[0]}), 201
 
@@ -247,7 +247,7 @@ def api_update_tournament(tid):
     db = get_db()
     fields = []
     values = []
-    for k in ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active']:
+    for k in ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active', 'logo_url']:
         if k in data:
             fields.append(f'{k}=?')
             values.append(data[k])

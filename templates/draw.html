@@ -243,6 +243,7 @@ function buildBracket(matches, playerMap, startRound) {
 (function() {
     api('/api/tournaments/' + tid).then(function(t) {
         if (!t.error) {
+            renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
             document.getElementById('tName').textContent = '比赛签表';
             document.getElementById('tMeta').innerHTML =

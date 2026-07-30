@@ -51,6 +51,7 @@ const tid = {{ tid }};
 (async function() {
     const t = await api(`/api/tournaments/${tid}`);
     if (!t.error) {
+        renderTournamentLogo(t);
         document.getElementById('tCat').textContent = t.category;
         document.getElementById('tName').textContent = '每日竞猜';
         document.getElementById('tMeta').innerHTML = `

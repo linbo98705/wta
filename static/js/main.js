@@ -115,3 +115,15 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
 }
+
+// ── Render Tournament Logo ────────────────
+function renderTournamentLogo(tournament) {
+    if (!tournament || !tournament.logo_url) return;
+    const headerContent = document.querySelector('.tournament-header-content');
+    if (!headerContent) return;
+    if (headerContent.querySelector('.tournament-logo')) return;
+    const logoDiv = document.createElement('div');
+    logoDiv.className = 'tournament-logo';
+    logoDiv.innerHTML = `<img src="${escapeHtml(tournament.logo_url)}" alt="${escapeHtml(tournament.name_cn || tournament.name || '')}" style="max-height:80px; margin-bottom:16px; border-radius:8px; background:#fff; padding:8px;">`;
+    headerContent.insertBefore(logoDiv, headerContent.firstChild);
+}

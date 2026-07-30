@@ -726,8 +726,10 @@
             selectedMatches.forEach(m => {
                 const p1Name = m.p1_name || 'TBD';
                 const p2Name = m.p2_name || 'TBD';
-                const s1 = m.score1 != null ? m.score1 : '-';
-                const s2 = m.score2 != null ? m.score2 : '-';
+                const score = m.score || '';
+                const scoreParts = score.split(' ');
+                const s1 = scoreParts[0] || (m.guess_a_total || 0);
+                const s2 = scoreParts[1] || (m.guess_b_total || 0);
                 const status = m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : '待进行';
                 const round = _roundLabels[m.round] || m.round;
 

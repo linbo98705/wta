@@ -157,7 +157,7 @@ function generateDrawPositions(totalSlots, numSeeds) {
  * 按照 Grand Slam Rule Book 官方规则填充签表
  * 1. 按种子号放置种子选手到官方指定的精确位置
  * 2. 非种子选手先随机抽签，然后从上到下填入剩余空位
- * 3. 空位保持 null（轮空）
+ * 3. 空位（Bye）优先分配给高种子选手的对手（遵循 WTA 标准：种子排位越高，优先轮空）
  *
  * @param {Array} players - 按种子和排名排序的球员列表
  *   每个球员需包含 { id, t_seed, ranking }
@@ -190,12 +190,48 @@ function fillDrawPositions(players, totalSlots, drawSize) {
         }
     }
 
-    // 非种子从上到下填入剩余空位（按抽签顺序）
-    let nsIdx = 0;
-    for (let i = 0; i < totalSlots; i++) {
-        if (result[i] === null && nsIdx < shuffledNonSeeded.length) {
-            result[i] = shuffledNonSeeded[nsIdx].id;
-            nsIdx++;
+    // ── WTA 标准：Bye 优先分配给高种子的对手 ──
+    // 计算需要多少个 Bye
+    const numByes = totalSlots - players.length;
+    if (numByes > 0) {
+        // 收集所有配对中，有种子且对手为空的位置（即种子的对手）
+        // 按种子号从小到大排序，确保高种子优先轮空
+        const seedOpponentSlots = [];
+        for (let i = 0; i < totalSlots; i += 2) {
+            const slotA = i;
+            const slotB = i + 1;
+            const aIsSeed = result[slotA] !== null;
+            const bIsSeed = result[slotB] !== null;
+            // 配对中只有一个种子，且对手为空
+            if (aIsSeed && !bIsSeed) {
+                const seedPlayer = players.find(p => p.id === result[slotA]);
+                seedOpponentSlots.push({ slot: slotB, seed: seedPlayer ? seedPlayer.t_seed : 999 });
+            } else if (bIsSeed && !aIsSeed) {
+                const seedPlayer = players.find(p => p.id === result[slotB]);
+                seedOpponentSlots.push({ slot: slotA, seed: seedPlayer ? seedPlayer.t_seed : 999 });
+            }
+        }
+        // 按种子号从小到大排序（种子1优先，种子2次之...）
+        seedOpponentSlots.sort((a, b) => a.seed - b.seed);
+        // 标记前 numByes 个位置为 Bye（保留 null，不填入非种子）
+        const byeSlots = new Set(seedOpponentSlots.slice(0, numByes).map(s => s.slot));
+
+        // 非种子从上到下填入剩余空位（跳过 Bye 位置）
+        let nsIdx = 0;
+        for (let i = 0; i < totalSlots; i++) {
+            if (result[i] === null && !byeSlots.has(i) && nsIdx < shuffledNonSeeded.length) {
+                result[i] = shuffledNonSeeded[nsIdx].id;
+                nsIdx++;
+            }
+        }
+    } else {
+        // 没有 Bye：非种子从上到下填入剩余空位（按抽签顺序）
+        let nsIdx = 0;
+        for (let i = 0; i < totalSlots; i++) {
+            if (result[i] === null && nsIdx < shuffledNonSeeded.length) {
+                result[i] = shuffledNonSeeded[nsIdx].id;
+                nsIdx++;
+            }
         }
     }
 

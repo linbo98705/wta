@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=14">
+    <link rel="stylesheet" href="static/css/style.css?v=15">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -74,7 +74,7 @@
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=8"></script>
     <script src="js/api.js?v=8"></script>
-    <script src="js/draw-engine.js?v=9"></script>
+    <script src="js/draw-engine.js?v=10"></script>
 
     <script>
     // ══════════════════════════════════════════════════════════════
@@ -338,6 +338,7 @@
         <div class="tournament-header-content">
             <div class="tournament-category" id="tCat">加载中...</div>
             <h1 id="tName">参赛名单</h1>
+            <div class="tournament-banner-subtitle" id="tTourName"></div>
             <div class="tournament-header-meta" id="tMeta"></div>
         </div>
     </div>
@@ -386,6 +387,7 @@
             renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
             document.getElementById('tName').textContent = '参赛名单';
+            document.getElementById('tTourName').textContent = t.name_cn || t.name;
             document.getElementById('tMeta').innerHTML = `
                 <span>&#128205; ${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
@@ -510,6 +512,7 @@
         <div class="tournament-header-content">
             <div class="tournament-category" id="tCat">加载中...</div>
             <h1 id="tName">比赛签表</h1>
+            <div class="tournament-banner-subtitle" id="tTourName"></div>
             <div class="tournament-header-meta" id="tMeta"></div>
         </div>
     </div>
@@ -615,6 +618,7 @@
         <div class="tournament-header-content">
             <div class="tournament-category" id="tCat">加载中...</div>
             <h1 id="tName">赛程赛果</h1>
+            <div class="tournament-banner-subtitle" id="tTourName"></div>
             <div class="tournament-header-meta" id="tMeta"></div>
         </div>
     </div>
@@ -669,6 +673,7 @@
             renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
             document.getElementById('tName').textContent = '赛程赛果';
+            document.getElementById('tTourName').textContent = t.name_cn || t.name;
             document.getElementById('tMeta').innerHTML = `
                 <span>&#128205; ${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
@@ -937,6 +942,7 @@
         <div class="tournament-header-content">
             <div class="tournament-category" id="tCat">加载中...</div>
             <h1 id="tName">每日竞猜</h1>
+            <div class="tournament-banner-subtitle" id="tTourName"></div>
             <div class="tournament-header-meta" id="tMeta"></div>
         </div>
     </div>
@@ -958,6 +964,7 @@
             renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
             document.getElementById('tName').textContent = '每日竞猜';
+            document.getElementById('tTourName').textContent = t.name_cn || t.name;
             document.getElementById('tMeta').innerHTML = `
                 <span>&#128205; ${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>

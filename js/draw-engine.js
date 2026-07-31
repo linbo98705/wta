@@ -331,6 +331,8 @@ async function initDrawView(tid, containerId, options = {}) {
 
         if (catEl) catEl.textContent = tournament.category;
         if (nameEl) nameEl.textContent = '比赛签表';
+        const tourNameEl = document.getElementById('tTourName');
+        if (tourNameEl) tourNameEl.textContent = tournament.name_cn || tournament.name;
         if (metaEl) {
             metaEl.innerHTML =
                 '<span>\u{1F4CD} ' + escapeHtml(tournament.location) + '</span>'

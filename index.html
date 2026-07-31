@@ -904,13 +904,25 @@
                 const exportBtn = cardSection.querySelector('button[onclick="exportScheduleImage()"]');
                 if (exportBtn) exportBtn.style.display = 'none';
 
-                // 展开所有折叠的比赛卡片，使竞猜内容在导出图片中可见
+                // 临时隐藏轮次导航（导出图片中不需要）
+                const roundFilterEl = cardSection.querySelector('#roundFilter');
+                let roundFilterOriginalDisplay = '';
+                if (roundFilterEl) {
+                    roundFilterOriginalDisplay = roundFilterEl.style.display;
+                    roundFilterEl.style.display = 'none';
+                }
+
+                // 展开比赛卡片使竞猜内容可见（待进行的不展开，无竞猜内容）
                 const originalCollapsed = [];
                 cardSection.querySelectorAll('.match-card').forEach(card => {
                     originalCollapsed.push(card.classList.contains('collapsed'));
-                    card.classList.remove('collapsed');
-                    const icon = card.querySelector('.toggle-icon');
-                    if (icon) icon.textContent = '\u25BE';
+                    // 待进行的比赛不展开竞猜内容
+                    const isScheduled = card.querySelector('.match-status.scheduled');
+                    if (!isScheduled) {
+                        card.classList.remove('collapsed');
+                        const icon = card.querySelector('.toggle-icon');
+                        if (icon) icon.textContent = '\u25BE';
+                    }
                 });
 
                 // 克隆到临时容器
@@ -926,6 +938,7 @@
 
                 // 恢复原页面显示
                 if (exportBtn) exportBtn.style.display = '';
+                if (roundFilterEl) roundFilterEl.style.display = roundFilterOriginalDisplay;
                 cardSection.querySelectorAll('.match-card').forEach((card, i) => {
                     if (originalCollapsed[i]) {
                         card.classList.add('collapsed');

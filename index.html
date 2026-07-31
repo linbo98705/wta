@@ -74,7 +74,7 @@
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=8"></script>
     <script src="js/api.js?v=8"></script>
-    <script src="js/draw-engine.js?v=11"></script>
+    <script src="js/draw-engine.js?v=12"></script>
 
     <script>
     // ══════════════════════════════════════════════════════════════
@@ -337,8 +337,8 @@
     <div class="container">
         <div class="tournament-header-content">
             <div class="tournament-category" id="tCat">加载中...</div>
-            <h1 id="tName">参赛名单</h1>
-            <div class="tournament-banner-subtitle" id="tTourName"></div>
+            <h1 id="tName">加载中...</h1>
+            <div class="tournament-banner-subtitle" id="tTourName">参赛名单</div>
             <div class="tournament-header-meta" id="tMeta"></div>
         </div>
     </div>
@@ -386,8 +386,8 @@
         if (t) {
             renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
-            document.getElementById('tName').textContent = '参赛名单';
-            document.getElementById('tTourName').textContent = t.name_cn || t.name;
+            document.getElementById('tName').textContent = t.name_cn || t.name;
+            document.getElementById('tTourName').textContent = '参赛名单';
             document.getElementById('tMeta').innerHTML = `
                 <span>&#128205; ${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
@@ -511,8 +511,8 @@
     <div class="container">
         <div class="tournament-header-content">
             <div class="tournament-category" id="tCat">加载中...</div>
-            <h1 id="tName">比赛签表</h1>
-            <div class="tournament-banner-subtitle" id="tTourName"></div>
+            <h1 id="tName">加载中...</h1>
+            <div class="tournament-banner-subtitle" id="tTourName">比赛签表</div>
             <div class="tournament-header-meta" id="tMeta"></div>
         </div>
     </div>
@@ -617,8 +617,8 @@
     <div class="container">
         <div class="tournament-header-content">
             <div class="tournament-category" id="tCat">加载中...</div>
-            <h1 id="tName">赛程赛果</h1>
-            <div class="tournament-banner-subtitle" id="tTourName"></div>
+            <h1 id="tName">加载中...</h1>
+            <div class="tournament-banner-subtitle" id="tTourName">赛程赛果</div>
             <div class="tournament-header-meta" id="tMeta"></div>
         </div>
     </div>
@@ -672,8 +672,8 @@
         if (t) {
             renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
-            document.getElementById('tName').textContent = '赛程赛果';
-            document.getElementById('tTourName').textContent = t.name_cn || t.name;
+            document.getElementById('tName').textContent = t.name_cn || t.name;
+            document.getElementById('tTourName').textContent = '赛程赛果';
             document.getElementById('tMeta').innerHTML = `
                 <span>&#128205; ${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
@@ -941,8 +941,8 @@
     <div class="container">
         <div class="tournament-header-content">
             <div class="tournament-category" id="tCat">加载中...</div>
-            <h1 id="tName">每日竞猜</h1>
-            <div class="tournament-banner-subtitle" id="tTourName"></div>
+            <h1 id="tName">加载中...</h1>
+            <div class="tournament-banner-subtitle" id="tTourName">每日竞猜</div>
             <div class="tournament-header-meta" id="tMeta"></div>
         </div>
     </div>
@@ -963,8 +963,8 @@
         if (t) {
             renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
-            document.getElementById('tName').textContent = '每日竞猜';
-            document.getElementById('tTourName').textContent = t.name_cn || t.name;
+            document.getElementById('tName').textContent = t.name_cn || t.name;
+            document.getElementById('tTourName').textContent = '每日竞猜';
             document.getElementById('tMeta').innerHTML = `
                 <span>&#128205; ${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>

@@ -362,9 +362,9 @@ async function initDrawView(tid, containerId, options = {}) {
         const toggleEl = document.getElementById(toggleId);
 
         if (catEl) catEl.textContent = tournament.category;
-        if (nameEl) nameEl.textContent = '比赛签表';
+        if (nameEl) nameEl.textContent = tournament.name_cn || tournament.name;
         const tourNameEl = document.getElementById('tTourName');
-        if (tourNameEl) tourNameEl.textContent = tournament.name_cn || tournament.name;
+        if (tourNameEl) tourNameEl.textContent = '比赛签表';
         if (metaEl) {
             metaEl.innerHTML =
                 '<span>\u{1F4CD} ' + escapeHtml(tournament.location) + '</span>'

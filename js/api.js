@@ -864,7 +864,7 @@ async function updateMatch(mid, data) {
 
     // 过滤有效字段
     const allowed = [
-        'player1_id', 'player2_id', 'winner_id', 'score', 'court', 'status', 'round', 'match_order',
+        'player1_id', 'player2_id', 'winner_id', 'score', 'court', 'match_date', 'status', 'round', 'match_order',
         'guess_team_a', 'guess_team_b', 'guess_a_tb', 'guess_b_tb',
         'guess_a_total', 'guess_b_total',
         'guess_a_tb_score', 'guess_b_tb_score', 'guess_winner', 'guess_reason',
@@ -883,7 +883,19 @@ async function updateMatch(mid, data) {
             .eq('id', mid);
 
         if (error) {
-            return { success: false, error: error.message };
+            // 如果 match_date 列不存在，去掉该字段后重试
+            if (error.message && error.message.includes('match_date') && updates.match_date !== undefined) {
+                delete updates.match_date;
+                const { error: retryError } = await supabase
+                    .from('matches')
+                    .update(updates)
+                    .eq('id', mid);
+                if (retryError) {
+                    return { success: false, error: retryError.message };
+                }
+            } else {
+                return { success: false, error: error.message };
+            }
         }
     }
 
@@ -966,9 +978,7 @@ async function updateMatch(mid, data) {
  * @returns {Promise<Object>} { success, id, error }
  */
 async function createMatch(data) {
-    const { data: row, error } = await supabase
-        .from('matches')
-        .insert({
+    const insertData = {
             tournament_id: data.tournament_id,
             round: data.round,
             match_order: data.match_order || 0,
@@ -977,6 +987,7 @@ async function createMatch(data) {
             winner_id: data.winner_id || null,
             score: data.score || '',
             court: data.court || '',
+            match_date: data.match_date || '',
             status: data.status || 'scheduled',
             guess_team_a: data.guess_team_a || '',
             guess_team_b: data.guess_team_b || '',
@@ -988,9 +999,25 @@ async function createMatch(data) {
             guess_b_tb_score: data.guess_b_tb_score || '',
             guess_winner: data.guess_winner || '',
             guess_reason: data.guess_reason || '',
-        })
+        };
+
+    let { data: row, error } = await supabase
+        .from('matches')
+        .insert(insertData)
         .select('id')
         .single();
+
+    // 如果 match_date 列不存在，去掉该字段后重试
+    if (error && error.message && error.message.includes('match_date')) {
+        delete insertData.match_date;
+        const retry = await supabase
+            .from('matches')
+            .insert(insertData)
+            .select('id')
+            .single();
+        row = retry.data;
+        error = retry.error;
+    }
 
     if (error) {
         return { success: false, id: null, error: error.message };

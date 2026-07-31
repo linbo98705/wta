@@ -120,6 +120,7 @@ def init_db():
         ('guess_b_tb_score', 'TEXT DEFAULT \'\''),
         ('guess_winner', 'TEXT DEFAULT \'\''),
         ('guess_reason', 'TEXT DEFAULT \'\''),
+        ('start_time', 'TEXT DEFAULT \'\''),
         # 旧字段（向后兼容，不再使用）
         ('guess_team_a_score', 'TEXT DEFAULT \'\''),
         ('guess_team_b_score', 'TEXT DEFAULT \'\''),
@@ -533,12 +534,13 @@ def api_create_match():
     data = request.json
     db = get_db()
     db.execute('''INSERT INTO matches (tournament_id, round, match_order, player1_id, player2_id,
-                  winner_id, score, court, status,
+                  winner_id, score, court, status, start_time,
                   guess_team_a, guess_team_b, guess_a_tb, guess_b_tb, guess_a_total, guess_b_total)
                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
                (data['tournament_id'], data['round'], data.get('match_order', 0),
                 data.get('player1_id'), data.get('player2_id'), data.get('winner_id'),
                 data.get('score', ''), data.get('court', ''), data.get('status', 'scheduled'),
+                data.get('start_time', ''),
                 data.get('guess_team_a', ''), data.get('guess_team_b', ''),
                 data.get('guess_a_tb', ''), data.get('guess_b_tb', ''),
                 data.get('guess_a_total', 0), data.get('guess_b_total', 0)))
@@ -642,6 +644,7 @@ def api_update_match(mid):
     fields = []
     values = []
     for k in ['player1_id', 'player2_id', 'winner_id', 'score', 'court', 'status', 'round', 'match_order',
+              'start_time',
               'guess_team_a', 'guess_team_b', 'guess_a_tb', 'guess_b_tb', 'guess_a_total', 'guess_b_total',
               'guess_a_tb_score', 'guess_b_tb_score', 'guess_winner', 'guess_reason']:
         if k in data:

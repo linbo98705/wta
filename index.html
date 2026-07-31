@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=15">
+    <link rel="stylesheet" href="static/css/style.css?v=16">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -73,7 +73,7 @@
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=8"></script>
-    <script src="js/api.js?v=8"></script>
+    <script src="js/api.js?v=9"></script>
     <script src="js/draw-engine.js?v=12"></script>
 
     <script>
@@ -629,7 +629,12 @@
         <div class="card">
             <div class="card-header flex-between">
                 <h3>赛程赛果</h3>
-                <span id="matchCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <select class="form-control" id="courtFilter" onchange="filterByCourt(this.value)" style="width:auto; font-size:0.8125rem; padding:4px 8px;">
+                        <option value="">所有场地</option>
+                    </select>
+                    <span id="matchCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
+                </div>
             </div>
             <div class="card-body">
                 <div class="round-filter" id="roundFilter"></div>
@@ -702,6 +707,17 @@
         `;
         document.getElementById('matchCount').innerHTML = '<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="selectAllMatches" onchange="toggleSelectAllMatches(this)"> <span style="font-size:0.8125rem;color:var(--gray-600);">全选</span></label> &nbsp; <button class="btn btn-sm btn-outline" onclick="exportSelectedMatches()" style="padding:4px 10px;font-size:0.75rem;">&#128247; 导出赛果</button> &nbsp; 共 ' + realMatches.length + ' 场比赛';
 
+        // 填充场地筛选下拉
+        const courts = [...new Set(realMatches.map(m => m.court).filter(c => c && c.trim()))].sort();
+        const courtFilterEl = document.getElementById('courtFilter');
+        if (courtFilterEl) {
+            courtFilterEl.innerHTML = '<option value="">所有场地</option>' + courts.map(c => '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>').join('');
+        }
+
+        // 当前筛选状态
+        let _currentRound = defaultRound;
+        let _currentCourt = '';
+
         function renderGuessSchedule(m) {
             const p1Name = m.p1_name || '球员1';
             const p2Name = m.p2_name || '球员2';
@@ -760,51 +776,89 @@
         }
 
         function renderMatches(filterRound) {
-            const filtered = filterRound === 'all' ? realMatches : realMatches.filter(m => m.round === filterRound);
+            _currentRound = filterRound;
+            let filtered = filterRound === 'all' ? realMatches : realMatches.filter(m => m.round === filterRound);
+            if (_currentCourt) {
+                filtered = filtered.filter(m => m.court === _currentCourt);
+            }
 
             if (filtered.length === 0) {
-                document.getElementById('matchList').innerHTML = '<div class="empty-state"><h3>暂无比赛</h3><p>该轮次暂无比赛</p></div>';
+                document.getElementById('matchList').innerHTML = '<div class="empty-state"><h3>暂无比赛</h3><p>该条件下暂无比赛</p></div>';
                 return;
             }
 
-            let html = '';
+            // 按场地分组显示（当选择了场地时，也按场地分组）
+            const grouped = {};
             filtered.forEach(m => {
-                const isCompleted = m.status === 'completed';
-                const isLive = m.status === 'live';
-                const guessReason = m.guess_reason || '';
-                const score = m.score || '';
-                const scoreParts = score.split(' ');
-                const s1 = scoreParts[0] || '';
-                const s2 = scoreParts[1] || '';
-                let quickScoreText = '';
-                if (isCompleted) {
-                    if (score) {
-                        quickScoreText = score;
-                    } else {
-                        const aTotal = m.guess_a_total || 0;
-                        const bTotal = m.guess_b_total || 0;
-                        if (aTotal > 0 || bTotal > 0) {
-                            quickScoreText = aTotal + ' - ' + bTotal;
-                        }
-                    }
-                    if (quickScoreText && guessReason) {
-                        quickScoreText += ' (' + guessReason + ')';
-                    }
-                }
-
-                const collapsedClass = ' collapsed';
-                const initIcon = '\u25B8';
-
-                html += '<div class="match-card' + collapsedClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="mc-select-wrap"><input type="checkbox" class="match-select" data-match-id="' + m.id + '" onclick="event.stopPropagation()"></span><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p1_country_code || '', m.p1_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (isCompleted ? '<strong>' + escapeHtml(m.p1_name || 'TBD') + '</strong>' : escapeHtml(m.p1_name || 'TBD')) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p2_country_code || '', m.p2_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (isCompleted ? '<strong>' + escapeHtml(m.p2_name || 'TBD') + '</strong>' : escapeHtml(m.p2_name || 'TBD')) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + renderGuessSchedule(m) + '</div></div>';
+                const courtName = m.court && m.court.trim() ? m.court : '未分配场地';
+                if (!grouped[courtName]) grouped[courtName] = [];
+                grouped[courtName].push(m);
             });
 
-            document.getElementById('matchList').innerHTML = '<div class="match-grid">' + html + '</div>';
+            let html = '';
+            const courtNames = Object.keys(grouped);
+            const showGroupHeaders = courtNames.length > 1 || (courtNames.length === 1 && courtNames[0] !== '未分配场地');
+
+            for (const courtName of courtNames) {
+                if (showGroupHeaders) {
+                    html += '<div class="court-group-header"><span class="court-icon">&#127968;</span> ' + escapeHtml(courtName) + ' <span class="court-match-count">(' + grouped[courtName].length + '场)</span></div>';
+                }
+                html += '<div class="match-grid">';
+                grouped[courtName].forEach(m => {
+                    const isCompleted = m.status === 'completed';
+                    const isLive = m.status === 'live';
+                    const guessReason = m.guess_reason || '';
+                    const score = m.score || '';
+                    const scoreParts = score.split(' ');
+                    const s1 = scoreParts[0] || '';
+                    const s2 = scoreParts[1] || '';
+                    let quickScoreText = '';
+                    if (isCompleted) {
+                        if (score) {
+                            quickScoreText = score;
+                        } else {
+                            const aTotal = m.guess_a_total || 0;
+                            const bTotal = m.guess_b_total || 0;
+                            if (aTotal > 0 || bTotal > 0) {
+                                quickScoreText = aTotal + ' - ' + bTotal;
+                            }
+                        }
+                        if (quickScoreText && guessReason) {
+                            quickScoreText += ' (' + guessReason + ')';
+                        }
+                    }
+
+                    // 场地和时间信息
+                    const courtBadge = (m.court && m.court.trim()) ? '<span class="mc-court-badge">&#127968; ' + escapeHtml(m.court) + '</span>' : '';
+                    let timeBadge = '';
+                    if (m.start_time) {
+                        const stDate = new Date(m.start_time);
+                        if (!isNaN(stDate)) {
+                            const timeStr = stDate.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                            timeBadge = '<span class="mc-time-badge">&#128197; ' + timeStr + '</span>';
+                        }
+                    }
+
+                    const collapsedClass = ' collapsed';
+                    const initIcon = '\u25B8';
+
+                    html += '<div class="match-card' + collapsedClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="mc-select-wrap"><input type="checkbox" class="match-select" data-match-id="' + m.id + '" onclick="event.stopPropagation()"></span><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + (timeBadge || courtBadge ? '<span class="mc-info-badges">' + timeBadge + courtBadge + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p1_country_code || '', m.p1_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (isCompleted ? '<strong>' + escapeHtml(m.p1_name || 'TBD') + '</strong>' : escapeHtml(m.p1_name || 'TBD')) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p2_country_code || '', m.p2_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (isCompleted ? '<strong>' + escapeHtml(m.p2_name || 'TBD') + '</strong>' : escapeHtml(m.p2_name || 'TBD')) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + renderGuessSchedule(m) + '</div></div>';
+                });
+                html += '</div>';
+            }
+
+            document.getElementById('matchList').innerHTML = html;
         }
 
         window.filterMatches = function(round) {
             document.querySelectorAll('.round-filter-btn').forEach(b => b.classList.remove('active'));
             if (event && event.target) event.target.classList.add('active');
             renderMatches(round);
+        };
+
+        window.filterByCourt = function(court) {
+            _currentCourt = court;
+            renderMatches(_currentRound);
         };
 
         window.toggleSelectAllMatches = function(cb) {

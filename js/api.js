@@ -865,6 +865,7 @@ async function updateMatch(mid, data) {
     // 过滤有效字段
     const allowed = [
         'player1_id', 'player2_id', 'winner_id', 'score', 'court', 'status', 'round', 'match_order',
+        'start_time',
         'guess_team_a', 'guess_team_b', 'guess_a_tb', 'guess_b_tb',
         'guess_a_total', 'guess_b_total',
         'guess_a_tb_score', 'guess_b_tb_score', 'guess_winner', 'guess_reason',

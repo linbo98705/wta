@@ -883,6 +883,60 @@ img { max-width: 100%; height: auto; }
     font-weight: 500;
 }
 
+/* 场地分组标题 */
+.court-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px 6px;
+    margin-top: 8px;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--purple-dark);
+    border-bottom: 2px solid var(--purple-lighter);
+}
+.court-group-header:first-child {
+    margin-top: 0;
+}
+.court-icon {
+    font-size: 1.125rem;
+}
+.court-match-count {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--gray-500);
+}
+
+/* 场地和时间徽章 */
+.mc-info-badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.mc-court-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(91,45,142,0.08);
+    color: var(--purple);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+.mc-time-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(0,168,107,0.08);
+    color: var(--accent-green);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
 .match-players {
     display: flex;
     flex-direction: column;

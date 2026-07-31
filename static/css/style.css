@@ -886,15 +886,23 @@ img { max-width: 100%; height: auto; }
 /* 场地分列布局 */
 .court-columns {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
-    overflow-x: auto;
     padding-bottom: 8px;
 }
 .court-column {
-    flex: 1;
-    min-width: 320px;
+    flex: 1 1 100%;
+    min-width: 0;
     border-radius: var(--radius);
     padding: 0 0 8px;
+}
+@media (min-width: 769px) {
+    .court-columns {
+        flex-wrap: wrap;
+    }
+    .court-column {
+        flex: 1 1 calc(50% - 6px);
+    }
 }
 .court-column-header {
     display: flex;

@@ -934,7 +934,34 @@
                 document.body.appendChild(wrapper);
 
                 if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
-                wrapper.appendChild(cardSection.cloneNode(true));
+                const clonedCard = cardSection.cloneNode(true);
+                wrapper.appendChild(clonedCard);
+
+                // 修改克隆内容：左上角显示"赛程"，右上角只显示比赛时间
+                const clonedH3 = clonedCard.querySelector('.card-header h3');
+                if (clonedH3) clonedH3.textContent = '赛程';
+
+                const clonedRight = clonedCard.querySelector('.card-header > div');
+                if (clonedRight) {
+                    const clonedSelect = clonedRight.querySelector('#dateFilter');
+                    const clonedCount = clonedRight.querySelector('#matchCount');
+                    // 隐藏比赛数量
+                    if (clonedCount) clonedCount.style.display = 'none';
+                    // 日期下拉框替换为纯文本
+                    if (clonedSelect) {
+                        if (_currentDate) {
+                            const dateObj = new Date(_currentDate);
+                            const dateLabel = isNaN(dateObj) ? _currentDate : dateObj.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+                            const dateSpan = document.createElement('span');
+                            dateSpan.style.fontSize = '0.875rem';
+                            dateSpan.style.color = 'var(--gray-500)';
+                            dateSpan.textContent = '比赛时间：' + dateLabel;
+                            clonedSelect.replaceWith(dateSpan);
+                        } else {
+                            clonedSelect.style.display = 'none';
+                        }
+                    }
+                }
 
                 // 恢复原页面显示
                 if (exportBtn) exportBtn.style.display = '';

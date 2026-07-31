@@ -199,6 +199,11 @@ function buildBracket(matches, playerMap, startRound) {
     // ── 输出 HTML ──
     let html = '';
 
+    // 计算 1/8 区信息
+    const sectionCount = firstCount >= 8 ? 8 : firstCount; // 最多8个区
+    const matchesPerSection = firstCount / sectionCount;
+    const sectionH = matchesPerSection * MATCH_HEIGHT;
+
     // 外层容器
     html += '<div class="bracket-wrap" style="position:relative; width:' + totalW + 'px;">';
 
@@ -217,9 +222,31 @@ function buildBracket(matches, playerMap, startRound) {
     // 主体区域（含 SVG 连线 + 比赛卡）
     html += '<div class="bracket-body" style="position:relative; width:' + totalW + 'px; height:' + totalH + 'px;">';
 
+    // 1/8 区背景色带（交替背景色）
+    for (let si = 0; si < sectionCount; si++) {
+        const sTop = si * sectionH;
+        const bgColor = si % 2 === 0 ? 'rgba(91,45,142,0.02)' : 'rgba(91,45,142,0.06)';
+        // 背景覆盖序号列到签表末尾
+        html += '<div style="position:absolute; left:0; top:' + sTop + 'px; width:' + totalW
+            + 'px; height:' + sectionH + 'px; background:' + bgColor + '; z-index:0;"></div>';
+
+        // 1/8 区标签（左侧序号列上方）
+        const labelTop = sTop + 2;
+        html += '<div style="position:absolute; left:0; top:' + labelTop + 'px; width:' + SEQ_COL_WIDTH
+            + 'px; text-align:center; font-size:0.625rem; font-weight:700; color:var(--purple); z-index:2; opacity:0.6;">'
+            + (si + 1) + '/' + sectionCount + '</div>';
+
+        // 区分隔线（除最后一区）
+        if (si < sectionCount - 1) {
+            const lineY = sTop + sectionH;
+            html += '<div style="position:absolute; left:0; top:' + lineY + 'px; width:' + totalW
+                + 'px; height:2px; background:var(--purple-light); opacity:0.4; z-index:2;"></div>';
+        }
+    }
+
     // SVG 连线层
     html += '<svg class="bracket-lines" width="' + totalW + '" height="' + totalH
-        + '" style="position:absolute; top:0; left:0; overflow:visible; pointer-events:none; z-index:0;">';
+        + '" style="position:absolute; top:0; left:0; overflow:visible; pointer-events:none; z-index:1;">';
     html += svgParts.join('');
     html += '</svg>';
 
@@ -230,7 +257,7 @@ function buildBracket(matches, playerMap, startRound) {
     for (let si = 0; si < slotCount; si++) {
         const sTop = si * slotH + (slotH - 16) / 2;
         html += '<div style="position:absolute; left:0; top:' + sTop + 'px; width:' + SEQ_COL_WIDTH
-            + 'px; height:16px; line-height:16px; text-align:center; font-size:0.6875rem; font-weight:600; color:var(--gray-500); z-index:1;">'
+            + 'px; height:16px; line-height:16px; text-align:center; font-size:0.6875rem; font-weight:600; color:var(--gray-500); z-index:3;">'
             + (si + 1) + '</div>';
     }
 
@@ -246,7 +273,7 @@ function buildBracket(matches, playerMap, startRound) {
             const mTop = mi * mSpan + (mSpan - MATCH_HEIGHT) / 2;
             html += '<div class="bracket-match-wrapper" style="position:absolute; left:' + colX
                 + 'px; top:' + mTop + 'px; width:' + COL_WIDTH + 'px; height:' + MATCH_HEIGHT
-                + 'px; z-index:1;">';
+                + 'px; z-index:3;">';
             html += '<div class="bracket-match" style="height:100%;">' + renderMatch(m, playerMap) + '</div>';
             html += '</div>';
         }

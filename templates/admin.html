@@ -508,16 +508,10 @@
                 </div>
             </div>
 
-            <!-- 场地 & 开始时间 -->
-            <div class="form-row" style="margin-top: 12px;">
-                <div class="form-group">
-                    <label>场地</label>
-                    <input type="text" class="form-control" id="mCourt" placeholder="如：中央球场、1号球场">
-                </div>
-                <div class="form-group">
-                    <label>开始时间</label>
-                    <input type="datetime-local" class="form-control" id="mStartTime">
-                </div>
+            <!-- 场地 -->
+            <div class="form-group" style="margin-top: 12px;">
+                <label>场地</label>
+                <input type="text" class="form-control" id="mCourt" placeholder="如：中央球场、1号球场">
             </div>
 
             <!-- 底部信息 -->
@@ -1279,7 +1273,6 @@ async function openMatchModal(mid, tid) {
     document.getElementById('mGuessWinner').value = '';
     document.getElementById('mGuessReason').value = '';
     document.getElementById('mCourt').value = '';
-    document.getElementById('mStartTime').value = '';
     for (let i = 1; i <= 5; i++) {
         document.getElementById('gaPs' + i).value = 0;
         document.getElementById('gbPs' + i).value = 0;
@@ -1304,9 +1297,6 @@ async function openMatchModal(mid, tid) {
             document.getElementById('mPlayer2').value = m.player2_id || '';
             document.getElementById('mStatus').value = m.status || 'scheduled';
             document.getElementById('mCourt').value = m.court || '';
-            // start_time 格式转为 datetime-local 需要的格式 (YYYY-MM-DDTHH:MM)
-            const stVal = m.start_time || '';
-            document.getElementById('mStartTime').value = stVal ? stVal.replace(' ', 'T').substring(0, 16) : '';
 
             // 对阵球员名 → 同时更新表头
             const p1Name = m.p1_name || 'TBD';
@@ -1469,7 +1459,6 @@ async function saveMatch(e) {
         winner_id: winnerId,
         status: autoStatus,
         court: document.getElementById('mCourt').value.trim(),
-        start_time: document.getElementById('mStartTime').value || '',
         guess_a_tb: aPreds.join(','),
         guess_b_tb: bPreds.join(','),
         guess_a_total: aTotal,

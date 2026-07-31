@@ -925,17 +925,6 @@ img { max-width: 100%; height: auto; }
     font-size: 0.6875rem;
     font-weight: 600;
 }
-.mc-time-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    background: rgba(0,168,107,0.08);
-    color: var(--accent-green);
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 0.6875rem;
-    font-weight: 600;
-}
 
 .match-players {
     display: flex;

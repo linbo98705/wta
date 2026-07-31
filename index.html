@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=18">
+    <link rel="stylesheet" href="static/css/style.css?v=19">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -73,7 +73,7 @@
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=8"></script>
-    <script src="js/api.js?v=10"></script>
+    <script src="js/api.js?v=11"></script>
     <script src="js/draw-engine.js?v=12"></script>
 
     <script>
@@ -691,6 +691,7 @@
 
         const realMatches = matches.filter(m => m.status !== 'bye');
         window._realMatches = realMatches;
+        window._tournamentCourtOrder = (t && t.court_order) ? t.court_order.split(',').map(s => s.trim()).filter(s => s) : [];
         const rounds = [...new Set(realMatches.map(m => m.round))];
 
         let defaultRound = 'all';
@@ -803,6 +804,18 @@
             });
 
             const courtNames = Object.keys(grouped);
+            // 按赛事配置的场地排序，未配置的场地排在最后
+            const courtOrderConfig = window._tournamentCourtOrder || [];
+            if (courtOrderConfig.length > 0) {
+                courtNames.sort((a, b) => {
+                    const idxA = courtOrderConfig.indexOf(a);
+                    const idxB = courtOrderConfig.indexOf(b);
+                    if (idxA === -1 && idxB === -1) return 0;
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                });
+            }
             const courtColors = [
                 { bg: 'rgba(91,45,142,0.06)', border: 'var(--purple-light)', header: 'var(--purple)', text: 'var(--purple-dark)' },
                 { bg: 'rgba(0,168,107,0.05)', border: '#4CAF50', header: '#2E7D32', text: '#1B5E20' },
@@ -1384,6 +1397,7 @@
             </div>
             <div class="form-group"><label>赛事 Logo</label><input type="file" class="form-control" id="tLogoFile" accept="image/png,image/jpeg,image/jpg,image/svg+xml" onchange="previewTournamentLogo(this)"><div id="tLogoPreview" style="margin-top:8px; display:none;"><img id="tLogoPreviewImg" style="max-height:80px; border-radius:8px; background:#fff; padding:4px;"></div><p style="font-size:0.75rem; color:var(--gray-400); margin-top:4px;">支持 PNG / JPG / SVG 格式，建议尺寸不小于 200x200</p></div>
             <input type="hidden" id="tLogoUrl" value="">
+            <div class="form-group" style="margin-top: 12px;"><label>场地排序</label><input type="text" class="form-control" id="tCourtOrder" placeholder="如：中央球场,1号球场,2号球场"><p style="font-size:0.75rem; color:var(--gray-400); margin-top:4px;">用英文逗号分隔场地名称，赛程赛果页将按此顺序排列场地列；未配置的场地排在最后</p></div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('tournamentModal')">取消</button>
                 <button type="submit" class="btn btn-primary btn-sm">保存</button>
@@ -1607,6 +1621,7 @@
                 draw_size: parseInt(document.getElementById('tDrawSize').value),
                 start_date: document.getElementById('tStartDate').value,
                 end_date: document.getElementById('tEndDate').value,
+                court_order: document.getElementById('tCourtOrder').value.trim(),
             };
             let result;
             if (id) {
@@ -1654,6 +1669,7 @@
             document.getElementById('tDrawSize').value = t.draw_size;
             document.getElementById('tStartDate').value = t.start_date;
             document.getElementById('tEndDate').value = t.end_date;
+            document.getElementById('tCourtOrder').value = t.court_order || '';
             document.getElementById('tLogoUrl').value = t.logo_url || '';
             // 显示现有 logo 预览
             const previewDiv = document.getElementById('tLogoPreview');

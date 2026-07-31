@@ -319,6 +319,7 @@ async function createTournament(data) {
             end_date: data.end_date,
             draw_size: data.draw_size || 32,
             logo_url: data.logo_url || '',
+            court_order: data.court_order || '',
         })
         .select('id')
         .single();
@@ -371,7 +372,7 @@ async function uploadTournamentLogo(file, tournamentId) {
  */
 async function updateTournament(id, data) {
     // 过滤有效字段
-    const allowed = ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active', 'logo_url'];
+    const allowed = ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active', 'logo_url', 'court_order'];
     const updates = {};
     for (const k of allowed) {
         if (data[k] !== undefined) {

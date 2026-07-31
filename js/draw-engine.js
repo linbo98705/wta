@@ -26,6 +26,7 @@ const MATCH_HEIGHT = 52;   // 每场比赛高度（px）
 const COL_WIDTH = 210;     // 列宽（px）
 const COL_GAP = 56;        // 列间距，含连线空间（px）
 const SEQ_COL_WIDTH = 40;  // 序号列宽度（px）
+const SEQ_COL_GAP = 8;     // 序号列与签表的间距（px）
 
 // ── 简写别名 ────────────────────────────────
 const compactStartRound = 'R16';
@@ -115,7 +116,7 @@ function buildBracket(matches, playerMap, startRound) {
     const numCols = roundData.length;
     const firstCount = roundData[0].length;
     const totalH = firstCount * MATCH_HEIGHT;
-    const seqOffset = SEQ_COL_WIDTH + COL_GAP; // 序号列偏移量
+    const seqOffset = SEQ_COL_WIDTH + SEQ_COL_GAP; // 序号列偏移量（贴近签表）
     const totalW = seqOffset + numCols * (COL_WIDTH + COL_GAP) - COL_GAP;
 
     // ── 构建 SVG 连线 + 比分 ──
@@ -202,10 +203,11 @@ function buildBracket(matches, playerMap, startRound) {
     html += '<div class="bracket-wrap" style="position:relative; width:' + totalW + 'px;">';
 
     // 轮次标题行（含序号列）
-    html += '<div class="bracket-headers" style="display:flex; gap:' + COL_GAP + 'px; margin-bottom:6px;">';
+    html += '<div class="bracket-headers" style="display:flex; margin-bottom:6px;">';
     // 序号列标题
-    html += '<div class="bracket-round-header" style="width:' + SEQ_COL_WIDTH + 'px; flex-shrink:0;">序号</div>';
+    html += '<div class="bracket-round-header" style="width:' + SEQ_COL_WIDTH + 'px; flex-shrink:0; margin-right:' + SEQ_COL_GAP + 'px;">序号</div>';
     for (let ri = 0; ri < roundOrder.length; ri++) {
+        if (ri > 0) html += '<div style="width:' + COL_GAP + 'px; flex-shrink:0;"></div>';
         html += '<div class="bracket-round-header" style="width:' + COL_WIDTH + 'px; flex-shrink:0;">'
             + (roundLabels[roundOrder[ri]] || roundOrder[ri])
             + '</div>';
@@ -221,13 +223,14 @@ function buildBracket(matches, playerMap, startRound) {
     html += svgParts.join('');
     html += '</svg>';
 
-    // 序号列（仅第一轮每场比赛显示序号）
+    // 序号列（按签位数显示，每场比赛2个签位）
     const firstRoundMatches = roundData[0];
-    const firstSpan = totalH / firstRoundMatches.length;
-    for (let si = 0; si < firstRoundMatches.length; si++) {
-        const sTop = si * firstSpan + (firstSpan - 20) / 2;
+    const slotCount = firstRoundMatches.length * 2; // 总签位数
+    const slotH = totalH / slotCount;
+    for (let si = 0; si < slotCount; si++) {
+        const sTop = si * slotH + (slotH - 16) / 2;
         html += '<div style="position:absolute; left:0; top:' + sTop + 'px; width:' + SEQ_COL_WIDTH
-            + 'px; height:20px; line-height:20px; text-align:center; font-size:0.75rem; font-weight:600; color:var(--gray-500); z-index:1;">'
+            + 'px; height:16px; line-height:16px; text-align:center; font-size:0.6875rem; font-weight:600; color:var(--gray-500); z-index:1;">'
             + (si + 1) + '</div>';
     }
 

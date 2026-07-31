@@ -41,15 +41,22 @@ function renderMatch(m, playerMap) {
     const p1Seed = (playerMap && playerMap[m.player1_id]) ? (playerMap[m.player1_id].t_seed || 0) : 0;
     const p2Seed = (playerMap && playerMap[m.player2_id]) ? (playerMap[m.player2_id].t_seed || 0) : 0;
 
+    // 获取球员国旗 HTML
+    function playerFlag(pid) {
+        if (!playerMap || !playerMap[pid]) return '';
+        const p = playerMap[pid];
+        return typeof countryFlag === 'function' ? countryFlag(p.country_code || '', p.country || '') : '';
+    }
+
     // Bye（轮空）比赛：一个有效球员 + 空位
     if (m.status === 'bye') {
         const topName = m.p1_name || '';
         const bottomName = m.p2_name || '';
         const topHtml = m.player1_id
-            ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + topName + '">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '') + '<span>' + topName + '</span></div></div>'
+            ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + topName + '">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '') + '<span>' + topName + '</span>' + playerFlag(m.player1_id) + '</div></div>'
             : '<div class="bracket-player bye-label"><div class="bracket-player-name"><span>Bye</span></div></div>';
         const bottomHtml = m.player2_id
-            ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + bottomName + '">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span>' : '') + '<span>' + bottomName + '</span></div></div>'
+            ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + bottomName + '">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span>' : '') + '<span>' + bottomName + '</span>' + playerFlag(m.player2_id) + '</div></div>'
             : '<div class="bracket-player bye-label"><div class="bracket-player-name"><span>Bye</span></div></div>';
         return topHtml + bottomHtml;
     }
@@ -64,12 +71,12 @@ function renderMatch(m, playerMap) {
     return '<div class="bracket-player ' + p1Class + '">'
         + '<div class="bracket-player-name" title="' + p1Full + '">'
         + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '')
-        + '<span>' + p1Full + '</span>'
+        + '<span>' + p1Full + '</span>' + playerFlag(m.player1_id)
         + '</div></div>'
         + '<div class="bracket-player ' + p2Class + '">'
         + '<div class="bracket-player-name" title="' + p2Full + '">'
         + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span>' : '')
-        + '<span>' + p2Full + '</span>'
+        + '<span>' + p2Full + '</span>' + playerFlag(m.player2_id)
         + '</div></div>';
 }
 

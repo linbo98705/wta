@@ -25,6 +25,7 @@ const roundLabels = {
 const MATCH_HEIGHT = 52;   // 每场比赛高度（px）
 const COL_WIDTH = 210;     // 列宽（px）
 const COL_GAP = 56;        // 列间距，含连线空间（px）
+const SECTION_COL_WIDTH = 28; // 区标签列宽度（px）
 const SEQ_COL_WIDTH = 40;  // 序号列宽度（px）
 const SEQ_COL_GAP = 8;     // 序号列与签表的间距（px）
 
@@ -116,7 +117,7 @@ function buildBracket(matches, playerMap, startRound) {
     const numCols = roundData.length;
     const firstCount = roundData[0].length;
     const totalH = firstCount * MATCH_HEIGHT;
-    const seqOffset = SEQ_COL_WIDTH + SEQ_COL_GAP; // 序号列偏移量（贴近签表）
+    const seqOffset = SECTION_COL_WIDTH + SEQ_COL_WIDTH + SEQ_COL_GAP; // 区标签列+序号列偏移量
     const totalW = seqOffset + numCols * (COL_WIDTH + COL_GAP) - COL_GAP;
 
     // ── 构建 SVG 连线 + 比分 ──
@@ -207,8 +208,10 @@ function buildBracket(matches, playerMap, startRound) {
     // 外层容器
     html += '<div class="bracket-wrap" style="position:relative; width:' + totalW + 'px;">';
 
-    // 轮次标题行（含序号列）
+    // 轮次标题行（含区标签列+序号列）
     html += '<div class="bracket-headers" style="display:flex; margin-bottom:6px;">';
+    // 区标签列标题
+    html += '<div class="bracket-round-header" style="width:' + SECTION_COL_WIDTH + 'px; flex-shrink:0; font-size:0.625rem;">区</div>';
     // 序号列标题
     html += '<div class="bracket-round-header" style="width:' + SEQ_COL_WIDTH + 'px; flex-shrink:0; margin-right:' + SEQ_COL_GAP + 'px;">序号</div>';
     for (let ri = 0; ri < roundOrder.length; ri++) {
@@ -222,19 +225,19 @@ function buildBracket(matches, playerMap, startRound) {
     // 主体区域（含 SVG 连线 + 比赛卡）
     html += '<div class="bracket-body" style="position:relative; width:' + totalW + 'px; height:' + totalH + 'px;">';
 
-    // 1/8 区背景色带（交替背景色）
+    // 1/8 区背景色带（交替背景色）+ 区标签
     for (let si = 0; si < sectionCount; si++) {
         const sTop = si * sectionH;
         const bgColor = si % 2 === 0 ? 'rgba(91,45,142,0.02)' : 'rgba(91,45,142,0.06)';
-        // 背景覆盖序号列到签表末尾
+        // 背景覆盖区标签列到签表末尾
         html += '<div style="position:absolute; left:0; top:' + sTop + 'px; width:' + totalW
             + 'px; height:' + sectionH + 'px; background:' + bgColor + '; z-index:0;"></div>';
 
-        // 1/8 区标签（左侧序号列上方）
-        const labelTop = sTop + 2;
-        html += '<div style="position:absolute; left:0; top:' + labelTop + 'px; width:' + SEQ_COL_WIDTH
-            + 'px; text-align:center; font-size:0.625rem; font-weight:700; color:var(--purple); z-index:2; opacity:0.6;">'
-            + (si + 1) + '/' + sectionCount + '</div>';
+        // 区标签（垂直居中于各区，独立列不与序号重叠）
+        const labelTop = sTop + (sectionH - 14) / 2;
+        html += '<div style="position:absolute; left:0; top:' + labelTop + 'px; width:' + SECTION_COL_WIDTH
+            + 'px; height:14px; line-height:14px; text-align:center; font-size:0.625rem; font-weight:700; '
+            + 'color:var(--purple); z-index:3;">' + (si + 1) + '/' + sectionCount + '</div>';
 
         // 区分隔线（除最后一区）
         if (si < sectionCount - 1) {
@@ -256,7 +259,7 @@ function buildBracket(matches, playerMap, startRound) {
     const slotH = totalH / slotCount;
     for (let si = 0; si < slotCount; si++) {
         const sTop = si * slotH + (slotH - 16) / 2;
-        html += '<div style="position:absolute; left:0; top:' + sTop + 'px; width:' + SEQ_COL_WIDTH
+        html += '<div style="position:absolute; left:' + SECTION_COL_WIDTH + 'px; top:' + sTop + 'px; width:' + SEQ_COL_WIDTH
             + 'px; height:16px; line-height:16px; text-align:center; font-size:0.6875rem; font-weight:600; color:var(--gray-500); z-index:3;">'
             + (si + 1) + '</div>';
     }

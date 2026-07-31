@@ -71,10 +71,10 @@
     <!-- html2canvas (HTML 转 Canvas) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- App Scripts -->
-    <script src="js/supabase-client.js?v=7"></script>
-    <script src="js/utils.js?v=7"></script>
-    <script src="js/api.js?v=7"></script>
-    <script src="js/draw-engine.js?v=7"></script>
+    <script src="js/supabase-client.js?v=8"></script>
+    <script src="js/utils.js?v=8"></script>
+    <script src="js/api.js?v=8"></script>
+    <script src="js/draw-engine.js?v=8"></script>
 
     <script>
     // ══════════════════════════════════════════════════════════════
@@ -526,7 +526,12 @@
                         <button class="view-btn" data-view="compact">16强起</button>
                     </div>
                 </div>
-                <span id="drawLegend" style="font-size:0.75rem; color:var(--gray-500);"></span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="btn btn-sm btn-outline" onclick="exportDrawToImage()" title="导出长图">
+                        <span>&#128247;</span> 导出长图
+                    </button>
+                    <span id="drawLegend" style="font-size:0.75rem; color:var(--gray-500);"></span>
+                </div>
             </div>
             <div class="card-body">
                 <div class="bracket-container" id="bracketContainer">
@@ -539,6 +544,66 @@
 
         await initDrawView(tid, 'bracketContainer');
     }
+
+    // ── 导出签表为长图 ──────────────────────────
+    window.exportDrawToImage = async function() {
+        const bracketContainer = document.getElementById('bracketContainer');
+        if (!bracketContainer) { showToast('未找到签表', 'error'); return; }
+
+        showToast('正在生成长图...', 'info');
+        try {
+            const tid = window.location.hash.match(/tournament\/(\d+)/)?.[1];
+            const t = tid ? await getTournament(tid) : null;
+
+            // 获取页面上的实际元素
+            const headerSection = document.querySelector('#app .tournament-header');
+            const cardSection = document.querySelector('#app .draw-card');
+            if (!cardSection) { showToast('未找到签表', 'error'); return; }
+
+            // 临时隐藏导出按钮和视图切换
+            const exportBtn = cardSection.querySelector('button[onclick="exportDrawToImage()"]');
+            const viewToggle = cardSection.querySelector('#viewToggle');
+            if (exportBtn) exportBtn.style.display = 'none';
+            if (viewToggle) viewToggle.style.display = 'none';
+
+            // 克隆到临时容器
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'fixed';
+            wrapper.style.left = '-9999px';
+            wrapper.style.top = '0';
+            wrapper.style.background = '#fff';
+            document.body.appendChild(wrapper);
+
+            if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
+            wrapper.appendChild(cardSection.cloneNode(true));
+
+            // 恢复原页面显示
+            if (exportBtn) exportBtn.style.display = '';
+            if (viewToggle) viewToggle.style.display = '';
+
+            // 等待图片加载
+            const clone = wrapper;
+            const imgs = clone.querySelectorAll('img');
+            await Promise.all([...imgs].map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(r => { img.onload = r; img.onerror = r; });
+            }));
+
+            const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+            document.body.removeChild(wrapper);
+
+            // 下载为 PNG
+            const link = document.createElement('a');
+            link.download = (t ? t.name + '_' : '') + '签表.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            showToast('长图导出成功', 'success');
+        } catch (err) {
+            console.error('导出失败:', err);
+            showToast('导出失败: ' + (err.message || ''), 'error');
+        }
+    };
 
     // ══════════════════════════════════════════════════════════════
     // renderSchedule(tid) - Schedule & Results

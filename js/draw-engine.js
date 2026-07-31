@@ -25,6 +25,7 @@ const roundLabels = {
 const MATCH_HEIGHT = 52;   // 每场比赛高度（px）
 const COL_WIDTH = 210;     // 列宽（px）
 const COL_GAP = 56;        // 列间距，含连线空间（px）
+const SEQ_COL_WIDTH = 40;  // 序号列宽度（px）
 
 // ── 简写别名 ────────────────────────────────
 const compactStartRound = 'R16';
@@ -107,7 +108,8 @@ function buildBracket(matches, playerMap, startRound) {
     const numCols = roundData.length;
     const firstCount = roundData[0].length;
     const totalH = firstCount * MATCH_HEIGHT;
-    const totalW = numCols * (COL_WIDTH + COL_GAP) - COL_GAP;
+    const seqOffset = SEQ_COL_WIDTH + COL_GAP; // 序号列偏移量
+    const totalW = seqOffset + numCols * (COL_WIDTH + COL_GAP) - COL_GAP;
 
     // ── 构建 SVG 连线 + 比分 ──
     const svgParts = [];
@@ -119,8 +121,8 @@ function buildBracket(matches, playerMap, startRound) {
         const nxtCnt = nxtMatches.length;
         const ratio = curCnt / nxtCnt;
 
-        const xCurRight = (ci + 1) * (COL_WIDTH + COL_GAP) - COL_GAP;
-        const xNxtLeft = (ci + 1) * (COL_WIDTH + COL_GAP);
+        const xCurRight = seqOffset + (ci + 1) * (COL_WIDTH + COL_GAP) - COL_GAP;
+        const xNxtLeft = seqOffset + (ci + 1) * (COL_WIDTH + COL_GAP);
         const xMid = xCurRight + (COL_GAP / 2);
 
         for (let ni = 0; ni < nxtCnt; ni++) {
@@ -192,8 +194,10 @@ function buildBracket(matches, playerMap, startRound) {
     // 外层容器
     html += '<div class="bracket-wrap" style="position:relative; width:' + totalW + 'px;">';
 
-    // 轮次标题行
+    // 轮次标题行（含序号列）
     html += '<div class="bracket-headers" style="display:flex; gap:' + COL_GAP + 'px; margin-bottom:6px;">';
+    // 序号列标题
+    html += '<div class="bracket-round-header" style="width:' + SEQ_COL_WIDTH + 'px; flex-shrink:0;">序号</div>';
     for (let ri = 0; ri < roundOrder.length; ri++) {
         html += '<div class="bracket-round-header" style="width:' + COL_WIDTH + 'px; flex-shrink:0;">'
             + (roundLabels[roundOrder[ri]] || roundOrder[ri])
@@ -210,11 +214,21 @@ function buildBracket(matches, playerMap, startRound) {
     html += svgParts.join('');
     html += '</svg>';
 
+    // 序号列（仅第一轮每场比赛显示序号）
+    const firstRoundMatches = roundData[0];
+    const firstSpan = totalH / firstRoundMatches.length;
+    for (let si = 0; si < firstRoundMatches.length; si++) {
+        const sTop = si * firstSpan + (firstSpan - 20) / 2;
+        html += '<div style="position:absolute; left:0; top:' + sTop + 'px; width:' + SEQ_COL_WIDTH
+            + 'px; height:20px; line-height:20px; text-align:center; font-size:0.75rem; font-weight:600; color:var(--gray-500); z-index:1;">'
+            + (si + 1) + '</div>';
+    }
+
     // 比赛卡片层
     for (let ci = 0; ci < numCols; ci++) {
         const rm = roundData[ci];
         const mc = rm.length;
-        const colX = ci * (COL_WIDTH + COL_GAP);
+        const colX = seqOffset + ci * (COL_WIDTH + COL_GAP);
         const mSpan = totalH / mc;
 
         for (let mi = 0; mi < mc; mi++) {

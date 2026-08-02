@@ -2079,27 +2079,22 @@ textarea.form-control {
         line-height: 1.3;
         max-width: none;
     }
-    /* 名字完整一行显示，不内部断行 */
+    /* 名字允许换行，完整显示 */
     .gc-a-text, .gc-b-text {
         display: block;
-        white-space: nowrap;
+        white-space: normal;
+        word-break: break-all;
         text-align: center;
         font-size: 0.75rem;
         line-height: 1.3;
-        overflow: hidden;
-        text-overflow: clip;
-        max-width: 100%;
     }
-    /* 比分在名字下方，独立一行 */
+    /* 比分在名字下方，独立一行不换行 */
     .gc-a-score-text, .gc-b-score-text {
         display: block;
         font-size: 0.6875rem;
         color: var(--gray-600);
         white-space: nowrap;
         text-align: center;
-        overflow: hidden;
-        text-overflow: clip;
-        max-width: 100%;
     }
 
     .gc-a-score, .gc-b-score {

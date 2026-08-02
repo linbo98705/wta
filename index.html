@@ -725,13 +725,37 @@
         function renderGuessSchedule(m) {
             const p1Name = m.p1_name || '球员1';
             const p2Name = m.p2_name || '球员2';
-            // guess_a_tb 格式: "name1|score1,name2|score2,..."
+            // guess_a_tb 格式: "name1|score1,name2|score2,..." 或 "name1 score1,name2 score2,..."
+            // 解析函数：从一条记录中拆分名字和比分
+            function parseEntry(entry) {
+                var s = (entry || '').trim();
+                if (!s) return { name: '', score: '' };
+                // 先尝试按 | 分割
+                var p = s.split('|');
+                if (p.length >= 2) return { name: p[0].trim(), score: p.slice(1).join('|').trim() };
+                // 没有管道符，尝试按最后一个空格分割：末段含数字则为比分
+                var lastSpace = s.lastIndexOf(' ');
+                if (lastSpace > 0) {
+                    var tail = s.substring(lastSpace + 1).trim();
+                    if (/\d/.test(tail)) {
+                        return { name: s.substring(0, lastSpace).trim(), score: tail };
+                    }
+                }
+                // 找不到比分分割点：尝试找第一个数字（比分模式如 6-4）的位置
+                var scoreIdx = s.search(/\d\s*[-–]\s*\d/);
+                if (scoreIdx > 0) {
+                    return { name: s.substring(0, scoreIdx).trim(), score: s.substring(scoreIdx).trim() };
+                }
+                return { name: s, score: '' };
+            }
             const aEntries = (m.guess_a_tb || '').split(',');
             const bEntries = (m.guess_b_tb || '').split(',');
-            const aNames = aEntries.map(e => { const p = (e || '').split('|'); return p[0] || ''; });
-            const bNames = bEntries.map(e => { const p = (e || '').split('|'); return p[0] || ''; });
-            const aScoreTexts = aEntries.map(e => { const p = (e || '').split('|'); return p[1] || ''; });
-            const bScoreTexts = bEntries.map(e => { const p = (e || '').split('|'); return p[1] || ''; });
+            const aParsed = aEntries.map(parseEntry);
+            const bParsed = bEntries.map(parseEntry);
+            const aNames = aParsed.map(p => p.name);
+            const bNames = bParsed.map(p => p.name);
+            const aScoreTexts = aParsed.map(p => p.score);
+            const bScoreTexts = bParsed.map(p => p.score);
             const aScores = (m.guess_a_tb_score || '').split(',');
             const bScores = (m.guess_b_tb_score || '').split(',');
             const aTotal = m.guess_a_total || 0;

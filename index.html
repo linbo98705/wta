@@ -2542,43 +2542,61 @@
             const allLines = text.split('\n').map(l => l.trim()).filter(l => l);
             const currentYear = new Date().getFullYear();
 
-            function parseDateStr(dateStr) {
-                let m = dateStr.match(/(\d{1,2})[.\-\/月](\d{1,2})/);
-                if (!m) return null;
-                const mm = String(m[1]).padStart(2, '0');
-                const dd = String(m[2]).padStart(2, '0');
-                return currentYear + '-' + mm + '-' + dd;
+            // 从字符串中提取日期，支持多种格式：
+            // 8.2 / 8-2 / 8/2 / 8月2 / 8月2日 / 8月2号 / 08-02 / 2026.8.2 / 2026-08-02
+            function extractDate(str) {
+                // 先尝试带年份的格式 2026.8.2 / 2026-08-02
+                let m = str.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/);
+                if (m) {
+                    return m[1] + '-' + String(m[2]).padStart(2, '0') + '-' + String(m[3]).padStart(2, '0');
+                }
+                // 不带年份的格式 8.2 / 8-2 / 8/2 / 8月2(日/号)
+                m = str.match(/(\d{1,2})[.\-\/月](\d{1,2})/);
+                if (m) {
+                    return currentYear + '-' + String(m[1]).padStart(2, '0') + '-' + String(m[2]).padStart(2, '0');
+                }
+                return null;
+            }
+
+            // 从字符串中提取时间 HH:MM
+            function extractTime(str) {
+                const m = str.match(/(\d{1,2})[：:](\d{2})/);
+                if (m) {
+                    return String(m[1]).padStart(2, '0') + ':' + m[2];
+                }
+                return null;
             }
 
             let parsedDate = null;
             let parsedDeadline = null;
 
             for (const line of allLines) {
-                if (!parsedDeadline) {
-                    // 支持 "截止时间 8.2 23:00"、"截止时间 8月2日 23:00" 等格式
-                    const dlMatch = line.match(/(?:截止时间|截止|deadline)[：:\s]*(\d{1,2}[.\-\/月]\d{1,2})日?[\s,，]*(\d{1,2})[：:](\d{2})/i);
-                    if (dlMatch) {
-                        const d = parseDateStr(dlMatch[1]);
-                        if (d) {
-                            const hh = String(dlMatch[2]).padStart(2, '0');
-                            const mm = dlMatch[3];
-                            parsedDeadline = d + 'T' + hh + ':' + mm;
-                            parsedDate = d;
-                            continue;
-                        }
+                const lower = line.toLowerCase();
+
+                // 1. 尝试解析截止时间（包含"截止"或"deadline"的行）
+                if (!parsedDeadline && /截止|deadline/i.test(line)) {
+                    const d = extractDate(line);
+                    const t = extractTime(line);
+                    if (d && t) {
+                        parsedDeadline = d + 'T' + t;
+                        parsedDate = d;
+                        continue;
                     }
                 }
 
+                // 2. 尝试解析日期（包含"日期"的行）
+                if (!parsedDate && /日期|竞猜日期|date/i.test(line)) {
+                    const d = extractDate(line);
+                    if (d) { parsedDate = d; continue; }
+                }
+
+                // 3. 尝试解析纯日期行（整行就是日期，如 "8.2" / "8月2日" / "8月2号"）
                 if (!parsedDate) {
-                    // 支持 "日期 8.2"、"日期 8月2日"、"8.2"、"8月2日" 等格式
-                    const dm = line.match(/(?:日期|竞猜日期|date)[：:\s]*(\d{1,2}[.\-\/月]\d{1,2})/i);
-                    if (dm) {
-                        const d = parseDateStr(dm[1]);
-                        if (d) { parsedDate = d; continue; }
-                    }
-                    if (/^\d{1,2}[.\-\/月]\d{1,2}日?$/.test(line)) {
-                        const d = parseDateStr(line);
-                        if (d) { parsedDate = d; continue; }
+                    const d = extractDate(line);
+                    // 确保这行只是一个日期，没有其他内容（允许 日/号 后缀）
+                    if (d && /^[^\d]*(\d{1,2})[.\-\/月](\d{1,2})[日号]?$/.test(line.trim())) {
+                        parsedDate = d;
+                        continue;
                     }
                 }
             }
@@ -2590,7 +2608,7 @@
                 document.getElementById('gDeadline').value = parsedDeadline;
             }
 
-            // 用 \bvs\b 匹配独立的 "vs"（大小写不敏感），避免误匹配球员名中的 "vs"
+            // 用 vs 匹配对阵行（大小写不敏感）
             const lines = allLines.filter(l => /\bvs\b/i.test(l));
             if (lines.length === 0 && !parsedDate && !parsedDeadline) {
                 showToast('未识别到有效的内容', 'error'); return;

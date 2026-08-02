@@ -1073,10 +1073,21 @@ async function updateDailyGuess(id, data) {
         return { success: true, error: null };
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
         .from('daily_guesses')
         .update(updates)
         .eq('id', id);
+
+    // 如果 tb6 列不存在，去掉 tb6 字段后重试
+    if (error && error.message && error.message.includes('tb6')) {
+        delete updates.tb6_match;
+        delete updates.tb6_result;
+        const retry = await supabase
+            .from('daily_guesses')
+            .update(updates)
+            .eq('id', id);
+        error = retry.error;
+    }
 
     if (error) {
         return { success: false, error: error.message };
@@ -1100,9 +1111,19 @@ async function createDailyGuess(data) {
         insertData[`tb${i}_result`] = data[`tb${i}_result`] || '';
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
         .from('daily_guesses')
         .insert(insertData);
+
+    // 如果 tb6 列不存在，去掉 tb6 字段后重试
+    if (error && error.message && error.message.includes('tb6')) {
+        delete insertData.tb6_match;
+        delete insertData.tb6_result;
+        const retry = await supabase
+            .from('daily_guesses')
+            .insert(insertData);
+        error = retry.error;
+    }
 
     if (error) {
         return { success: false, error: error.message };

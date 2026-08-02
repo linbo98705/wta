@@ -2554,10 +2554,9 @@
             let parsedDeadline = null;
 
             for (const line of allLines) {
-                const lower = line.toLowerCase();
-
                 if (!parsedDeadline) {
-                    const dlMatch = line.match(/(?:截止时间|截止|deadline)[：:\s]*(\d{1,2}[.\-\/月]\d{1,2})[\s,，]*(\d{1,2})[：:](\d{2})/i);
+                    // 支持 "截止时间 8.2 23:00"、"截止时间 8月2日 23:00" 等格式
+                    const dlMatch = line.match(/(?:截止时间|截止|deadline)[：:\s]*(\d{1,2}[.\-\/月]\d{1,2})日?[\s,，]*(\d{1,2})[：:](\d{2})/i);
                     if (dlMatch) {
                         const d = parseDateStr(dlMatch[1]);
                         if (d) {
@@ -2571,12 +2570,13 @@
                 }
 
                 if (!parsedDate) {
+                    // 支持 "日期 8.2"、"日期 8月2日"、"8.2"、"8月2日" 等格式
                     const dm = line.match(/(?:日期|竞猜日期|date)[：:\s]*(\d{1,2}[.\-\/月]\d{1,2})/i);
                     if (dm) {
                         const d = parseDateStr(dm[1]);
                         if (d) { parsedDate = d; continue; }
                     }
-                    if (/^\d{1,2}[.\-\/月]\d{1,2}$/.test(line)) {
+                    if (/^\d{1,2}[.\-\/月]\d{1,2}日?$/.test(line)) {
                         const d = parseDateStr(line);
                         if (d) { parsedDate = d; continue; }
                     }
@@ -2590,14 +2590,16 @@
                 document.getElementById('gDeadline').value = parsedDeadline;
             }
 
-            const lines = allLines.filter(l => l.toLowerCase().includes('vs'));
+            // 用 \bvs\b 匹配独立的 "vs"（大小写不敏感），避免误匹配球员名中的 "vs"
+            const lines = allLines.filter(l => /\bvs\b/i.test(l));
             if (lines.length === 0 && !parsedDate && !parsedDeadline) {
                 showToast('未识别到有效的内容', 'error'); return;
             }
             let filled = 0;
             for (let i = 0; i < Math.min(lines.length, 6); i++) {
                 const line = lines[i];
-                const parts = line.split(/\s+(?:vs|VS|Vs)\s+/);
+                // 大小写不敏感，不要求两侧必须有空格
+                const parts = line.split(/\s*vs\s*/i);
                 if (parts.length >= 2) {
                     const p1 = parts[0].trim();
                     const p2 = parts.slice(1).join(' vs ').trim();
@@ -2609,7 +2611,11 @@
             if (parsedDate) msgs.push('日期 ' + parsedDate);
             if (parsedDeadline) msgs.push('截止 ' + parsedDeadline.replace('T', ' '));
             if (filled > 0) msgs.push(filled + ' 条对阵');
-            showToast('已填充: ' + msgs.join('，'), 'success');
+            if (msgs.length === 0) {
+                showToast('未能解析到有效内容，请检查格式（每行一场对阵，用 vs 分隔）', 'error');
+            } else {
+                showToast('已填充: ' + msgs.join('，'), 'success');
+            }
         };
 
         window.adminOpenGuessModal = function(guessData) {

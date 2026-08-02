@@ -637,7 +637,6 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="round-filter" id="roundFilter"></div>
                 <div id="matchList">
                     <div class="loading">加载中...</div>
                 </div>
@@ -692,39 +691,27 @@
         const realMatches = matches.filter(m => m.status !== 'bye');
         window._realMatches = realMatches;
         window._tournamentCourtOrder = (t && t.court_order) ? t.court_order.split(',').map(s => s.trim()).filter(s => s) : [];
-        const rounds = [...new Set(realMatches.map(m => m.round))];
 
-        let defaultRound = 'all';
-        const liveRounds = [...new Set(realMatches.filter(m => m.status === 'live').map(m => m.round))];
-        if (liveRounds.length > 0) {
-            defaultRound = liveRounds[0];
-        } else {
-            const scheduledRounds = [...new Set(realMatches.filter(m => m.status === 'scheduled').map(m => m.round))];
-            if (scheduledRounds.length > 0) defaultRound = scheduledRounds[0];
-        }
-
-        document.getElementById('roundFilter').innerHTML = `
-            ${rounds.map(r => '<button class="round-filter-btn ' + (defaultRound === r ? 'active' : '') + '" onclick="filterMatches(\'' + r + '\')">' + (_roundLabels[r] || r) + '</button>').join('')}
-        `;
         document.getElementById('matchCount').innerHTML = '<button class="btn btn-sm btn-outline" onclick="exportScheduleImage()" style="padding:4px 10px;font-size:0.75rem;">&#128247; 导出赛果</button> &nbsp; 共 ' + realMatches.length + ' 场比赛';
 
-        // 填充日期筛选下拉（从比赛的 match_date 提取）
+        // 填充日期筛选下拉（从比赛的 match_date 提取），默认选最近日期
         const dates = [...new Set(realMatches.map(m => {
             if (m.match_date) return m.match_date;
             return '';
         }).filter(d => d))].sort();
         const dateFilterEl = document.getElementById('dateFilter');
+        const defaultDate = dates.length > 0 ? dates[dates.length - 1] : '';
         if (dateFilterEl) {
             dateFilterEl.innerHTML = '<option value="">所有日期</option>' + dates.map(d => {
                 const dateObj = new Date(d);
                 const label = isNaN(dateObj) ? d : dateObj.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
-                return '<option value="' + d + '">' + escapeHtml(label) + '</option>';
+                return '<option value="' + d + '"' + (d === defaultDate ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
             }).join('');
         }
 
         // 当前筛选状态
-        let _currentRound = defaultRound;
-        let _currentDate = '';
+        let _currentRound = 'all';
+        let _currentDate = defaultDate;
 
         function renderGuessSchedule(m) {
             const p1Name = m.p1_name || '球员1';
@@ -783,9 +770,8 @@
             return '<div class="match-guess"><table class="gt-table"><thead><tr><th class="gt-th-label"></th><th class="gt-th-a">' + escapeHtml(p1Name) + '</th><th class="gt-th-score">得分</th><th class="gt-th-score">得分</th><th class="gt-th-b">' + escapeHtml(p2Name) + '</th></tr></thead><tbody>' + rows + '<tr class="gt-total-row"><td class="gt-label" style="font-weight:700;">总分</td><td class="gt-a">' + ((aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : '') + '</td><td class="gt-score gt-total ' + (aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')) + '">' + aTotal + '</td><td class="gt-score gt-total ' + (bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')) + '">' + bTotal + '</td><td class="gt-b">' + ((bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : '') + '</td></tr></tbody></table></div>';
         }
 
-        function renderMatches(filterRound) {
-            _currentRound = filterRound;
-            let filtered = filterRound === 'all' ? realMatches : realMatches.filter(m => m.round === filterRound);
+        function renderMatches() {
+            let filtered = realMatches;
             if (_currentDate) {
                 filtered = filtered.filter(m => m.match_date && m.match_date === _currentDate);
             }
@@ -875,15 +861,9 @@
             document.getElementById('matchList').innerHTML = html;
         }
 
-        window.filterMatches = function(round) {
-            document.querySelectorAll('.round-filter-btn').forEach(b => b.classList.remove('active'));
-            if (event && event.target) event.target.classList.add('active');
-            renderMatches(round);
-        };
-
         window.filterByDate = function(date) {
             _currentDate = date;
-            renderMatches(_currentRound);
+            renderMatches();
         };
 
         window.exportScheduleImage = async function() {
@@ -1006,7 +986,7 @@
             }
         };
 
-        renderMatches(defaultRound);
+        renderMatches();
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -2348,7 +2328,7 @@
             let parsedCount = 0;
             for (let i = 0; i < Math.min(lines.length, 6); i++) {
                 const tbIndex = i + 1;
-                let line = lines[i].trim().replace(/^TB\d+\s*/i, '');
+                let line = lines[i].trim().replace(/^TB\d+[\s:：]*/i, '');
                 let sideA = '', sideB = '';
                 if (line.includes(' vs ')) { const p = line.split(' vs '); sideA = p[0].trim(); sideB = p[1].trim(); }
                 else if (line.includes(' VS ')) { const p = line.split(' VS '); sideA = p[0].trim(); sideB = p[1].trim(); }
@@ -2399,8 +2379,8 @@
 
             for (let i = 0; i < 6; i++) {
                 const tbIndex = i + 1;
-                let lineA = linesA[i] ? linesA[i].trim().replace(/^TB\d+\s*/i, '') : '';
-                let lineB = linesB[i] ? linesB[i].trim().replace(/^TB\d+\s*/i, '') : '';
+                let lineA = linesA[i] ? linesA[i].trim().replace(/^TB\d+[\s:：]*/i, '') : '';
+                let lineB = linesB[i] ? linesB[i].trim().replace(/^TB\d+[\s:：]*/i, '') : '';
 
                 // 如果只填了比分，自动补球员名
                 if (lineA && !lineA.match(/[^\d\s\-–\/]/) && p1Name && p1Name !== '球员1') {

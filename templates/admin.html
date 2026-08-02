@@ -1380,8 +1380,8 @@ function parseMatchGuessTextSeparate() {
 
     for (let i = 0; i < 6; i++) {
         const tbIndex = i + 1;
-        let lineA = linesA[i] ? linesA[i].trim().replace(/^TB\d+\s*/i, '') : '';
-        let lineB = linesB[i] ? linesB[i].trim().replace(/^TB\d+\s*/i, '') : '';
+        let lineA = linesA[i] ? linesA[i].trim().replace(/^TB\d+[\s:：]*/i, '') : '';
+        let lineB = linesB[i] ? linesB[i].trim().replace(/^TB\d+[\s:：]*/i, '') : '';
 
         // 如果只填了比分，自动补球员名
         if (lineA && !lineA.match(/[^\d\s\-–\/]/)) {

@@ -1310,11 +1310,13 @@
             <div class="card">
                 <div class="card-header flex-between">
                     <h3>比赛管理</h3>
-                    <div style="display:flex; gap:8px; align-items:center;">
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <select class="form-control" id="matchTournamentSelect" onchange="adminLoadMatchList()" style="width:auto;"><option value="">请选择赛事</option></select>
                         <button class="btn btn-success btn-sm" onclick="adminGenerateDraw()">&#127922; 生成签表</button>
                         <button class="btn btn-outline btn-sm" onclick="adminAdvanceByes()">&#9193; 处理轮空晋级</button>
                         <button class="btn btn-primary btn-sm" onclick="adminOpenMatchModal()">+ 添加比赛</button>
+                        <select class="form-control" id="matchExportDateSelect" style="width:auto; font-size:0.8125rem; padding:4px 8px;"><option value="">所有日期</option></select>
+                        <button class="btn btn-outline btn-sm" onclick="adminExportMatchupsText()">&#128196; 导出对阵</button>
                     </div>
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
@@ -1442,6 +1444,24 @@
                 <button type="submit" class="btn btn-primary btn-sm">保存</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Export Matchup Text Modal -->
+<div class="modal-overlay" id="exportMatchupModal">
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>对阵文字版</h3>
+            <button class="modal-close" onclick="closeModal('exportMatchupModal')">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:16px;">
+            <textarea id="exportMatchupText" readonly style="width:100%; min-height:320px; font-family:monospace; font-size:0.875rem; padding:12px; border:1px solid var(--gray-200); border-radius:8px; resize:vertical; line-height:1.8;"></textarea>
+        </div>
+        <div class="modal-actions" style="padding:0 16px 16px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('exportMatchupModal')">关闭</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="adminCopyMatchupText()">&#128203; 复制</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="adminDownloadMatchupText()">&#128190; 下载 TXT</button>
+        </div>
     </div>
 </div>
 
@@ -2093,9 +2113,25 @@
             const matches = await getMatches(parseInt(tid));
             const tbody = document.getElementById('matchTable');
             if (!Array.isArray(matches) || matches.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px;">暂无比赛，请先生成签表或手动添加</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;">暂无比赛，请先生成签表或手动添加</td></tr>';
+                // 清空日期选择器
+                const dateSelect = document.getElementById('matchExportDateSelect');
+                if (dateSelect) dateSelect.innerHTML = '<option value="">所有日期</option>';
                 return;
             }
+
+            // 填充导出日期选择器（从非 bye 比赛的 match_date 提取）
+            const realMatches = matches.filter(m => m.status !== 'bye');
+            const dates = [...new Set(realMatches.map(m => m.match_date).filter(d => d))].sort();
+            const dateSelect = document.getElementById('matchExportDateSelect');
+            if (dateSelect) {
+                dateSelect.innerHTML = '<option value="">所有日期</option>' + dates.map(d => {
+                    const dateObj = new Date(d);
+                    const label = isNaN(dateObj) ? d : dateObj.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
+                    return '<option value="' + d + '">' + escapeHtml(label) + '</option>';
+                }).join('');
+            }
+
             tbody.innerHTML = matches.map(m => {
                 const score = m.score || '';
                 const reason = m.guess_reason || '';
@@ -2108,6 +2144,104 @@
                 if (scoreDisplay !== '-' && reason) scoreDisplay += ' (' + reason + ')';
                 return '<tr><td>' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + escapeHtml(m.p1_name || 'TBD') + '</td><td>' + escapeHtml(m.p2_name || 'TBD') + '</td><td>' + scoreDisplay + '</td><td>' + (m.match_date || '-') + '</td><td>' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td><button class="btn btn-outline btn-sm" onclick="adminEditMatch(' + m.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteMatch(' + m.id + ')">删除</button></td></tr>';
             }).join('');
+        };
+
+        // ── 导出对阵文字版 ──────────────────────────
+        window.adminExportMatchupsText = async function() {
+            const tid = document.getElementById('matchTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            const matches = await getMatches(parseInt(tid));
+            if (!Array.isArray(matches) || matches.length === 0) {
+                showToast('暂无比赛数据', 'error');
+                return;
+            }
+
+            const exportDate = document.getElementById('matchExportDateSelect') ? document.getElementById('matchExportDateSelect').value : '';
+            // 过滤掉 bye 比赛，按日期筛选
+            let filtered = matches.filter(m => m.status !== 'bye');
+            if (exportDate) {
+                filtered = filtered.filter(m => m.match_date === exportDate);
+            }
+            if (filtered.length === 0) {
+                showToast('该条件下无比赛', 'error');
+                return;
+            }
+
+            // 按场地分组
+            const grouped = {};
+            filtered.forEach(m => {
+                const court = m.court && m.court.trim() ? m.court : '未分配场地';
+                if (!grouped[court]) grouped[court] = [];
+                grouped[court].push(m);
+            });
+
+            const roundLabels = { 'R128': 'R128', 'R64': 'R64', 'R32': 'R32', 'R16': 'R16', 'QF': '1/4决赛', 'SF': '半决赛', 'F': '决赛' };
+
+            let lines = [];
+            // 日期标题
+            if (exportDate) {
+                const dateObj = new Date(exportDate);
+                const dateLabel = isNaN(dateObj) ? exportDate : dateObj.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+                lines.push(dateLabel);
+            } else {
+                lines.push('所有比赛');
+            }
+            lines.push('');
+
+            // 按场地输出
+            Object.keys(grouped).forEach(court => {
+                lines.push('【' + court + '】');
+                grouped[court].forEach(m => {
+                    const p1 = m.p1_name || 'TBD';
+                    const p2 = m.p2_name || 'TBD';
+                    lines.push('@' + p1 + ' vs @' + p2);
+                });
+                lines.push('');
+            });
+
+            const text = lines.join('\n').trim();
+            document.getElementById('exportMatchupText').value = text;
+            openModal('exportMatchupModal');
+        };
+
+        window.adminCopyMatchupText = function() {
+            const text = document.getElementById('exportMatchupText').value;
+            if (!text) return;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('已复制到剪贴板', 'success');
+                }).catch(() => {
+                    // 降级方案
+                    const ta = document.getElementById('exportMatchupText');
+                    ta.select();
+                    document.execCommand('copy');
+                    showToast('已复制到剪贴板', 'success');
+                });
+            } else {
+                const ta = document.getElementById('exportMatchupText');
+                ta.select();
+                document.execCommand('copy');
+                showToast('已复制到剪贴板', 'success');
+            }
+        };
+
+        window.adminDownloadMatchupText = function() {
+            const text = document.getElementById('exportMatchupText').value;
+            if (!text) return;
+            const tid = document.getElementById('matchTournamentSelect');
+            const tournamentName = tid.options[tid.selectedIndex] ? tid.options[tid.selectedIndex].textContent : '赛事';
+            const exportDate = document.getElementById('matchExportDateSelect') ? document.getElementById('matchExportDateSelect').value : '';
+            let fileName = tournamentName + '_对阵';
+            if (exportDate) fileName += '_' + exportDate;
+            fileName += '.txt';
+
+            const blob = new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            URL.revokeObjectURL(link.href);
+            showToast('TXT 下载成功', 'success');
         };
 
         window.adminOpenMatchModal = async function(mid) {

@@ -148,12 +148,23 @@ def init_db():
             tb4_result TEXT DEFAULT '',
             tb5_match TEXT DEFAULT '',
             tb5_result TEXT DEFAULT '',
+            tb6_match TEXT DEFAULT '',
+            tb6_result TEXT DEFAULT '',
             FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
         );
     ''')
     # deadline 字段增量迁移
     try:
         db.execute('ALTER TABLE daily_guesses ADD COLUMN deadline TEXT DEFAULT \'\'')
+    except sqlite3.OperationalError:
+        pass
+    # tb6 字段增量迁移
+    try:
+        db.execute('ALTER TABLE daily_guesses ADD COLUMN tb6_match TEXT DEFAULT \'\'')
+    except sqlite3.OperationalError:
+        pass
+    try:
+        db.execute('ALTER TABLE daily_guesses ADD COLUMN tb6_result TEXT DEFAULT \'\'')
     except sqlite3.OperationalError:
         pass
     db.commit()
@@ -1091,7 +1102,7 @@ def api_create_daily_guess(tid):
     db = get_db()
     fields = ['guess_date', 'deadline']
     values = [data.get('guess_date', ''), data.get('deadline', '')]
-    for i in range(1, 6):
+    for i in range(1, 7):
         fields.append(f'tb{i}_match')
         values.append(data.get(f'tb{i}_match', ''))
         fields.append(f'tb{i}_result')
@@ -1120,7 +1131,7 @@ def api_update_daily_guess(gid):
     if 'deadline' in data:
         fields.append('deadline=?')
         values.append(data['deadline'])
-    for i in range(1, 6):
+    for i in range(1, 7):
         for k in [f'tb{i}_match', f'tb{i}_result']:
             if k in data:
                 fields.append(f'{k}=?')

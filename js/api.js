@@ -1057,7 +1057,7 @@ async function getDailyGuesses(tid) {
  */
 async function updateDailyGuess(id, data) {
     const allowed = ['guess_date', 'deadline'];
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 6; i++) {
         allowed.push(`tb${i}_match`);
         allowed.push(`tb${i}_result`);
     }
@@ -1095,7 +1095,7 @@ async function createDailyGuess(data) {
         guess_date: data.guess_date || '',
         deadline: data.deadline || '',
     };
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 6; i++) {
         insertData[`tb${i}_match`] = data[`tb${i}_match`] || '';
         insertData[`tb${i}_result`] = data[`tb${i}_result`] || '';
     }

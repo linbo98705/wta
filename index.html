@@ -299,7 +299,7 @@
             }
 
             let rows = '';
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 6; i++) {
                 rows += '<tr><td class="guess-tb-label">TB' + (i + 1) + '</td><td>' + tbCell(aTb[i], true) + '</td><td>' + tbCell(bTb[i], false) + '</td></tr>';
                 rows += '<tr class="guess-score-row"><td class="guess-tb-label"></td><td>' + scoreCell(aScores[i]) + '</td><td>' + scoreCell(bScores[i]) + '</td></tr>';
             }
@@ -776,7 +776,7 @@
             }
 
             let rows = '';
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 6; i++) {
                 rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
             }
 
@@ -1062,7 +1062,7 @@
             let hasResult = false;
             let hasAnyMatch = false;
             let allResult = true;
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 6; i++) {
                 const match = g['tb' + i + '_match'] || '';
                 const result = g['tb' + i + '_result'] || '';
                 if (result) hasResult = true;
@@ -1340,8 +1340,8 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th>ID</th><th>日期</th><th>截止时间</th><th>TB1 对阵</th><th>TB1 结果</th><th>TB2 对阵</th><th>TB2 结果</th><th>TB3 对阵</th><th>TB3 结果</th><th>TB4 对阵</th><th>TB4 结果</th><th>TB5 对阵</th><th>TB5 结果</th><th>操作</th></tr></thead>
-                        <tbody id="dailyGuessTable"><tr><td colspan="14" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
+                        <thead><tr><th>ID</th><th>日期</th><th>截止时间</th><th>TB1 对阵</th><th>TB1 结果</th><th>TB2 对阵</th><th>TB2 结果</th><th>TB3 对阵</th><th>TB3 结果</th><th>TB4 对阵</th><th>TB4 结果</th><th>TB5 对阵</th><th>TB5 结果</th><th>TB6 对阵</th><th>TB6 结果</th><th>操作</th></tr></thead>
+                        <tbody id="dailyGuessTable"><tr><td colspan="16" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -1509,12 +1509,13 @@
                     <tr><td><select class="guess-ps-input" id="gaPs3"><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred3" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB3</td><td><input type="text" class="guess-predict-input" id="gbPred3" placeholder="球员名 比分"></td><td><select class="guess-ps-input" id="gbPs3"><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td></tr>
                     <tr><td><select class="guess-ps-input" id="gaPs4"><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred4" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB4</td><td><input type="text" class="guess-predict-input" id="gbPred4" placeholder="球员名 比分"></td><td><select class="guess-ps-input" id="gbPs4"><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td></tr>
                     <tr><td><select class="guess-ps-input" id="gaPs5"><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred5" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB5</td><td><input type="text" class="guess-predict-input" id="gbPred5" placeholder="球员名 比分"></td><td><select class="guess-ps-input" id="gbPs5"><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td></tr>
+                    <tr><td><select class="guess-ps-input" id="gaPs6"><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred6" placeholder="球员名 比分"></td><td class="ge-tb-cell">TB6</td><td><input type="text" class="guess-predict-input" id="gbPred6" placeholder="球员名 比分"></td><td><select class="guess-ps-input" id="gbPs6"><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td></tr>
                 </tbody>
                 <tfoot><tr><td class="ge-total-cell"><span id="geTotalA">0</span></td><td colspan="3" class="ge-total-label">TOTAL POINTS</td><td class="ge-total-cell"><span id="geTotalB">0</span></td></tr></tfoot>
             </table>
             <div class="form-row" style="margin-top: 12px;">
                 <div class="form-group"><label>竞猜胜者</label><select class="form-control" id="mGuessWinner"><option value="">自动判定（总分高者）</option><option value="player1" id="gwOption1">球员1</option><option value="player2" id="gwOption2">球员2</option></select></div>
-                <div class="form-group"><label>胜利原因</label><select class="form-control" id="mGuessReason"><option value="">请选择</option><option value="TB1">TB1</option><option value="TB2">TB2</option><option value="TB3">TB3</option><option value="TB4">TB4</option><option value="TB5">TB5</option><option value="ZD">ZD</option><option value="时间">时间</option></select></div>
+                <div class="form-group"><label>胜利原因</label><select class="form-control" id="mGuessReason"><option value="">请选择</option><option value="TB1">TB1</option><option value="TB2">TB2</option><option value="TB3">TB3</option><option value="TB4">TB4</option><option value="TB5">TB5</option><option value="TB6">TB6</option><option value="ZD">ZD</option><option value="时间">时间</option></select></div>
             </div>
             <div class="form-row" style="margin-top: 12px;">
                 <div class="form-group"><label>比赛日期</label><input type="date" class="form-control" id="mMatchDate" style="width: 200px;"></div>
@@ -1556,6 +1557,7 @@
                         <tr><td><input type="text" class="form-control" value="TB3" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb3Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb3Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb3Score" placeholder="6-3 6-3"></td></tr>
                         <tr><td><input type="text" class="form-control" value="TB4" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb4Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb4Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb4Score" placeholder="6-3 6-3"></td></tr>
                         <tr><td><input type="text" class="form-control" value="TB5" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb5Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb5Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb5Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td><input type="text" class="form-control" value="TB6" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb6Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb6Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb6Score" placeholder="6-3 6-3"></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -2263,13 +2265,13 @@
             document.getElementById('geTotalB').textContent = '0';
             document.getElementById('mGuessWinner').value = '';
             document.getElementById('mGuessReason').value = '';
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 6; i++) {
                 document.getElementById('gaPs' + i).value = 0;
                 document.getElementById('gbPs' + i).value = 0;
                 document.getElementById('gaPred' + i).value = '';
                 document.getElementById('gbPred' + i).value = '';
             }
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 6; i++) {
                 document.getElementById('gaPs' + i).addEventListener('change', adminCalcTotals);
                 document.getElementById('gbPs' + i).addEventListener('change', adminCalcTotals);
             }
@@ -2297,7 +2299,7 @@
                     const bEntries = (m.guess_b_tb || '').split(',');
                     const aScores = (m.guess_a_tb_score || '').split(',');
                     const bScores = (m.guess_b_tb_score || '').split(',');
-                    for (let i = 1; i <= 5; i++) {
+                    for (let i = 1; i <= 6; i++) {
                         let aText = (aEntries[i - 1] || '').trim();
                         let bText = (bEntries[i - 1] || '').trim();
                         // 兼容旧格式：name|score -> name score
@@ -2324,7 +2326,7 @@
 
         window.adminCalcTotals = function() {
             let totalA = 0, totalB = 0;
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 6; i++) {
                 totalA += parseInt(document.getElementById('gaPs' + i).value) || 0;
                 totalB += parseInt(document.getElementById('gbPs' + i).value) || 0;
             }
@@ -2344,7 +2346,7 @@
             if (!text) { showToast('请先输入或粘贴竞猜内容', 'error'); return; }
             const lines = text.split('\n').filter(l => l.trim());
             let parsedCount = 0;
-            for (let i = 0; i < Math.min(lines.length, 5); i++) {
+            for (let i = 0; i < Math.min(lines.length, 6); i++) {
                 const tbIndex = i + 1;
                 let line = lines[i].trim().replace(/^TB\d+\s*/i, '');
                 let sideA = '', sideB = '';
@@ -2395,7 +2397,7 @@
             const linesB = textB.split('\n').filter(l => l.trim());
             let parsedCount = 0;
 
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 6; i++) {
                 const tbIndex = i + 1;
                 let lineA = linesA[i] ? linesA[i].trim().replace(/^TB\d+\s*/i, '') : '';
                 let lineB = linesB[i] ? linesB[i].trim().replace(/^TB\d+\s*/i, '') : '';
@@ -2440,10 +2442,10 @@
             const status = document.getElementById('mStatus').value;
             const p1Id = document.getElementById('mPlayer1').value ? parseInt(document.getElementById('mPlayer1').value) : null;
             const p2Id = document.getElementById('mPlayer2').value ? parseInt(document.getElementById('mPlayer2').value) : null;
-            const aPreds = [1, 2, 3, 4, 5].map(i => document.getElementById('gaPred' + i).value.trim());
-            const bPreds = [1, 2, 3, 4, 5].map(i => document.getElementById('gbPred' + i).value.trim());
-            const aScores = [1, 2, 3, 4, 5].map(i => parseInt(document.getElementById('gaPs' + i).value) || 0);
-            const bScores = [1, 2, 3, 4, 5].map(i => parseInt(document.getElementById('gbPs' + i).value) || 0);
+            const aPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gaPred' + i).value.trim());
+            const bPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gbPred' + i).value.trim());
+            const aScores = [1, 2, 3, 4, 5, 6].map(i => parseInt(document.getElementById('gaPs' + i).value) || 0);
+            const bScores = [1, 2, 3, 4, 5, 6].map(i => parseInt(document.getElementById('gbPs' + i).value) || 0);
             const aTotal = aScores.reduce((s, v) => s + v, 0);
             const bTotal = bScores.reduce((s, v) => s + v, 0);
             const guessWinner = document.getElementById('mGuessWinner').value;
@@ -2540,10 +2542,10 @@
         window.adminLoadDailyGuessList = async function() {
             const tid = document.getElementById('guessTournamentSelect').value;
             const tbody = document.getElementById('dailyGuessTable');
-            if (!tid) { tbody.innerHTML = '<tr><td colspan="14" class="text-center" style="padding:40px;">请先选择赛事</td></tr>'; return; }
+            if (!tid) { tbody.innerHTML = '<tr><td colspan="16" class="text-center" style="padding:40px;">请先选择赛事</td></tr>'; return; }
             const data = await getDailyGuesses(parseInt(tid));
-            if (!Array.isArray(data) || data.length === 0) { tbody.innerHTML = '<tr><td colspan="14" class="text-center" style="padding:40px;">暂无竞猜数据</td></tr>'; return; }
-            tbody.innerHTML = data.map(g => '<tr style="cursor:pointer;" onclick="adminEditGuess(' + g.id + ')"><td>' + g.id + '</td><td>' + (g.guess_date || '') + '</td><td>' + (g.deadline ? escapeHtml(g.deadline.replace('T', ' ')) : '-') + '</td><td>' + escapeHtml(g.tb1_match || '') + '</td><td>' + escapeHtml(g.tb1_result || '') + '</td><td>' + escapeHtml(g.tb2_match || '') + '</td><td>' + escapeHtml(g.tb2_result || '') + '</td><td>' + escapeHtml(g.tb3_match || '') + '</td><td>' + escapeHtml(g.tb3_result || '') + '</td><td>' + escapeHtml(g.tb4_match || '') + '</td><td>' + escapeHtml(g.tb4_result || '') + '</td><td>' + escapeHtml(g.tb5_match || '') + '</td><td>' + escapeHtml(g.tb5_result || '') + '</td><td><button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); adminDeleteGuess(' + g.id + ')">删除</button></td></tr>').join('');
+            if (!Array.isArray(data) || data.length === 0) { tbody.innerHTML = '<tr><td colspan="16" class="text-center" style="padding:40px;">暂无竞猜数据</td></tr>'; return; }
+            tbody.innerHTML = data.map(g => '<tr style="cursor:pointer;" onclick="adminEditGuess(' + g.id + ')"><td>' + g.id + '</td><td>' + (g.guess_date || '') + '</td><td>' + (g.deadline ? escapeHtml(g.deadline.replace('T', ' ')) : '-') + '</td><td>' + escapeHtml(g.tb1_match || '') + '</td><td>' + escapeHtml(g.tb1_result || '') + '</td><td>' + escapeHtml(g.tb2_match || '') + '</td><td>' + escapeHtml(g.tb2_result || '') + '</td><td>' + escapeHtml(g.tb3_match || '') + '</td><td>' + escapeHtml(g.tb3_result || '') + '</td><td>' + escapeHtml(g.tb4_match || '') + '</td><td>' + escapeHtml(g.tb4_result || '') + '</td><td>' + escapeHtml(g.tb5_match || '') + '</td><td>' + escapeHtml(g.tb5_result || '') + '</td><td>' + escapeHtml(g.tb6_match || '') + '</td><td>' + escapeHtml(g.tb6_result || '') + '</td><td><button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); adminDeleteGuess(' + g.id + ')">删除</button></td></tr>').join('');
         };
 
         window.adminParseGuessMatches = function() {
@@ -2604,7 +2606,7 @@
                 showToast('未识别到有效的内容', 'error'); return;
             }
             let filled = 0;
-            for (let i = 0; i < Math.min(lines.length, 5); i++) {
+            for (let i = 0; i < Math.min(lines.length, 6); i++) {
                 const line = lines[i];
                 const parts = line.split(/\s+(?:vs|VS|Vs)\s+/);
                 if (parts.length >= 2) {
@@ -2628,7 +2630,7 @@
                 document.getElementById('gId').value = guessData.id;
                 document.getElementById('gDate').value = guessData.guess_date || '';
                 document.getElementById('gDeadline').value = guessData.deadline || '';
-                for (let i = 1; i <= 5; i++) {
+                for (let i = 1; i <= 6; i++) {
                     document.getElementById('gTb' + i + 'Match').value = guessData['tb' + i + '_match'] || '';
                     var resultStr = guessData['tb' + i + '_result'] || '';
                     var winner = '';
@@ -2668,7 +2670,7 @@
                 guess_date: document.getElementById('gDate').value,
                 deadline: document.getElementById('gDeadline').value,
             };
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 6; i++) {
                 data['tb' + i + '_match'] = document.getElementById('gTb' + i + 'Match').value.trim();
                 var winner = (document.getElementById('gTb' + i + 'Winner') ? document.getElementById('gTb' + i + 'Winner').value : '').trim();
                 var score = (document.getElementById('gTb' + i + 'Score') ? document.getElementById('gTb' + i + 'Score').value : '').trim();

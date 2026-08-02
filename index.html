@@ -700,13 +700,16 @@
             return '';
         }).filter(d => d))].sort();
         const dateFilterEl = document.getElementById('dateFilter');
-        // 找最近有未完成比赛（scheduled/live）的日期，没有则取最近日期
+        // 今天日期（YYYY-MM-DD），只考虑今天及之前的日期
+        const _todayStr = new Date().toLocaleDateString('sv-SE'); // 'sv-SE' 格式为 YYYY-MM-DD
+        const pastDates = dates.filter(d => d <= _todayStr);
+        // 在今天及之前的日期中，找最近有未完成比赛（scheduled/live）的日期，没有则取最近日期
         let defaultDate = '';
-        for (let i = dates.length - 1; i >= 0; i--) {
-            const hasUnfinished = realMatches.some(m => m.match_date === dates[i] && (m.status === 'scheduled' || m.status === 'live'));
-            if (hasUnfinished) { defaultDate = dates[i]; break; }
+        for (let i = pastDates.length - 1; i >= 0; i--) {
+            const hasUnfinished = realMatches.some(m => m.match_date === pastDates[i] && (m.status === 'scheduled' || m.status === 'live'));
+            if (hasUnfinished) { defaultDate = pastDates[i]; break; }
         }
-        if (!defaultDate && dates.length > 0) defaultDate = dates[dates.length - 1];
+        if (!defaultDate && pastDates.length > 0) defaultDate = pastDates[pastDates.length - 1];
         if (dateFilterEl) {
             dateFilterEl.innerHTML = '<option value="">所有日期</option>' + dates.map(d => {
                 const dateObj = new Date(d);

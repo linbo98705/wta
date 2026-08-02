@@ -694,13 +694,19 @@
 
         document.getElementById('matchCount').innerHTML = '<button class="btn btn-sm btn-outline" onclick="exportScheduleImage()" style="padding:4px 10px;font-size:0.75rem;">&#128247; 导出赛果</button> &nbsp; 共 ' + realMatches.length + ' 场比赛';
 
-        // 填充日期筛选下拉（从比赛的 match_date 提取），默认选最近日期
+        // 填充日期筛选下拉（从比赛的 match_date 提取），默认选最近未完成的一天
         const dates = [...new Set(realMatches.map(m => {
             if (m.match_date) return m.match_date;
             return '';
         }).filter(d => d))].sort();
         const dateFilterEl = document.getElementById('dateFilter');
-        const defaultDate = dates.length > 0 ? dates[dates.length - 1] : '';
+        // 找最近有未完成比赛（scheduled/live）的日期，没有则取最近日期
+        let defaultDate = '';
+        for (let i = dates.length - 1; i >= 0; i--) {
+            const hasUnfinished = realMatches.some(m => m.match_date === dates[i] && (m.status === 'scheduled' || m.status === 'live'));
+            if (hasUnfinished) { defaultDate = dates[i]; break; }
+        }
+        if (!defaultDate && dates.length > 0) defaultDate = dates[dates.length - 1];
         if (dateFilterEl) {
             dateFilterEl.innerHTML = '<option value="">所有日期</option>' + dates.map(d => {
                 const dateObj = new Date(d);

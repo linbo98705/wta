@@ -776,6 +776,7 @@ async function editTournament(id) {
 
 async function deleteTournament(id) {
     if (!confirm('确定删除此赛事？这将同时删除所有相关数据！')) return;
+    if (!confirm('再次确认：删除后不可恢复，确定删除？')) return;
     await api(`/api/tournaments/${id}`, { method: 'DELETE' });
     showToast('赛事已删除', 'success');
     loadTournaments();
@@ -941,6 +942,7 @@ async function batchDeletePlayers() {
     const checked = [...document.querySelectorAll('.player-check:checked')].map(cb => parseInt(cb.value));
     if (checked.length === 0) { showToast('请先选择球员', 'error'); return; }
     if (!confirm(`确定删除选中的 ${checked.length} 名球员？此操作不可撤销！`)) return;
+    if (!confirm('再次确认：删除后不可恢复，确定删除？')) return;
 
     const result = await api('/api/players/batch/delete', {
         method: 'POST',
@@ -1026,6 +1028,7 @@ async function savePlayerEdit(e) {
 
 async function deletePlayer(id) {
     if (!confirm('确定删除此球员？')) return;
+    if (!confirm('再次确认：删除后不可恢复，确定删除？')) return;
     await api(`/api/players/${id}`, { method: 'DELETE' });
     showToast('球员已删除', 'success');
     loadPlayers();
@@ -1200,6 +1203,7 @@ async function saveEntryEdit(e) {
 
 async function removeEntry(playerId) {
     if (!confirm('确定移除该球员？')) return;
+    if (!confirm('再次确认：确定移除？')) return;
     const tid = document.getElementById('entryTournamentSelect').value;
     await api(`/api/tournaments/${tid}/players/${playerId}`, { method: 'DELETE' });
     // 自动重算种子
@@ -1507,6 +1511,7 @@ async function editMatch(mid, tid) {
 
 async function deleteMatch(mid, tid) {
     if (!confirm('确定删除此比赛？')) return;
+    if (!confirm('再次确认：删除后不可恢复，确定删除？')) return;
     await api(`/api/matches/${mid}`, { method: 'DELETE' });
     showToast('比赛已删除', 'success');
     loadMatchList();
@@ -1516,6 +1521,7 @@ async function generateDraw() {
     const tid = document.getElementById('matchTournamentSelect').value;
     if (!tid) { showToast('请先选择赛事', 'error'); return; }
     if (!confirm('确定生成签表？这将清除当前所有比赛数据！')) return;
+    if (!confirm('再次确认：将清除所有现有比赛数据，确定继续？')) return;
 
     const result = await api(`/api/tournaments/${tid}/generate-draw`, { method: 'POST' });
     if (!result.error) {
@@ -1649,6 +1655,7 @@ async function editGuess(gid) {
 
 async function deleteGuess(gid) {
     if (!confirm('确定删除此竞猜？')) return;
+    if (!confirm('再次确认：删除后不可恢复，确定删除？')) return;
     await api(`/api/daily-guesses/${gid}`, { method: 'DELETE' });
     showToast('竞猜已删除', 'success');
     loadDailyGuessList();

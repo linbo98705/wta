@@ -2043,24 +2043,30 @@ textarea.form-control {
 
 /* ── Mobile: 竞猜内容换行（名字+比分分行） ── */
 @media (max-width: 480px) {
+    /* 减少容器内边距，给表格更多空间 */
+    .container { padding: 0 8px; }
+    .mc-body { padding: 0 6px 10px; }
+    .match-card-toggle { padding: 8px 6px; }
+
     .gt-table {
         font-size: 0.75rem;
+        table-layout: fixed;
     }
     .gt-table th {
-        padding: 5px 3px;
+        padding: 5px 2px;
         font-size: 0.6875rem;
     }
     .gt-table td {
-        padding: 4px 3px;
+        padding: 4px 2px;
     }
     .gt-th-label,
     .gt-label {
         font-size: 0.625rem;
-        width: 28px;
+        width: 24px;
     }
     .gt-th-score,
     .gt-score {
-        width: 32px;
+        width: 28px;
         font-size: 0.6875rem;
     }
 

@@ -1014,6 +1014,7 @@ img { max-width: 100%; height: auto; }
 .gt-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     font-size: 0.8125rem;
     border-radius: var(--radius-sm);
     overflow: hidden;
@@ -1036,7 +1037,7 @@ img { max-width: 100%; height: auto; }
 }
 
 .gt-th-label { width: 50px; background: var(--purple-dark); }
-.gt-th-a, .gt-th-b { font-size: 0.875rem; font-weight: 700; letter-spacing: 0.01em; }
+.gt-th-a, .gt-th-b { width: auto; font-size: 0.875rem; font-weight: 700; letter-spacing: 0.01em; }
 .gt-th-score { width: 55px; background: var(--purple-lighter); color: var(--purple-dark); font-size: 0.6875rem; }
 
 .gt-label {
@@ -1047,8 +1048,8 @@ img { max-width: 100%; height: auto; }
     text-align: center;
 }
 
-.gt-a { text-align: left; }
-.gt-b { text-align: right; }
+.gt-a { text-align: left; word-break: break-word; overflow: hidden; }
+.gt-b { text-align: right; word-break: break-word; overflow: hidden; }
 .gt-score { width: 55px; text-align: center; background: var(--purple-bg); }
 
 .gt-total-cell {
@@ -1166,6 +1167,7 @@ img { max-width: 100%; height: auto; }
 .match-guess-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     font-size: 0.8125rem;
     border-radius: var(--radius-sm);
     overflow: hidden;

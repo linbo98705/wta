@@ -1990,6 +1990,151 @@ textarea.form-control {
         grid-template-columns: 1fr;
     }
 
+    /* 移动端：卡片和容器间距 */
+    .container {
+        padding: 0 12px;
+    }
+
+    .card-header {
+        padding: 12px 14px;
+    }
+
+    .card-header h2, .card-header h3 {
+        font-size: 1rem;
+    }
+
+    .card-body {
+        padding: 14px;
+    }
+
+    /* 移动端：表格横向滚动 + 缩小内边距 */
+    .data-table-wrapper,
+    .card-body:has(.data-table) {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        font-size: 0.8125rem;
+        min-width: 600px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 6px 8px;
+    }
+
+    /* 移动端：按钮和表单尺寸优化 */
+    .btn {
+        padding: 8px 14px;
+        font-size: 0.8125rem;
+    }
+
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+    }
+
+    .form-control {
+        padding: 8px 10px;
+        font-size: 0.875rem;
+    }
+
+    /* 移动端：弹窗优化 */
+    .modal {
+        width: 95%;
+        max-width: none;
+        padding: 16px;
+        max-height: 90vh;
+        border-radius: var(--radius);
+    }
+
+    .modal-header {
+        margin-bottom: 14px;
+    }
+
+    .modal-header h3 {
+        font-size: 1rem;
+    }
+
+    .modal-actions {
+        margin-top: 14px;
+        gap: 6px;
+    }
+
+    .modal-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* 移动端：竞猜编辑表格优化 */
+    .guess-edit-table {
+        font-size: 0.75rem;
+    }
+
+    .guess-edit-table-5 {
+        font-size: 0.75rem;
+    }
+
+    .guess-edit-table-5 thead th {
+        padding: 6px 4px;
+        font-size: 0.6875rem;
+    }
+
+    .guess-edit-table-5 tbody td {
+        padding: 3px 4px;
+    }
+
+    .ge-score-col {
+        width: 56px;
+    }
+
+    .ge-vs-col {
+        width: 40px;
+    }
+
+    .ge-tb-cell {
+        font-size: 0.75rem;
+    }
+
+    .ge-total-cell {
+        font-size: 0.9375rem;
+        padding: 6px 4px;
+    }
+
+    .ge-total-label {
+        font-size: 0.75rem;
+        padding: 6px 4px;
+    }
+
+    .guess-ps-input {
+        width: 44px;
+        padding: 5px 0;
+        font-size: 0.8125rem;
+    }
+
+    .guess-predict-input,
+    .guess-name-input,
+    .guess-score-input {
+        padding: 5px 6px;
+        font-size: 0.75rem;
+    }
+
+    /* 移动端：对阵信息 */
+    .guess-matchup {
+        padding: 10px 12px;
+        gap: 8px;
+        margin: 12px 0 10px;
+    }
+
+    .guess-matchup-player {
+        font-size: 0.9375rem;
+    }
+
+    .guess-matchup-vs {
+        font-size: 1rem;
+        padding: 0 10px;
+    }
+
     /* 赛程赛果卡片移动端适配 */
     .match-card-toggle {
         padding: 8px 10px;
@@ -2039,6 +2184,30 @@ textarea.form-control {
     .mc-player-col {
         gap: 2px;
     }
+
+    /* 移动端：Toast 居中底部显示 */
+    .toast {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        bottom: 20px;
+        padding: 10px 18px;
+        font-size: 0.8125rem;
+        max-width: 90%;
+        text-align: center;
+    }
+
+    /* 移动端：工具栏搜索框自适应 */
+    .admin-panel .card-header > div {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .admin-panel .card-header input[type="text"],
+    .admin-panel .card-header .form-control {
+        flex: 1;
+        min-width: 120px;
+    }
 }
 
 /* ── Mobile: 竞猜内容换行（名字+比分分行） ── */
@@ -2047,6 +2216,140 @@ textarea.form-control {
     .container { padding: 0 8px; }
     .mc-body { padding: 0 6px 10px; }
     .match-card-toggle { padding: 8px 6px; }
+
+    .card-header {
+        padding: 10px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .card-header h2, .card-header h3 {
+        font-size: 0.9375rem;
+    }
+
+    .card-body {
+        padding: 12px 10px;
+    }
+
+    /* 弹窗全屏 */
+    .modal {
+        width: 100%;
+        max-width: none;
+        max-height: 100vh;
+        height: 100vh;
+        padding: 12px;
+        border-radius: 0;
+    }
+
+    .modal-header {
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .modal-header h3 {
+        font-size: 0.9375rem;
+    }
+
+    .modal-actions {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        padding-top: 12px;
+        margin-top: 12px;
+    }
+
+    /* 按钮进一步缩小 */
+    .btn {
+        padding: 7px 12px;
+        font-size: 0.8125rem;
+    }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 0.6875rem;
+    }
+
+    .form-control {
+        padding: 7px 10px;
+        font-size: 0.875rem;
+    }
+
+    /* 后台表格：进一步缩小字体和内边距 */
+    .data-table {
+        font-size: 0.75rem;
+        min-width: 680px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 5px 6px;
+    }
+
+    /* 竞猜编辑表格超小屏优化 */
+    .guess-edit-table-5 {
+        font-size: 0.6875rem;
+    }
+
+    .guess-edit-table-5 thead th {
+        padding: 5px 2px;
+        font-size: 0.625rem;
+    }
+
+    .guess-edit-table-5 tbody td {
+        padding: 2px 2px;
+    }
+
+    .ge-score-col {
+        width: 48px;
+    }
+
+    .ge-vs-col {
+        width: 36px;
+    }
+
+    .ge-tb-cell {
+        font-size: 0.6875rem;
+    }
+
+    .ge-total-cell {
+        font-size: 0.875rem;
+        padding: 5px 2px;
+    }
+
+    .ge-total-label {
+        font-size: 0.625rem;
+        padding: 5px 2px;
+        letter-spacing: 0.02em;
+    }
+
+    .guess-ps-input {
+        width: 38px;
+        padding: 4px 0;
+        font-size: 0.75rem;
+    }
+
+    .guess-predict-input,
+    .guess-name-input,
+    .guess-score-input {
+        padding: 4px 5px;
+        font-size: 0.6875rem;
+    }
+
+    .guess-matchup {
+        padding: 8px 10px;
+        gap: 6px;
+        margin: 10px 0 8px;
+    }
+
+    .guess-matchup-player {
+        font-size: 0.875rem;
+    }
+
+    .guess-matchup-vs {
+        font-size: 0.875rem;
+        padding: 0 8px;
+    }
 
     .gt-table {
         font-size: 0.75rem;

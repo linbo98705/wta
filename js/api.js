@@ -1168,14 +1168,75 @@ async function updateDailyGuess(id, data) {
         return { success: true, error: null };
     }
 
-    // 尝试 UPDATE，并用 .select() 验证是否真正更新了数据
+    // ── 内部回退方案：INSERT 新记录 + DELETE 旧记录 ──
+    // 当 UPDATE 被 RLS 阻止或列权限缺失时使用
+    async function fallbackInsertDelete() {
+        console.warn('UPDATE 失败或部分字段未更新，使用 INSERT+DELETE 回退方案');
+
+        // 1. 获取原记录
+        const { data: existing, error: fetchError } = await supabase
+            .from('daily_guesses')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !existing) {
+            return { success: false, error: '无法更新竞猜（无法获取原记录）' };
+        }
+
+        // 2. 构建新记录（合并原有字段和更新字段）
+        const insertData = {
+            tournament_id: existing.tournament_id,
+            guess_date: updates.guess_date !== undefined ? updates.guess_date : existing.guess_date,
+            deadline: updates.deadline !== undefined ? updates.deadline : existing.deadline,
+        };
+        for (let i = 1; i <= 6; i++) {
+            const mk = `tb${i}_match`;
+            const rk = `tb${i}_result`;
+            insertData[mk] = updates[mk] !== undefined ? updates[mk] : (existing[mk] || '');
+            insertData[rk] = updates[rk] !== undefined ? updates[rk] : (existing[rk] || '');
+        }
+
+        // 3. 插入新记录
+        let { error: insertError } = await supabase
+            .from('daily_guesses')
+            .insert(insertData);
+
+        // tb6 列不存在的重试
+        if (insertError && insertError.message && insertError.message.includes('tb6')) {
+            delete insertData.tb6_match;
+            delete insertData.tb6_result;
+            const retry = await supabase
+                .from('daily_guesses')
+                .insert(insertData);
+            insertError = retry.error;
+        }
+
+        if (insertError) {
+            return { success: false, error: '更新竞猜失败: ' + insertError.message };
+        }
+
+        // 4. 删除旧记录
+        const { error: deleteError } = await supabase
+            .from('daily_guesses')
+            .delete()
+            .eq('id', id);
+
+        if (deleteError) {
+            console.warn('旧记录删除失败，可能产生重复记录:', deleteError.message);
+        }
+
+        return { success: true, error: null };
+    }
+
+    // ── 主逻辑：尝试 UPDATE + .select() ──
     let { data: updatedRows, error } = await supabase
         .from('daily_guesses')
         .update(updates)
         .eq('id', id)
         .select();
 
-    // 如果 tb6 列不存在，去掉 tb6 字段后重试
+    // tb6 列不存在的重试
     if (error && error.message && error.message.includes('tb6')) {
         delete updates.tb6_match;
         delete updates.tb6_result;
@@ -1188,70 +1249,33 @@ async function updateDailyGuess(id, data) {
         error = retry.error;
     }
 
+    // 有错误 → 如果是权限相关错误，尝试回退
     if (error) {
-        return { success: false, error: error.message };
+        console.warn('UPDATE 出错:', error.message, '— 尝试 INSERT+DELETE 回退');
+        return await fallbackInsertDelete();
     }
 
-    // UPDATE 返回了数据 → 更新成功
-    if (updatedRows && updatedRows.length > 0) {
-        return { success: true, error: null };
+    // 返回空数组 → RLS 静默阻止了整个 UPDATE
+    if (!updatedRows || updatedRows.length === 0) {
+        return await fallbackInsertDelete();
     }
 
-    // UPDATE 返回空数组 → RLS 静默阻止了更新（无 UPDATE 策略）
-    // 回退方案：先插入新记录，再删除旧记录（避免数据丢失）
-    console.warn('UPDATE 被 RLS 静默阻止，使用 INSERT+DELETE 回退方案');
-
-    // 1. 获取原记录
-    const { data: existing, error: fetchError } = await supabase
-        .from('daily_guesses')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-    if (fetchError || !existing) {
-        return { success: false, error: '无法更新竞猜（RLS 阻止 UPDATE 且无法获取原记录）' };
+    // 返回了数据 → 验证所有更新的字段是否真正写入
+    // 防止 PostgREST 静默忽略无 UPDATE 权限的列（tb3-tb6 列权限缺失时）
+    const updated = updatedRows[0];
+    let mismatch = false;
+    for (const k of Object.keys(updates)) {
+        const sentVal = updates[k] || '';
+        const gotVal = (updated[k] !== null && updated[k] !== undefined) ? updated[k] : '';
+        if (sentVal !== gotVal) {
+            console.warn(`字段 ${k} 更新不匹配: 发送="${sentVal}", 返回="${gotVal}"`);
+            mismatch = true;
+            break;
+        }
     }
 
-    // 2. 构建新记录数据（合并原有字段和更新字段）
-    const insertData = {
-        tournament_id: existing.tournament_id,
-        guess_date: updates.guess_date !== undefined ? updates.guess_date : existing.guess_date,
-        deadline: updates.deadline !== undefined ? updates.deadline : existing.deadline,
-    };
-    for (let i = 1; i <= 6; i++) {
-        const matchKey = `tb${i}_match`;
-        const resultKey = `tb${i}_result`;
-        insertData[matchKey] = updates[matchKey] !== undefined ? updates[matchKey] : (existing[matchKey] || '');
-        insertData[resultKey] = updates[resultKey] !== undefined ? updates[resultKey] : (existing[resultKey] || '');
-    }
-
-    // 3. 插入新记录
-    let { error: insertError } = await supabase
-        .from('daily_guesses')
-        .insert(insertData);
-
-    // tb6 列不存在的重试
-    if (insertError && insertError.message && insertError.message.includes('tb6')) {
-        delete insertData.tb6_match;
-        delete insertData.tb6_result;
-        const retry = await supabase
-            .from('daily_guesses')
-            .insert(insertData);
-        insertError = retry.error;
-    }
-
-    if (insertError) {
-        return { success: false, error: '更新竞猜失败: ' + insertError.message };
-    }
-
-    // 4. 删除旧记录（新记录已安全插入）
-    const { error: deleteError } = await supabase
-        .from('daily_guesses')
-        .delete()
-        .eq('id', id);
-
-    if (deleteError) {
-        console.warn('旧记录删除失败，可能产生重复记录:', deleteError.message);
+    if (mismatch) {
+        return await fallbackInsertDelete();
     }
 
     return { success: true, error: null };

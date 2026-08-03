@@ -2149,7 +2149,10 @@
                     if (aT > 0 || bT > 0) scoreDisplay = aT + ' - ' + bT;
                 }
                 if (scoreDisplay !== '-' && reason) scoreDisplay += ' (' + reason + ')';
-                return '<tr><td>' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + escapeHtml(m.p1_name || 'TBD') + '</td><td>' + escapeHtml(m.p2_name || 'TBD') + '</td><td>' + scoreDisplay + '</td><td>' + (m.match_date || '-') + '</td><td>' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td><button class="btn btn-outline btn-sm" onclick="adminEditMatch(' + m.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteMatch(' + m.id + ')">删除</button></td></tr>';
+                const actionBtns = '<button class="btn btn-outline btn-sm" onclick="adminEditMatch(' + m.id + ')">编辑</button>' +
+                    (m.status === 'completed' ? ' <button class="btn btn-warning btn-sm" onclick="adminRevertMatch(' + m.id + ')">撤销</button>' : '') +
+                    ' <button class="btn btn-danger btn-sm" onclick="adminDeleteMatch(' + m.id + ')">删除</button>';
+                return '<tr><td>' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + escapeHtml(m.p1_name || 'TBD') + '</td><td>' + escapeHtml(m.p2_name || 'TBD') + '</td><td>' + scoreDisplay + '</td><td>' + (m.match_date || '-') + '</td><td>' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td>' + actionBtns + '</td></tr>';
             }).join('');
         };
 
@@ -2506,6 +2509,17 @@
 
         window.adminEditMatch = async function(mid) {
             await adminOpenMatchModal(mid);
+        };
+
+        window.adminRevertMatch = async function(mid) {
+            if (!confirm('确定撤销此比赛结果？\n\n此操作会：\n1. 将比赛状态改回「待进行」\n2. 清除胜者\n3. 从下一轮中移除该胜者\n\n确定继续吗？')) return;
+            const result = await revertMatchResult(mid);
+            if (result.success) {
+                showToast('比赛结果已撤销，下一轮晋级球员已清除', 'success');
+                adminLoadMatchList();
+            } else {
+                showToast('撤销失败: ' + (result.error || '未知错误'), 'error');
+            }
         };
 
         window.adminDeleteMatch = async function(mid) {

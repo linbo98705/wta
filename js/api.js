@@ -974,6 +974,101 @@ async function updateMatch(mid, data) {
 }
 
 /**
+ * 撤销比赛结果（回退已完成的比赛）
+ * 1. 将比赛状态改回 scheduled，清除 winner_id
+ * 2. 清除下一轮对应位置的晋级球员
+ * 3. 如下一轮双方都清空了，状态改回 pending
+ * @param {number} mid - 比赛 ID
+ * @returns {Promise<Object>} { success, error }
+ */
+async function revertMatchResult(mid) {
+    // 获取当前比赛信息
+    const { data: match, error: fetchError } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('id', mid)
+        .single();
+
+    if (fetchError || !match) {
+        return { success: false, error: '比赛未找到' };
+    }
+
+    const tid = match.tournament_id;
+    const currentRound = match.round;
+    const roundOrder = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+
+    try {
+        // 1. 回退当前比赛状态
+        await supabase
+            .from('matches')
+            .update({ status: 'scheduled', winner_id: null })
+            .eq('id', mid);
+
+        // 2. 清除下一轮的晋级球员
+        if (roundOrder.includes(currentRound)) {
+            const rIdx = roundOrder.indexOf(currentRound);
+            if (rIdx < roundOrder.length - 1) {
+                const nextRound = roundOrder[rIdx + 1];
+
+                // 获取当前轮次所有比赛
+                const { data: curMatches } = await supabase
+                    .from('matches')
+                    .select('*')
+                    .eq('tournament_id', tid)
+                    .eq('round', currentRound)
+                    .order('match_order', { ascending: true });
+
+                // 获取下一轮所有比赛
+                const { data: nextMatches } = await supabase
+                    .from('matches')
+                    .select('*')
+                    .eq('tournament_id', tid)
+                    .eq('round', nextRound)
+                    .order('match_order', { ascending: true });
+
+                if (curMatches && nextMatches) {
+                    // 找到当前比赛在轮次中的位置
+                    let curIdx = null;
+                    for (let ci = 0; ci < curMatches.length; ci++) {
+                        if (curMatches[ci].id === mid) {
+                            curIdx = ci + 1; // 1-indexed
+                            break;
+                        }
+                    }
+
+                    if (curIdx !== null) {
+                        const nextIdx = Math.floor((curIdx - 1) / 2); // 0-indexed
+                        if (nextIdx < nextMatches.length) {
+                            const nxt = nextMatches[nextIdx];
+                            const slot = (curIdx % 2 === 1) ? 'player1_id' : 'player2_id';
+
+                            // 清除对应位置的球员
+                            const updateData = { [slot]: null };
+
+                            // 检查清除后双方是否都空了，如果都空了则状态改回 pending
+                            const remainingP1 = slot === 'player1_id' ? null : nxt.player1_id;
+                            const remainingP2 = slot === 'player2_id' ? null : nxt.player2_id;
+                            if (!remainingP1 && !remainingP2) {
+                                updateData.status = 'pending';
+                            }
+
+                            await supabase
+                                .from('matches')
+                                .update(updateData)
+                                .eq('id', nxt.id);
+                        }
+                    }
+                }
+            }
+        }
+
+        return { success: true, error: null };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+}
+
+/**
  * 创建单场比赛
  * @param {Object} data - 比赛数据
  * @returns {Promise<Object>} { success, id, error }

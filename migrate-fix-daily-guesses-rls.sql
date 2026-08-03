@@ -1,29 +1,69 @@
--- 修复 daily_guesses 表的 RLS 策略和列权限
--- 问题原因：tb3-tb6 列可能缺少 GRANT UPDATE/INSERT 权限，
--- 导致已登录管理员编辑竞猜时 tb1/tb2 能更新但 tb3-tb6 被静默忽略
+-- 修复 daily_guesses 表的更新问题
+-- 问题原因：tb3-tb6 列可能缺少 GRANT UPDATE 权限，导致 UPDATE 静默忽略这些列
+-- 解决方案：创建 SECURITY DEFINER 函数绕过 RLS 和列权限
 -- 在 Supabase Dashboard 的 SQL Editor 中执行此文件
 
 -- ═══════════════════════════════════════════
--- 1. RLS 策略（行级安全）
+-- 1. 创建 RPC 函数（SECURITY DEFINER 绕过所有权限检查）
+-- ═══════════════════════════════════════════
+
+CREATE OR REPLACE FUNCTION public.update_daily_guess(
+    p_id BIGINT,
+    p_data JSONB
+) RETURNS JSONB AS $$
+DECLARE
+    result_row daily_guesses%ROWTYPE;
+BEGIN
+    UPDATE daily_guesses SET
+        guess_date = COALESCE(p_data->>'guess_date', guess_date),
+        deadline = COALESCE(p_data->>'deadline', deadline),
+        tb1_match = COALESCE(p_data->>'tb1_match', tb1_match),
+        tb1_result = COALESCE(p_data->>'tb1_result', tb1_result),
+        tb2_match = COALESCE(p_data->>'tb2_match', tb2_match),
+        tb2_result = COALESCE(p_data->>'tb2_result', tb2_result),
+        tb3_match = COALESCE(p_data->>'tb3_match', tb3_match),
+        tb3_result = COALESCE(p_data->>'tb3_result', tb3_result),
+        tb4_match = COALESCE(p_data->>'tb4_match', tb4_match),
+        tb4_result = COALESCE(p_data->>'tb4_result', tb4_result),
+        tb5_match = COALESCE(p_data->>'tb5_match', tb5_match),
+        tb5_result = COALESCE(p_data->>'tb5_result', tb5_result),
+        tb6_match = COALESCE(p_data->>'tb6_match', tb6_match),
+        tb6_result = COALESCE(p_data->>'tb6_result', tb6_result)
+    WHERE id = p_id
+    RETURNING * INTO result_row;
+
+    IF result_row IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Record not found');
+    END IF;
+
+    RETURN to_jsonb(result_row);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 允许已登录用户调用此函数
+GRANT EXECUTE ON FUNCTION public.update_daily_guess(BIGINT, JSONB) TO authenticated;
+
+-- ═══════════════════════════════════════════
+-- 2. 修复列权限（双保险）
 -- ═══════════════════════════════════════════
 
 ALTER TABLE daily_guesses ENABLE ROW LEVEL SECURITY;
 
--- 允许匿名用户和已登录用户 SELECT（前台展示需要）
+-- 允许匿名用户和已登录用户 SELECT
 DROP POLICY IF EXISTS "daily_guesses_select_all" ON daily_guesses;
 CREATE POLICY "daily_guesses_select_all"
     ON daily_guesses FOR SELECT
     TO anon, authenticated
     USING (true);
 
--- 允许已登录用户 INSERT（管理员创建竞猜）
+-- 允许已登录用户 INSERT
 DROP POLICY IF EXISTS "daily_guesses_insert_authenticated" ON daily_guesses;
 CREATE POLICY "daily_guesses_insert_authenticated"
     ON daily_guesses FOR INSERT
     TO authenticated
     WITH CHECK (true);
 
--- 允许已登录用户 UPDATE（管理员编辑竞猜）
+-- 允许已登录用户 UPDATE
 DROP POLICY IF EXISTS "daily_guesses_update_authenticated" ON daily_guesses;
 CREATE POLICY "daily_guesses_update_authenticated"
     ON daily_guesses FOR UPDATE
@@ -31,26 +71,13 @@ CREATE POLICY "daily_guesses_update_authenticated"
     USING (true)
     WITH CHECK (true);
 
--- 允许已登录用户 DELETE（管理员删除竞猜）
+-- 允许已登录用户 DELETE
 DROP POLICY IF EXISTS "daily_guesses_delete_authenticated" ON daily_guesses;
 CREATE POLICY "daily_guesses_delete_authenticated"
     ON daily_guesses FOR DELETE
     TO authenticated
     USING (true);
 
--- ═══════════════════════════════════════════
--- 2. 列级权限（关键修复！）
--- 当通过 ALTER TABLE 后续添加 tb3-tb6 列时，
--- 新列可能不会自动继承 authenticated 角色的 UPDATE/INSERT 权限
--- 这会导致 PostgREST 静默忽略这些列的更新
--- ═══════════════════════════════════════════
-
--- 授予 authenticated 角色对所有列的完整权限
+-- 确保所有列都有完整的权限
 GRANT SELECT, INSERT, UPDATE, DELETE ON daily_guesses TO authenticated;
 GRANT SELECT ON daily_guesses TO anon;
-
--- 确保所有列（包括 tb3-tb6）都有 UPDATE 权限
--- PostgreSQL 中 GRANT UPDATE ON table 会覆盖所有列，无需逐列授权
--- 但如果之前使用过 GRANT UPDATE (col1, col2) 限制了列，需要重新授予全表权限
-GRANT UPDATE ON daily_guesses TO authenticated;
-GRANT INSERT ON daily_guesses TO authenticated;

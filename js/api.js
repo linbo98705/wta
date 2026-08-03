@@ -1168,68 +1168,38 @@ async function updateDailyGuess(id, data) {
         return { success: true, error: null };
     }
 
-    // ── 内部回退方案：INSERT 新记录 + DELETE 旧记录 ──
-    // 当 UPDATE 被 RLS 阻止或列权限缺失时使用
-    async function fallbackInsertDelete() {
-        console.warn('UPDATE 失败或部分字段未更新，使用 INSERT+DELETE 回退方案');
+    // ── 方案1：RPC 函数（SECURITY DEFINER，绕过 RLS 和列权限）──
+    // 需要在 Supabase Dashboard 执行 migrate-fix-daily-guesses-rls.sql 创建函数
+    try {
+        const { data: rpcResult, error: rpcError } = await supabase
+            .rpc('update_daily_guess', { p_id: id, p_data: updates });
 
-        // 1. 获取原记录
-        const { data: existing, error: fetchError } = await supabase
-            .from('daily_guesses')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-        if (fetchError || !existing) {
-            return { success: false, error: '无法更新竞猜（无法获取原记录）' };
+        if (!rpcError && rpcResult) {
+            // RPC 成功，验证返回数据
+            if (rpcResult.error) {
+                return { success: false, error: rpcResult.error };
+            }
+            // 验证所有字段是否正确写入
+            let allMatch = true;
+            for (const k of Object.keys(updates)) {
+                const sentVal = updates[k] || '';
+                const gotVal = (rpcResult[k] !== null && rpcResult[k] !== undefined) ? rpcResult[k] : '';
+                if (sentVal !== gotVal) {
+                    console.warn(`RPC: 字段 ${k} 不匹配: 发送="${sentVal}", 返回="${gotVal}"`);
+                    allMatch = false;
+                    break;
+                }
+            }
+            if (allMatch) {
+                return { success: true, error: null };
+            }
+            // RPC 数据不匹配，继续尝试方案2
         }
-
-        // 2. 构建新记录（合并原有字段和更新字段）
-        const insertData = {
-            tournament_id: existing.tournament_id,
-            guess_date: updates.guess_date !== undefined ? updates.guess_date : existing.guess_date,
-            deadline: updates.deadline !== undefined ? updates.deadline : existing.deadline,
-        };
-        for (let i = 1; i <= 6; i++) {
-            const mk = `tb${i}_match`;
-            const rk = `tb${i}_result`;
-            insertData[mk] = updates[mk] !== undefined ? updates[mk] : (existing[mk] || '');
-            insertData[rk] = updates[rk] !== undefined ? updates[rk] : (existing[rk] || '');
-        }
-
-        // 3. 插入新记录
-        let { error: insertError } = await supabase
-            .from('daily_guesses')
-            .insert(insertData);
-
-        // tb6 列不存在的重试
-        if (insertError && insertError.message && insertError.message.includes('tb6')) {
-            delete insertData.tb6_match;
-            delete insertData.tb6_result;
-            const retry = await supabase
-                .from('daily_guesses')
-                .insert(insertData);
-            insertError = retry.error;
-        }
-
-        if (insertError) {
-            return { success: false, error: '更新竞猜失败: ' + insertError.message };
-        }
-
-        // 4. 删除旧记录
-        const { error: deleteError } = await supabase
-            .from('daily_guesses')
-            .delete()
-            .eq('id', id);
-
-        if (deleteError) {
-            console.warn('旧记录删除失败，可能产生重复记录:', deleteError.message);
-        }
-
-        return { success: true, error: null };
+    } catch (e) {
+        console.warn('RPC 不可用，使用直接 UPDATE:', e.message);
     }
 
-    // ── 主逻辑：尝试 UPDATE + .select() ──
+    // ── 方案2：直接 UPDATE + .select() 验证 ──
     let { data: updatedRows, error } = await supabase
         .from('daily_guesses')
         .update(updates)
@@ -1249,33 +1219,28 @@ async function updateDailyGuess(id, data) {
         error = retry.error;
     }
 
-    // 有错误 → 如果是权限相关错误，尝试回退
     if (error) {
-        console.warn('UPDATE 出错:', error.message, '— 尝试 INSERT+DELETE 回退');
-        return await fallbackInsertDelete();
+        return { success: false, error: error.message };
     }
 
-    // 返回空数组 → RLS 静默阻止了整个 UPDATE
+    // UPDATE 返回空数组 → RLS 阻止了更新
     if (!updatedRows || updatedRows.length === 0) {
-        return await fallbackInsertDelete();
+        return { success: false, error: '更新失败：权限不足，请执行 SQL 迁移修复' };
     }
 
-    // 返回了数据 → 验证所有更新的字段是否真正写入
-    // 防止 PostgREST 静默忽略无 UPDATE 权限的列（tb3-tb6 列权限缺失时）
+    // 验证所有更新的字段是否真正写入
+    // 防止 PostgREST 静默忽略无 UPDATE 权限的列
     const updated = updatedRows[0];
-    let mismatch = false;
     for (const k of Object.keys(updates)) {
         const sentVal = updates[k] || '';
         const gotVal = (updated[k] !== null && updated[k] !== undefined) ? updated[k] : '';
         if (sentVal !== gotVal) {
-            console.warn(`字段 ${k} 更新不匹配: 发送="${sentVal}", 返回="${gotVal}"`);
-            mismatch = true;
-            break;
+            console.warn(`字段 ${k} 更新失败: 发送="${sentVal}", 实际="${gotVal}"`);
+            return {
+                success: false,
+                error: `字段 ${k} 更新失败（列权限缺失）。请在 Supabase Dashboard 执行 migrate-fix-daily-guesses-rls.sql`
+            };
         }
-    }
-
-    if (mismatch) {
-        return await fallbackInsertDelete();
     }
 
     return { success: true, error: null };

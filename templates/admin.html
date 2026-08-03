@@ -1406,14 +1406,9 @@ function parseMatchGuessTextSeparate() {
 
         if (lineA) document.getElementById('gaPred' + tbIndex).value = lineA;
         if (lineB) document.getElementById('gbPred' + tbIndex).value = lineB;
-        // TB3~TB6得分强制为空
-        if (tbIndex >= 3) {
-            document.getElementById('gaPs' + tbIndex).value = '';
-            document.getElementById('gbPs' + tbIndex).value = '';
-        } else {
-            document.getElementById('gaPs' + tbIndex).value = scoreA || '';
-            document.getElementById('gbPs' + tbIndex).value = scoreB || '';
-        }
+        // 所有得分保持空，不自动填充
+        document.getElementById('gaPs' + tbIndex).value = '';
+        document.getElementById('gbPs' + tbIndex).value = '';
 
         if (lineA || lineB) parsedCount++;
     }

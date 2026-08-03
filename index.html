@@ -1327,7 +1327,7 @@
                         <select class="form-control" id="matchTournamentSelect" onchange="adminLoadMatchList()" style="width:auto;"><option value="">请选择赛事</option></select>
                         <button class="btn btn-success btn-sm" onclick="adminGenerateDraw()">&#127922; 生成签表</button>
                         <button class="btn btn-outline btn-sm" onclick="adminAdvanceByes()">&#9193; 处理轮空晋级</button>
-                        <button class="btn btn-primary btn-sm" onclick="adminOpenMatchModal()">+ 添加比赛</button>
+                        <button class="btn btn-primary btn-sm" onclick="adminOpenMatchModal()" style="display:none;">+ 添加比赛</button>
                         <select class="form-control" id="matchExportDateSelect" style="width:auto; font-size:0.8125rem; padding:4px 8px;"><option value="">所有日期</option></select>
                         <button class="btn btn-outline btn-sm" onclick="adminExportMatchupsText()">&#128196; 导出对阵</button>
                     </div>
@@ -2158,8 +2158,7 @@
                 }
                 if (scoreDisplay !== '-' && reason) scoreDisplay += ' (' + reason + ')';
                 const actionBtns = '<button class="btn btn-outline btn-sm" onclick="adminEditMatch(' + m.id + ')">编辑</button>' +
-                    (m.status === 'completed' ? ' <button class="btn btn-warning btn-sm" onclick="adminRevertMatch(' + m.id + ')">撤销</button>' : '') +
-                    ' <button class="btn btn-danger btn-sm" onclick="adminDeleteMatch(' + m.id + ')">删除</button>';
+                    (m.status === 'completed' ? ' <button class="btn btn-warning btn-sm" onclick="adminRevertMatch(' + m.id + ')">撤销</button>' : '');
                 return '<tr><td>' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + escapeHtml(m.p1_name || 'TBD') + '</td><td>' + escapeHtml(m.p2_name || 'TBD') + '</td><td>' + scoreDisplay + '</td><td>' + (m.match_date || '-') + '</td><td>' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td>' + actionBtns + '</td></tr>';
             }).join('');
         };

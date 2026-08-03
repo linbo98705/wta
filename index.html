@@ -1204,6 +1204,7 @@
     let allPlayersCache = [];
     let entryAllPlayersCache = [];
     let allEntryPlayersCache = [];
+    let allMatchesCache = [];
 
     async function renderAdmin() {
         const loggedIn = await isAdminLoggedIn();
@@ -1325,6 +1326,7 @@
                     <h3>比赛管理</h3>
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <select class="form-control" id="matchTournamentSelect" onchange="adminLoadMatchList()" style="width:auto;"><option value="">请选择赛事</option></select>
+                        <input type="text" class="form-control" id="matchSearchInput" placeholder="搜索球员/轮次/场地..." oninput="adminFilterMatchList()" style="width:200px;">
                         <button class="btn btn-success btn-sm" onclick="adminGenerateDraw()">&#127922; 生成签表</button>
                         <button class="btn btn-outline btn-sm" onclick="adminAdvanceByes()">&#9193; 处理轮空晋级</button>
                         <button class="btn btn-primary btn-sm" onclick="adminOpenMatchModal()" style="display:none;">+ 添加比赛</button>
@@ -1976,6 +1978,11 @@
             const data = await getTournaments();
             const select = document.getElementById('entryTournamentSelect');
             select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + ' (' + escapeHtml(t.category) + ')</option>').join('') : '');
+            const activeId = findActiveTournamentId(data);
+            if (activeId && !select.value) {
+                select.value = activeId;
+                adminLoadEntryList();
+            }
         }
 
         window.adminLoadEntryList = async function() {
@@ -2115,19 +2122,55 @@
             else { showToast('重算失败', 'error'); }
         };
 
+        // ── 查找当前正在进行的赛事 ──
+        function findActiveTournamentId(tournaments) {
+            if (!Array.isArray(tournaments) || tournaments.length === 0) return null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            // 优先找 is_active 且日期范围内的
+            let active = tournaments.find(t => {
+                if (!t.is_active) return false;
+                const start = t.start_date ? new Date(t.start_date) : null;
+                const end = t.end_date ? new Date(t.end_date) : null;
+                if (start && end) {
+                    start.setHours(0, 0, 0, 0);
+                    end.setHours(23, 59, 59, 999);
+                    return today >= start && today <= end;
+                }
+                return t.is_active;
+            });
+            if (active) return active.id;
+            // 其次找 is_active 的
+            active = tournaments.find(t => t.is_active);
+            if (active) return active.id;
+            // 最后找最近开始的
+            const sorted = [...tournaments].sort((a, b) => {
+                const da = a.start_date ? new Date(a.start_date) : new Date(0);
+                const db = b.start_date ? new Date(b.start_date) : new Date(0);
+                return db - da;
+            });
+            return sorted[0] ? sorted[0].id : null;
+        }
+
         // ── Match Management ──
         window.adminLoadMatchSelect = async function() {
             const data = await getTournaments();
             const select = document.getElementById('matchTournamentSelect');
             select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + '</option>').join('') : '');
+            const activeId = findActiveTournamentId(data);
+            if (activeId && !select.value) {
+                select.value = activeId;
+                adminLoadMatchList();
+            }
         }
 
         window.adminLoadMatchList = async function() {
             const tid = document.getElementById('matchTournamentSelect').value;
             if (!tid) return;
             const matches = await getMatches(parseInt(tid));
+            allMatchesCache = Array.isArray(matches) ? matches : [];
             const tbody = document.getElementById('matchTable');
-            if (!Array.isArray(matches) || matches.length === 0) {
+            if (allMatchesCache.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;">暂无比赛，请先生成签表或手动添加</td></tr>';
                 // 清空日期选择器
                 const dateSelect = document.getElementById('matchExportDateSelect');
@@ -2136,7 +2179,7 @@
             }
 
             // 填充导出日期选择器（从非 bye 比赛的 match_date 提取）
-            const realMatches = matches.filter(m => m.status !== 'bye');
+            const realMatches = allMatchesCache.filter(m => m.status !== 'bye');
             const dates = [...new Set(realMatches.map(m => m.match_date).filter(d => d))].sort();
             const dateSelect = document.getElementById('matchExportDateSelect');
             if (dateSelect) {
@@ -2147,6 +2190,35 @@
                 }).join('');
             }
 
+            // 清空搜索框
+            const searchInput = document.getElementById('matchSearchInput');
+            if (searchInput) searchInput.value = '';
+
+            adminRenderMatchList(allMatchesCache);
+        };
+
+        window.adminFilterMatchList = function() {
+            const keyword = (document.getElementById('matchSearchInput') ? document.getElementById('matchSearchInput').value : '').trim().toLowerCase();
+            if (!keyword) {
+                adminRenderMatchList(allMatchesCache);
+                return;
+            }
+            const filtered = allMatchesCache.filter(m => {
+                return (m.p1_name || '').toLowerCase().includes(keyword) ||
+                    (m.p2_name || '').toLowerCase().includes(keyword) ||
+                    (m.round || '').toLowerCase().includes(keyword) ||
+                    (m.court || '').toLowerCase().includes(keyword) ||
+                    (m.match_date || '').includes(keyword);
+            });
+            adminRenderMatchList(filtered);
+        };
+
+        window.adminRenderMatchList = function(matches) {
+            const tbody = document.getElementById('matchTable');
+            if (!Array.isArray(matches) || matches.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;">未找到匹配的比赛</td></tr>';
+                return;
+            }
             tbody.innerHTML = matches.map(m => {
                 const score = m.score || '';
                 const reason = m.guess_reason || '';
@@ -2627,6 +2699,11 @@
             const data = await getTournaments();
             const select = document.getElementById('guessTournamentSelect');
             select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + '</option>').join('') : '');
+            const activeId = findActiveTournamentId(data);
+            if (activeId && !select.value) {
+                select.value = activeId;
+                adminLoadDailyGuessList();
+            }
         }
 
         window.adminLoadDailyGuessList = async function() {

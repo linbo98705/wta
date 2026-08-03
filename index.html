@@ -779,11 +779,11 @@
                        '</div>';
             }
             function scoreACell(val) {
-                if (!val || val.trim() === '') return '<span class="gc-score-zero">0</span>';
+                if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
                 return '<span class="gc-a-score">' + (parseInt(val) || 0) + '</span>';
             }
             function scoreBCell(val) {
-                if (!val || val.trim() === '') return '<span class="gc-score-zero">0</span>';
+                if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
                 return '<span class="gc-b-score">' + (parseInt(val) || 0) + '</span>';
             }
 

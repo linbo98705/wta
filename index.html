@@ -2468,9 +2468,8 @@
             const p2Id = document.getElementById('mPlayer2').value ? parseInt(document.getElementById('mPlayer2').value) : null;
             const aPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gaPred' + i).value.trim());
             const bPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gbPred' + i).value.trim());
-            // TB3~TB6得分强制为空，TB1~TB2空值按0处理
-            const aScores = [1, 2, 3, 4, 5, 6].map(i => i >= 3 ? '' : (parseInt(document.getElementById('gaPs' + i).value) || 0));
-            const bScores = [1, 2, 3, 4, 5, 6].map(i => i >= 3 ? '' : (parseInt(document.getElementById('gbPs' + i).value) || 0));
+            const aScores = [1, 2, 3, 4, 5, 6].map(i => i >= 3 ? '' : ((document.getElementById('gaPs' + i).value || '').trim()));
+            const bScores = [1, 2, 3, 4, 5, 6].map(i => i >= 3 ? '' : ((document.getElementById('gbPs' + i).value || '').trim()));
             const aTotal = aScores.slice(0, 2).reduce((s, v) => s + (parseInt(v) || 0), 0);
             const bTotal = bScores.slice(0, 2).reduce((s, v) => s + (parseInt(v) || 0), 0);
             const guessWinner = document.getElementById('mGuessWinner').value;

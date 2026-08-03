@@ -789,6 +789,13 @@
 
             let rows = '';
             for (let i = 0; i < 6; i++) {
+                const aName = aNames[i] ? aNames[i].trim() : '';
+                const bName = bNames[i] ? bNames[i].trim() : '';
+                const aScoreTxt = aScoreTexts[i] ? aScoreTexts[i].trim() : '';
+                const bScoreTxt = bScoreTexts[i] ? bScoreTexts[i].trim() : '';
+                const aSc = aScores[i] ? aScores[i].trim() : '';
+                const bSc = bScores[i] ? bScores[i].trim() : '';
+                if (!aName && !bName && !aScoreTxt && !bScoreTxt && !aSc && !bSc) continue;
                 rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
             }
 
@@ -1070,6 +1077,7 @@
             for (let i = 1; i <= 6; i++) {
                 const match = g['tb' + i + '_match'] || '';
                 const result = g['tb' + i + '_result'] || '';
+                if (!match && !result) continue;
                 if (result) hasResult = true;
                 if (match) hasAnyMatch = true;
                 if (match && !result) allResult = false;

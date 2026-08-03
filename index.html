@@ -1557,12 +1557,12 @@
                 <table class="data-table" style="margin-top: 8px;">
                     <thead><tr><th style="width:60px;">TB</th><th>对阵 (如: 奥克佳布列娃 vs 多丹)</th><th>胜者球员</th><th>比分 (如: 6-3 6-3)</th></tr></thead>
                     <tbody>
-                        <tr><td><input type="text" class="form-control" value="TB1" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb1Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb1Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb1Score" placeholder="6-3 6-3"></td></tr>
-                        <tr><td><input type="text" class="form-control" value="TB2" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb2Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb2Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb2Score" placeholder="6-3 6-3"></td></tr>
-                        <tr><td><input type="text" class="form-control" value="TB3" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb3Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb3Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb3Score" placeholder="6-3 6-3"></td></tr>
-                        <tr><td><input type="text" class="form-control" value="TB4" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb4Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb4Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb4Score" placeholder="6-3 6-3"></td></tr>
-                        <tr><td><input type="text" class="form-control" value="TB5" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb5Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb5Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb5Score" placeholder="6-3 6-3"></td></tr>
-                        <tr><td><input type="text" class="form-control" value="TB6" readonly style="text-align:center; font-weight:bold;"></td><td><input type="text" class="form-control" id="gTb6Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb6Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb6Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td style="text-align:center; font-weight:bold;">TB1</td><td><input type="text" class="form-control" id="gTb1Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb1Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb1Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td style="text-align:center; font-weight:bold;">TB2</td><td><input type="text" class="form-control" id="gTb2Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb2Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb2Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td style="text-align:center; font-weight:bold;">TB3</td><td><input type="text" class="form-control" id="gTb3Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb3Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb3Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td style="text-align:center; font-weight:bold;">TB4</td><td><input type="text" class="form-control" id="gTb4Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb4Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb4Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td style="text-align:center; font-weight:bold;">TB5</td><td><input type="text" class="form-control" id="gTb5Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb5Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb5Score" placeholder="6-3 6-3"></td></tr>
+                        <tr><td style="text-align:center; font-weight:bold;">TB6</td><td><input type="text" class="form-control" id="gTb6Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb6Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb6Score" placeholder="6-3 6-3"></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -2657,7 +2657,10 @@
             }
             let filled = 0;
             for (let i = 0; i < Math.min(lines.length, 6); i++) {
-                const line = lines[i];
+                let line = lines[i];
+                // 去掉冒号及之前的内容（如 "郑钦文: 郑钦文 vs 艾拉" → "郑钦文 vs 艾拉"）
+                const colonIdx = line.search(/[:：]/);
+                if (colonIdx >= 0) line = line.substring(colonIdx + 1).trim();
                 // 大小写不敏感，不要求两侧必须有空格
                 const parts = line.split(/\s*vs\s*/i);
                 if (parts.length >= 2) {

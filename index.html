@@ -76,7 +76,7 @@
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=8"></script>
-    <script src="js/api.js?v=11"></script>
+    <script src="js/api.js?v=12"></script>
     <script src="js/draw-engine.js?v=12"></script>
 
     <script>
@@ -459,8 +459,9 @@
 
         showToast('正在生成长图...', 'info');
         try {
-            const tid = window.location.hash.match(/tournament\/(\d+)/)?.[1];
-            const t = tid ? await getTournament(tid) : null;
+            var hashMatch = window.location.hash.match(/tournament\/(\d+)/);
+            var tid = hashMatch ? hashMatch[1] : null;
+            var t = tid ? await getTournament(tid) : null;
 
             // 获取页面上的实际元素
             const headerSection = document.querySelector('#app .tournament-header');
@@ -559,8 +560,9 @@
 
         showToast('正在生成长图...', 'info');
         try {
-            const tid = window.location.hash.match(/tournament\/(\d+)/)?.[1];
-            const t = tid ? await getTournament(tid) : null;
+            var hashMatch2 = window.location.hash.match(/tournament\/(\d+)/);
+            var tid = hashMatch2 ? hashMatch2[1] : null;
+            var t = tid ? await getTournament(tid) : null;
 
             // 获取页面上的实际元素
             const headerSection = document.querySelector('#app .tournament-header');
@@ -910,8 +912,9 @@
 
             showToast('正在生成长图...', 'info');
             try {
-                const tid = window.location.hash.match(/tournament\/(\d+)/)?.[1];
-                const t = tid ? await getTournament(tid) : null;
+                var hashMatch3 = window.location.hash.match(/tournament\/(\d+)/);
+                var tid = hashMatch3 ? hashMatch3[1] : null;
+                var t = tid ? await getTournament(tid) : null;
 
                 // 获取页面上的实际元素
                 const headerSection = document.querySelector('#app .tournament-header');
@@ -949,7 +952,7 @@
                 wrapper.style.position = 'fixed';
                 wrapper.style.left = '-9999px';
                 wrapper.style.top = '0';
-                wrapper.style.width = '1200px';
+                wrapper.style.width = '800px';
                 wrapper.style.background = '#fff';
                 document.body.appendChild(wrapper);
 

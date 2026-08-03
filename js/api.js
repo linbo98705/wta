@@ -776,7 +776,7 @@ async function recalcSeeds(tid) {
         .map(r => ({
             tp_id: r.id,
             old_seed: r.seed || 0,
-            ranking: r.player?.ranking || 999,
+            ranking: (r.player && r.player.ranking) || 999,
         }))
         .sort((a, b) => a.ranking - b.ranking);
 
@@ -835,13 +835,13 @@ async function getMatches(tid, roundFilter) {
     // 展平关联数据，保持与旧 API 兼容的字段名
     return (data || []).map(m => ({
         ...m,
-        p1_name: m.player1?.name || '',
-        p1_country: m.player1?.country || '',
-        p1_country_code: m.player1?.country_code || '',
-        p2_name: m.player2?.name || '',
-        p2_country: m.player2?.country || '',
-        p2_country_code: m.player2?.country_code || '',
-        winner_name: m.winner?.name || '',
+        p1_name: (m.player1 && m.player1.name) || '',
+        p1_country: (m.player1 && m.player1.country) || '',
+        p1_country_code: (m.player1 && m.player1.country_code) || '',
+        p2_name: (m.player2 && m.player2.name) || '',
+        p2_country: (m.player2 && m.player2.country) || '',
+        p2_country_code: (m.player2 && m.player2.country_code) || '',
+        winner_name: (m.winner && m.winner.name) || '',
     }));
 }
 

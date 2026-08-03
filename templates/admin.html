@@ -1462,6 +1462,9 @@ function parseMatchGuessTextSeparate() {
     calcTotals();
 
     if (parsedCount > 0) {
+        // 解析成功后清空文本框，避免下次解析时误判两侧都有内容
+        document.getElementById('matchGuessTextInputA').value = '';
+        document.getElementById('matchGuessTextInputB').value = '';
         showToast(`成功解析 ${parsedCount} 个TB的竞猜内容`, 'success');
     } else {
         showToast('未能解析到有效内容，请检查格式（每行需以TB开头）', 'error');

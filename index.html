@@ -2585,65 +2585,72 @@
 
         window.adminSaveMatch = async function(e) {
             e.preventDefault();
-            const id = document.getElementById('mId').value;
-            const tid = document.getElementById('matchTournamentSelect').value;
-            const status = document.getElementById('mStatus').value;
-            const p1Id = document.getElementById('mPlayer1').value ? parseInt(document.getElementById('mPlayer1').value) : null;
-            const p2Id = document.getElementById('mPlayer2').value ? parseInt(document.getElementById('mPlayer2').value) : null;
-            const aPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gaPred' + i).value.trim());
-            const bPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gbPred' + i).value.trim());
-            const aScores = [1, 2, 3, 4, 5, 6].map(i => i >= 3 ? '' : ((document.getElementById('gaPs' + i).value || '').trim()));
-            const bScores = [1, 2, 3, 4, 5, 6].map(i => i >= 3 ? '' : ((document.getElementById('gbPs' + i).value || '').trim()));
-            const aTotal = aScores.slice(0, 2).reduce((s, v) => s + (parseInt(v) || 0), 0);
-            const bTotal = bScores.slice(0, 2).reduce((s, v) => s + (parseInt(v) || 0), 0);
-            const guessWinner = document.getElementById('mGuessWinner').value;
-            const guessReason = document.getElementById('mGuessReason').value.trim();
+            try {
+                const id = document.getElementById('mId').value;
+                const tid = document.getElementById('matchTournamentSelect').value;
+                if (!tid) { showToast('请先选择赛事', 'error'); return; }
+                const status = document.getElementById('mStatus').value;
+                const p1Id = document.getElementById('mPlayer1').value ? parseInt(document.getElementById('mPlayer1').value) : null;
+                const p2Id = document.getElementById('mPlayer2').value ? parseInt(document.getElementById('mPlayer2').value) : null;
+                const aPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gaPred' + i).value.trim());
+                const bPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gbPred' + i).value.trim());
+                const aScores = [1, 2, 3, 4, 5, 6].map(i => i >= 3 ? '' : ((document.getElementById('gaPs' + i).value || '').trim()));
+                const bScores = [1, 2, 3, 4, 5, 6].map(i => i >= 3 ? '' : ((document.getElementById('gbPs' + i).value || '').trim()));
+                const aTotal = aScores.slice(0, 2).reduce((s, v) => s + (parseInt(v) || 0), 0);
+                const bTotal = bScores.slice(0, 2).reduce((s, v) => s + (parseInt(v) || 0), 0);
+                const guessWinner = document.getElementById('mGuessWinner').value;
+                const guessReason = document.getElementById('mGuessReason').value.trim();
 
-            // 只有状态为 completed 时才结算胜负
-            let winnerId = null;
-            if (status === 'completed') {
-                if (guessWinner === 'player1' && p1Id) winnerId = p1Id;
-                else if (guessWinner === 'player2' && p2Id) winnerId = p2Id;
-                else if (aTotal > bTotal && p1Id) winnerId = p1Id;
-                else if (bTotal > aTotal && p2Id) winnerId = p2Id;
-            }
+                // 只有状态为 completed 时才结算胜负
+                let winnerId = null;
+                if (status === 'completed') {
+                    if (guessWinner === 'player1' && p1Id) winnerId = p1Id;
+                    else if (guessWinner === 'player2' && p2Id) winnerId = p2Id;
+                    else if (aTotal > bTotal && p1Id) winnerId = p1Id;
+                    else if (bTotal > aTotal && p2Id) winnerId = p2Id;
+                }
 
-            // 直接用预测内容（球员名+比分合并的格式），用逗号分隔6个TB
-            const aTbCombined = aPreds.join(',');
-            const bTbCombined = bPreds.join(',');
-            const data = {
-                tournament_id: parseInt(tid),
-                round: document.getElementById('mRound').value,
-                match_order: parseInt(document.getElementById('mOrder').value),
-                player1_id: p1Id,
-                player2_id: p2Id,
-                winner_id: winnerId,
-                status: status,
-                court: document.getElementById('mCourt').value.trim(),
-                match_date: document.getElementById('mMatchDate').value,
-                guess_a_tb: aTbCombined,
-                guess_b_tb: bTbCombined,
-                guess_a_total: aTotal,
-                guess_b_total: bTotal,
-                guess_a_tb_score: aScores.join(','),
-                guess_b_tb_score: bScores.join(','),
-                guess_winner: guessWinner,
-                guess_reason: guessReason,
-            };
+                // 直接用预测内容（球员名+比分合并的格式），用逗号分隔6个TB
+                const aTbCombined = aPreds.join(',');
+                const bTbCombined = bPreds.join(',');
+                const matchOrder = parseInt(document.getElementById('mOrder').value);
+                const data = {
+                    tournament_id: parseInt(tid),
+                    round: document.getElementById('mRound').value,
+                    match_order: isNaN(matchOrder) ? 1 : matchOrder,
+                    player1_id: p1Id,
+                    player2_id: p2Id,
+                    winner_id: winnerId,
+                    status: status,
+                    court: document.getElementById('mCourt').value.trim(),
+                    match_date: document.getElementById('mMatchDate').value || '',
+                    guess_a_tb: aTbCombined,
+                    guess_b_tb: bTbCombined,
+                    guess_a_total: aTotal,
+                    guess_b_total: bTotal,
+                    guess_a_tb_score: aScores.join(','),
+                    guess_b_tb_score: bScores.join(','),
+                    guess_winner: guessWinner,
+                    guess_reason: guessReason,
+                };
 
-            let result;
-            if (id) {
-                result = await updateMatch(parseInt(id), data);
-            } else {
-                result = await createMatch(data);
-            }
-            if (result.success) {
-                closeModal('matchModal');
-                const msg = id ? (status === 'completed' ? '比赛已更新，胜者已自动晋级到下一轮' : '比赛已更新') : '比赛已添加';
-                showToast(msg, 'success');
-                adminLoadMatchList();
-            } else {
-                showToast('操作失败: ' + (result.error || '未知错误'), 'error');
+                let result;
+                if (id) {
+                    result = await updateMatch(parseInt(id), data);
+                } else {
+                    result = await createMatch(data);
+                }
+                if (result.success) {
+                    closeModal('matchModal');
+                    const msg = id ? (status === 'completed' ? '比赛已更新，胜者已自动晋级到下一轮' : '比赛已更新') : '比赛已添加';
+                    showToast(msg, 'success');
+                    adminLoadMatchList();
+                } else {
+                    showToast('操作失败: ' + (result.error || '未知错误'), 'error');
+                }
+            } catch (err) {
+                console.error('保存比赛出错:', err);
+                showToast('保存失败: ' + (err.message || '未知错误'), 'error');
             }
         };
 

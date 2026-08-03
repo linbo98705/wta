@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=22">
+    <link rel="stylesheet" href="static/css/style.css?v=23">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -2409,14 +2409,8 @@
                         if (bText.includes('|')) bText = bText.replace('|', ' ');
                         document.getElementById('gaPred' + i).value = aText;
                         document.getElementById('gbPred' + i).value = bText;
-                        // TB3~TB6得分强制为空；其他默认为空而非0
-                        if (i >= 3) {
-                            document.getElementById('gaPs' + i).value = '';
-                            document.getElementById('gbPs' + i).value = '';
-                        } else {
-                            document.getElementById('gaPs' + i).value = aScores[i - 1] || '';
-                            document.getElementById('gbPs' + i).value = bScores[i - 1] || '';
-                        }
+                        document.getElementById('gaPs' + i).value = aScores[i - 1] || '';
+                        document.getElementById('gbPs' + i).value = bScores[i - 1] || '';
                     }
                     document.getElementById('geTotalA').textContent = m.guess_a_total || 0;
                     document.getElementById('geTotalB').textContent = m.guess_b_total || 0;
@@ -2622,10 +2616,10 @@
                 const p2Id = document.getElementById('mPlayer2').value ? parseInt(document.getElementById('mPlayer2').value) : null;
                 const aPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gaPred' + i).value.trim());
                 const bPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gbPred' + i).value.trim());
-                const aScores = [1, 2, 3, 4, 5, 6].map(i => i >= 3 ? '' : ((document.getElementById('gaPs' + i).value || '').trim()));
-                const bScores = [1, 2, 3, 4, 5, 6].map(i => i >= 3 ? '' : ((document.getElementById('gbPs' + i).value || '').trim()));
-                const aTotal = aScores.slice(0, 2).reduce((s, v) => s + (parseInt(v) || 0), 0);
-                const bTotal = bScores.slice(0, 2).reduce((s, v) => s + (parseInt(v) || 0), 0);
+                const aScores = [1, 2, 3, 4, 5, 6].map(i => (document.getElementById('gaPs' + i).value || '').trim());
+                const bScores = [1, 2, 3, 4, 5, 6].map(i => (document.getElementById('gbPs' + i).value || '').trim());
+                const aTotal = aScores.reduce((s, v) => s + (parseInt(v) || 0), 0);
+                const bTotal = bScores.reduce((s, v) => s + (parseInt(v) || 0), 0);
                 const guessWinner = document.getElementById('mGuessWinner').value;
                 const guessReason = document.getElementById('mGuessReason').value.trim();
 

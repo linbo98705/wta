@@ -1261,7 +1261,7 @@
                     <p style="font-size:0.8125rem; color:var(--gray-500); margin-bottom:12px;">支持手动输入或导入 Excel/CSV 文件（格式：中文姓名,国家/地区,排名）。填写完毕后点击「批量保存」。</p>
                     <div style="overflow-x:auto;">
                         <table class="data-table" id="playerEditTable">
-                            <thead><tr><th class="hide-mobile" style="width:30px;">#</th><th>中文姓名</th><th>国家/地区</th><th class="hide-mobile">排名</th><th style="width:60px;">操作</th></tr></thead>
+                            <thead><tr><th class="hide-mobile" style="width:30px;">#</th><th>中文姓名</th><th>国家/地区</th><th>排名</th><th style="width:60px;">操作</th></tr></thead>
                             <tbody id="playerEditBody"></tbody>
                         </table>
                     </div>
@@ -1286,7 +1286,7 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAll" onchange="adminToggleAllCheckboxes(this)"></th><th class="hide-mobile">ID</th><th>姓名</th><th>国家/地区</th><th class="hide-mobile">排名</th><th>操作</th></tr></thead>
+                        <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAll" onchange="adminToggleAllCheckboxes(this)"></th><th class="hide-mobile">ID</th><th>姓名</th><th>国家/地区</th><th>排名</th><th>操作</th></tr></thead>
                         <tbody id="playerTable"></tbody>
                     </table>
                 </div>
@@ -1312,7 +1312,7 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th>种子</th><th>球员</th><th>国家/地区</th><th class="hide-mobile">排名</th><th class="hide-mobile">入围类型</th><th>操作</th></tr></thead>
+                        <thead><tr><th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th></tr></thead>
                         <tbody id="entryTable"><tr><td colspan="6" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
                     </table>
                 </div>
@@ -1336,7 +1336,7 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th class="hide-mobile">#</th><th>轮次</th><th>球员1</th><th>球员2</th><th>比分</th><th class="hide-mobile">日期</th><th class="hide-mobile">场地</th><th>状态</th><th>操作</th></tr></thead>
+                        <thead><tr><th class="hide-mobile">#</th><th>轮次</th><th>球员1</th><th>球员2</th><th>比分</th><th>日期</th><th class="hide-mobile">场地</th><th>状态</th><th>操作</th></tr></thead>
                         <tbody id="matchTable"><tr><td colspan="9" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
                     </table>
                 </div>
@@ -1751,7 +1751,7 @@
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:20px;color:var(--gray-400);">点击「+ 添加行」开始输入球员</td></tr>';
                 return;
             }
-            tbody.innerHTML = playerEditRows.map((p, i) => '<tr><td class="hide-mobile">' + (i + 1) + '</td><td><input type="text" class="form-control" value="' + escapeHtml(p.name) + '" placeholder="如：郑钦文" onchange="adminUpdatePlayerRow(' + i + ',\'name\',this.value)"></td><td><input type="text" class="form-control" value="' + escapeHtml(p.country) + '" placeholder="如：中国" onchange="adminUpdatePlayerRow(' + i + ',\'country\',this.value)"></td><td class="hide-mobile"><input type="number" class="form-control" value="' + p.ranking + '" min="1" style="width:80px;" onchange="adminUpdatePlayerRow(' + i + ',\'ranking\',parseInt(this.value)||999)"></td><td><button class="btn btn-danger btn-sm" onclick="adminRemovePlayerRow(' + i + ')">&#10005;</button></td></tr>').join('');
+            tbody.innerHTML = playerEditRows.map((p, i) => '<tr><td class="hide-mobile">' + (i + 1) + '</td><td><input type="text" class="form-control" value="' + escapeHtml(p.name) + '" placeholder="如：郑钦文" onchange="adminUpdatePlayerRow(' + i + ',\'name\',this.value)"></td><td><input type="text" class="form-control" value="' + escapeHtml(p.country) + '" placeholder="如：中国" onchange="adminUpdatePlayerRow(' + i + ',\'country\',this.value)"></td><td><input type="number" class="form-control" value="' + p.ranking + '" min="1" style="width:80px;" onchange="adminUpdatePlayerRow(' + i + ',\'ranking\',parseInt(this.value)||999)"></td><td><button class="btn btn-danger btn-sm" onclick="adminRemovePlayerRow(' + i + ')">&#10005;</button></td></tr>').join('');
         }
 
         window.adminBatchSavePlayers = async function() {
@@ -1801,7 +1801,7 @@
                 adminUpdateBatchDelBtn();
                 return;
             }
-            tbody.innerHTML = players.map(p => '<tr><td><input type="checkbox" class="player-check" value="' + p.id + '" onchange="adminUpdateBatchDelBtn()"></td><td class="hide-mobile">' + p.id + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td class="hide-mobile">' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditPlayer(' + p.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeletePlayer(' + p.id + ')">删除</button></td></tr>').join('');
+            tbody.innerHTML = players.map(p => '<tr><td><input type="checkbox" class="player-check" value="' + p.id + '" onchange="adminUpdateBatchDelBtn()"></td><td class="hide-mobile">' + p.id + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditPlayer(' + p.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeletePlayer(' + p.id + ')">删除</button></td></tr>').join('');
             adminUpdateBatchDelBtn();
         }
 
@@ -2019,7 +2019,7 @@
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
                 return;
             }
-            tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td class="hide-mobile">' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td class="hide-mobile">' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正赛') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
+            tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td class="hide-mobile">' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正赛') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
         };
 
         window.adminOpenEntryModal = async function() {
@@ -2231,7 +2231,7 @@
                 if (scoreDisplay !== '-' && reason) scoreDisplay += ' (' + reason + ')';
                 const actionBtns = '<button class="btn btn-outline btn-sm" onclick="adminEditMatch(' + m.id + ')">编辑</button>' +
                     (m.status === 'completed' ? ' <button class="btn btn-warning btn-sm" onclick="adminRevertMatch(' + m.id + ')">撤销</button>' : '');
-                return '<tr><td class="hide-mobile">' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + escapeHtml(m.p1_name || 'TBD') + '</td><td>' + escapeHtml(m.p2_name || 'TBD') + '</td><td>' + scoreDisplay + '</td><td class="hide-mobile">' + (m.match_date || '-') + '</td><td class="hide-mobile">' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td>' + actionBtns + '</td></tr>';
+                return '<tr><td class="hide-mobile">' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + escapeHtml(m.p1_name || 'TBD') + '</td><td>' + escapeHtml(m.p2_name || 'TBD') + '</td><td>' + scoreDisplay + '</td><td>' + (m.match_date || '-') + '</td><td class="hide-mobile">' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td>' + actionBtns + '</td></tr>';
             }).join('');
         };
 

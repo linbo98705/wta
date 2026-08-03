@@ -40,6 +40,7 @@ body {
     background: var(--white);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
 }
 
 .container {
@@ -2007,20 +2008,30 @@ textarea.form-control {
         padding: 14px;
     }
 
-    /* 移动端：表格横向滚动 + 缩小内边距 */
+    /* 移动端：表格不强制宽度，自适应屏幕 */
     .data-table-wrapper,
     .card-body:has(.data-table) {
-        overflow-x: auto;
+        overflow-x: hidden;
     }
 
     .data-table {
-        font-size: 0.8125rem;
-        min-width: 600px;
+        font-size: 0.75rem;
+        min-width: 0;
+        table-layout: fixed;
+        width: 100%;
     }
 
     .data-table th,
     .data-table td {
-        padding: 6px 8px;
+        padding: 5px 4px;
+        white-space: normal;
+        word-break: break-all;
+        line-height: 1.3;
+    }
+
+    /* 移动端：隐藏次要列 */
+    .hide-mobile {
+        display: none !important;
     }
 
     /* 移动端：按钮和表单尺寸优化 */
@@ -2277,13 +2288,13 @@ textarea.form-control {
 
     /* 后台表格：进一步缩小字体和内边距 */
     .data-table {
-        font-size: 0.75rem;
-        min-width: 680px;
+        font-size: 0.6875rem;
+        min-width: 0;
     }
 
     .data-table th,
     .data-table td {
-        padding: 5px 6px;
+        padding: 4px 3px;
     }
 
     /* 竞猜编辑表格超小屏优化 */

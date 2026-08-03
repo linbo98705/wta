@@ -2650,15 +2650,40 @@
                 document.getElementById('gDeadline').value = parsedDeadline;
             }
 
-            // 用 vs 匹配对阵行（大小写不敏感）
-            const lines = allLines.filter(l => /\bvs\b/i.test(l));
-            if (lines.length === 0 && !parsedDate && !parsedDeadline) {
+            // 用 vs 匹配对阵行（大小写不敏感），并识别 TB 编号前缀
+            const matchLines = [];
+            for (const line of allLines) {
+                if (!/\bvs\b/i.test(line)) continue;
+                // 识别 TB 编号前缀（如 "TB5:"、"TB7 "、"tb3："）
+                const tbMatch = line.match(/^\s*TB\s*(\d+)\s*[:：\s]?/i);
+                let tbNum = null;
+                let cleanLine = line;
+                if (tbMatch) {
+                    tbNum = parseInt(tbMatch[1]);
+                    cleanLine = line.substring(tbMatch[0].length).trim();
+                }
+                matchLines.push({ tbNum, line: cleanLine, raw: line });
+            }
+            if (matchLines.length === 0 && !parsedDate && !parsedDeadline) {
                 showToast('未识别到有效的内容', 'error'); return;
             }
+
+            // 先清空所有行
+            const maxTb = 6;
+            for (let i = 1; i <= maxTb; i++) {
+                const f = document.getElementById('gTb' + i + 'Match');
+                if (f) f.value = '';
+                const w = document.getElementById('gTb' + i + 'Winner');
+                if (w) w.value = '';
+                const s = document.getElementById('gTb' + i + 'Score');
+                if (s) s.value = '';
+            }
+
             let filled = 0;
-            for (let i = 0; i < Math.min(lines.length, 6); i++) {
-                let line = lines[i];
-                // 去掉冒号及之前的内容（如 "郑钦文: 郑钦文 vs 艾拉" → "郑钦文 vs 艾拉"）
+            let autoIdx = 0;
+            for (const item of matchLines) {
+                let line = item.line;
+                // 去掉冒号及之前的内容
                 const colonIdx = line.search(/[:：]/);
                 if (colonIdx >= 0) line = line.substring(colonIdx + 1).trim();
                 // 大小写不敏感，不要求两侧必须有空格
@@ -2666,7 +2691,19 @@
                 if (parts.length >= 2) {
                     const p1 = parts[0].trim();
                     const p2 = parts.slice(1).join(' vs ').trim();
-                    const matchField = document.getElementById('gTb' + (i + 1) + 'Match');
+                    // 确定行号：有 TB 编号用编号，否则按顺序
+                    let rowNum;
+                    if (item.tbNum !== null) {
+                        rowNum = item.tbNum;
+                    } else {
+                        autoIdx++;
+                        rowNum = autoIdx;
+                    }
+                    if (rowNum > maxTb) {
+                        showToast(`内容中包含 TB${rowNum}，但数据库最多支持 TB${maxTb}，已忽略`, 'warning');
+                        continue;
+                    }
+                    const matchField = document.getElementById('gTb' + rowNum + 'Match');
                     if (matchField) { matchField.value = p1 + ' vs ' + p2; filled++; }
                 }
             }

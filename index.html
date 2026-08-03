@@ -2367,10 +2367,41 @@
             const text = document.getElementById('matchGuessTextInput').value.trim();
             if (!text) { showToast('请先输入或粘贴竞猜内容', 'error'); return; }
             const lines = text.split('\n').filter(l => l.trim());
+            const maxTb = 6;
+
+            // 先清空所有行
+            for (let i = 1; i <= maxTb; i++) {
+                const gaName = document.getElementById('gaName' + i);
+                const gaScore = document.getElementById('gaScore' + i);
+                const gbName = document.getElementById('gbName' + i);
+                const gbScore = document.getElementById('gbScore' + i);
+                const gaPs = document.getElementById('gaPs' + i);
+                const gbPs = document.getElementById('gbPs' + i);
+                if (gaName) gaName.value = '';
+                if (gaScore) gaScore.value = '';
+                if (gbName) gbName.value = '';
+                if (gbScore) gbScore.value = '';
+                if (gaPs) gaPs.value = '';
+                if (gbPs) gbPs.value = '';
+            }
+
             let parsedCount = 0;
-            for (let i = 0; i < Math.min(lines.length, 6); i++) {
-                const tbIndex = i + 1;
-                let line = lines[i].trim().replace(/^TB\d+[\s:：]*/i, '');
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                // 只识别TB开头的行
+                const tbMatch = line.match(/^\s*TB\s*(\d+)\s*[:：\s]?/i);
+                if (!tbMatch) continue;
+                const tbIndex = parseInt(tbMatch[1]);
+                line = line.substring(tbMatch[0].length).trim();
+                // 去掉冒号及之前的内容
+                const colonIdx = line.search(/[:：]/);
+                if (colonIdx >= 0) line = line.substring(colonIdx + 1).trim();
+
+                if (tbIndex > maxTb) {
+                    showToast(`内容中包含 TB${tbIndex}，但最多支持 TB${maxTb}，已忽略`, 'warning');
+                    continue;
+                }
+
                 let sideA = '', sideB = '';
                 if (line.includes(' vs ')) { const p = line.split(' vs '); sideA = p[0].trim(); sideB = p[1].trim(); }
                 else if (line.includes(' VS ')) { const p = line.split(' VS '); sideA = p[0].trim(); sideB = p[1].trim(); }
@@ -2382,9 +2413,6 @@
                 if (aParts.score) document.getElementById('gaScore' + tbIndex).value = aParts.score;
                 if (bParts.name) document.getElementById('gbName' + tbIndex).value = bParts.name;
                 if (bParts.score) document.getElementById('gbScore' + tbIndex).value = bParts.score;
-                // 得分保持空，不自动填充
-                document.getElementById('gaPs' + tbIndex).value = '';
-                document.getElementById('gbPs' + tbIndex).value = '';
                 if (aParts.name || bParts.name) parsedCount++;
             }
             window.adminCalcTotals();
@@ -2418,31 +2446,56 @@
             const p2Name = document.getElementById('matchupP2').textContent.trim();
             const linesA = textA.split('\n').filter(l => l.trim());
             const linesB = textB.split('\n').filter(l => l.trim());
+            const maxTb = 6;
             let parsedCount = 0;
 
-            for (let i = 0; i < 6; i++) {
-                const tbIndex = i + 1;
-                let lineA = linesA[i] ? linesA[i].trim().replace(/^TB\d+[\s:：]*/i, '') : '';
-                let lineB = linesB[i] ? linesB[i].trim().replace(/^TB\d+[\s:：]*/i, '') : '';
+            // 先清空所有行
+            for (let i = 1; i <= maxTb; i++) {
+                document.getElementById('gaPred' + i).value = '';
+                document.getElementById('gbPred' + i).value = '';
+                document.getElementById('gaPs' + i).value = '';
+                document.getElementById('gbPs' + i).value = '';
+            }
 
+            // 解析A侧，只识别TB开头
+            for (let i = 0; i < linesA.length; i++) {
+                let line = linesA[i].trim();
+                const tbMatch = line.match(/^\s*TB\s*(\d+)\s*[:：\s]?/i);
+                if (!tbMatch) continue;
+                const tbIndex = parseInt(tbMatch[1]);
+                if (tbIndex > maxTb) continue;
+                line = line.substring(tbMatch[0].length).trim();
                 // 如果只填了比分，自动补球员名
-                if (lineA && !lineA.match(/[^\d\s\-–\/]/) && p1Name && p1Name !== '球员1') {
-                    lineA = p1Name + ' ' + lineA;
+                if (line && !line.match(/[^\d\s\-–\/]/) && p1Name && p1Name !== '球员1') {
+                    line = p1Name + ' ' + line;
                 }
-                if (lineB && !lineB.match(/[^\d\s\-–\/]/) && p2Name && p2Name !== '球员2') {
-                    lineB = p2Name + ' ' + lineB;
+                if (line) {
+                    document.getElementById('gaPred' + tbIndex).value = line;
                 }
+            }
 
-                const scoreA = calcSetScoreStatic(lineA);
-                const scoreB = calcSetScoreStatic(lineB);
+            // 解析B侧，只识别TB开头
+            for (let i = 0; i < linesB.length; i++) {
+                let line = linesB[i].trim();
+                const tbMatch = line.match(/^\s*TB\s*(\d+)\s*[:：\s]?/i);
+                if (!tbMatch) continue;
+                const tbIndex = parseInt(tbMatch[1]);
+                if (tbIndex > maxTb) continue;
+                line = line.substring(tbMatch[0].length).trim();
+                // 如果只填了比分，自动补球员名
+                if (line && !line.match(/[^\d\s\-–\/]/) && p2Name && p2Name !== '球员2') {
+                    line = p2Name + ' ' + line;
+                }
+                if (line) {
+                    document.getElementById('gbPred' + tbIndex).value = line;
+                }
+            }
 
-                if (lineA) document.getElementById('gaPred' + tbIndex).value = lineA;
-                if (lineB) document.getElementById('gbPred' + tbIndex).value = lineB;
-                // 所有得分保持空，不自动填充
-                document.getElementById('gaPs' + tbIndex).value = '';
-                document.getElementById('gbPs' + tbIndex).value = '';
-
-                if (lineA || lineB) parsedCount++;
+            // 统计解析到的行数
+            for (let i = 1; i <= maxTb; i++) {
+                if (document.getElementById('gaPred' + i).value || document.getElementById('gbPred' + i).value) {
+                    parsedCount++;
+                }
             }
 
             window.adminCalcTotals();

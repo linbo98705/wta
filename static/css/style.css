@@ -2470,3 +2470,83 @@ textarea.form-control {
         font-size: 0.6875rem;
     }
 }
+
+/* ── Export Wrapper: 强制桌面布局（导出长图时使用） ── */
+.export-wrapper .court-columns {
+    flex-wrap: wrap;
+}
+.export-wrapper .court-column {
+    flex: 1 1 calc(50% - 6px);
+}
+.export-wrapper .match-card-toggle {
+    padding: 10px 14px;
+}
+.export-wrapper .mc-toggle-top {
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.export-wrapper .mc-quick-score {
+    max-width: 260px;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.export-wrapper .mc-toggle-matchup {
+    gap: 16px;
+    padding: 8px 0 4px;
+    align-items: center;
+}
+.export-wrapper .mc-player {
+    flex: 1 1 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.9375rem;
+}
+.export-wrapper .mc-player-score {
+    font-size: 1.1rem;
+    min-width: 28px;
+}
+.export-wrapper .mc-vs-text {
+    font-size: 1.2rem;
+}
+.export-wrapper .mc-player-name {
+    font-size: 0.9375rem;
+    white-space: normal;
+    word-break: break-word;
+    text-align: center;
+    line-height: 1.4;
+}
+.export-wrapper .mc-body {
+    padding: 0 14px 14px;
+}
+.export-wrapper .gt-table {
+    font-size: 0.8125rem;
+}
+.export-wrapper .gt-table th {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+}
+.export-wrapper .gt-table td {
+    padding: 6px 10px;
+}
+.export-wrapper .gt-th-label,
+.export-wrapper .gt-label {
+    font-size: 0.75rem;
+    width: 50px;
+}
+.export-wrapper .gt-th-score,
+.export-wrapper .gt-score {
+    width: 55px;
+    font-size: 0.6875rem;
+}
+.export-wrapper .match-round-badge {
+    padding: 3px 10px;
+    font-size: 0.6875rem;
+}
+.export-wrapper .match-status {
+    font-size: 0.75rem;
+}

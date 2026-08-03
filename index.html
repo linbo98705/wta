@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=21">
+    <link rel="stylesheet" href="static/css/style.css?v=22">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -475,6 +475,7 @@
 
             // 克隆到临时容器，保留网页原始样式
             const wrapper = document.createElement('div');
+            wrapper.className = 'export-wrapper';
             wrapper.style.position = 'fixed';
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
@@ -574,9 +575,11 @@
 
             // 克隆到临时容器
             const wrapper = document.createElement('div');
+            wrapper.className = 'export-wrapper';
             wrapper.style.position = 'fixed';
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
+            wrapper.style.width = '1200px';
             wrapper.style.background = '#fff';
             document.body.appendChild(wrapper);
 
@@ -942,9 +945,11 @@
 
                 // 克隆到临时容器
                 const wrapper = document.createElement('div');
+                wrapper.className = 'export-wrapper';
                 wrapper.style.position = 'fixed';
                 wrapper.style.left = '-9999px';
                 wrapper.style.top = '0';
+                wrapper.style.width = '1200px';
                 wrapper.style.background = '#fff';
                 document.body.appendChild(wrapper);
 
@@ -969,7 +974,7 @@
                             const dateLabel = isNaN(dateObj) ? _currentDate : dateObj.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
                             const dateSpan = document.createElement('span');
                             dateSpan.style.fontSize = '0.875rem';
-                            dateSpan.style.color = 'var(--gray-500)';
+                            dateSpan.style.color = '#737373';
                             dateSpan.textContent = '比赛时间：' + dateLabel;
                             clonedSelect.replaceWith(dateSpan);
                         } else {

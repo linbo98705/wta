@@ -1721,6 +1721,7 @@
 
         window.adminDeleteTournament = async function(id) {
             if (!confirm('确定删除此赛事？这将同时删除所有相关数据！')) return;
+            if (!confirm('再次确认：删除后不可恢复，确定删除？')) return;
             const result = await deleteTournament(id);
             if (result.success) { showToast('赛事已删除', 'success'); adminLoadTournaments(); }
             else { showToast('删除失败: ' + result.error, 'error'); }
@@ -1852,6 +1853,7 @@
             const checked = [...document.querySelectorAll('.player-check:checked')].map(cb => parseInt(cb.value));
             if (checked.length === 0) { showToast('请先选择球员', 'error'); return; }
             if (!confirm('确定删除选中的 ' + checked.length + ' 名球员？此操作不可撤销！')) return;
+            if (!confirm('再次确认：删除后不可恢复，确定删除？')) return;
             try {
                 const result = await batchDeletePlayers(checked);
                 if (result.success) {
@@ -1963,6 +1965,7 @@
 
         window.adminDeletePlayer = async function(id) {
             if (!confirm('确定删除此球员？')) return;
+            if (!confirm('再次确认：删除后不可恢复，确定删除？')) return;
             try {
                 const result = await deletePlayer(id);
                 if (result.success) { showToast('球员已删除', 'success'); adminLoadPlayers(); }
@@ -2104,6 +2107,7 @@
 
         window.adminRemoveEntry = async function(playerId) {
             if (!confirm('确定移除该球员？')) return;
+            if (!confirm('再次确认：确定移除？')) return;
             const tid = document.getElementById('entryTournamentSelect').value;
             await removeTournamentPlayer(parseInt(tid), parseInt(playerId));
             showToast('已移除，正在重算种子...', 'success');
@@ -2684,6 +2688,7 @@
 
         window.adminDeleteMatch = async function(mid) {
             if (!confirm('确定删除此比赛？')) return;
+            if (!confirm('再次确认：删除后不可恢复，确定删除？')) return;
             // Delete match using supabase directly since there's no deleteMatch API
             const { error } = await supabase.from('matches').delete().eq('id', mid);
             if (!error) { showToast('比赛已删除', 'success'); adminLoadMatchList(); }
@@ -2694,6 +2699,7 @@
             const tid = document.getElementById('matchTournamentSelect').value;
             if (!tid) { showToast('请先选择赛事', 'error'); return; }
             if (!confirm('确定生成签表？这将清除当前所有比赛数据！')) return;
+            if (!confirm('再次确认：将清除所有现有比赛数据，确定继续？')) return;
             const result = await generateDraw(parseInt(tid));
             if (result.success) {
                 showToast('签表已生成！共创建 ' + result.matchesCreated + ' 场比赛，轮空种子已自动晋级', 'success');
@@ -2953,6 +2959,7 @@
 
         window.adminDeleteGuess = async function(gid) {
             if (!confirm('确定删除此竞猜？')) return;
+            if (!confirm('再次确认：删除后不可恢复，确定删除？')) return;
             const result = await deleteDailyGuess(gid);
             if (result.success) { showToast('竞猜已删除', 'success'); adminLoadDailyGuessList(); }
             else { showToast('删除失败', 'error'); }

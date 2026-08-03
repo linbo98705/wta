@@ -2520,12 +2520,18 @@
             const maxTb = 6;
             let parsedCount = 0;
 
-            // 先清空所有行
-            for (let i = 1; i <= maxTb; i++) {
-                document.getElementById('gaPred' + i).value = '';
-                document.getElementById('gbPred' + i).value = '';
-                document.getElementById('gaPs' + i).value = '';
-                document.getElementById('gbPs' + i).value = '';
+            // 只清空有输入的那一侧，另一侧保留
+            if (textA) {
+                for (let i = 1; i <= maxTb; i++) {
+                    document.getElementById('gaPred' + i).value = '';
+                    document.getElementById('gaPs' + i).value = '';
+                }
+            }
+            if (textB) {
+                for (let i = 1; i <= maxTb; i++) {
+                    document.getElementById('gbPred' + i).value = '';
+                    document.getElementById('gbPs' + i).value = '';
+                }
             }
 
             // 解析A侧，只识别TB开头

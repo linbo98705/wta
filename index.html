@@ -2455,14 +2455,17 @@
             const bTotal = bScores.reduce((s, v) => s + v, 0);
             const guessWinner = document.getElementById('mGuessWinner').value;
             const guessReason = document.getElementById('mGuessReason').value.trim();
+
+            // 只有状态为 completed 时才结算胜负
             let winnerId = null;
-            if (guessWinner === 'player1' && p1Id) winnerId = p1Id;
-            else if (guessWinner === 'player2' && p2Id) winnerId = p2Id;
-            else if (aTotal > bTotal && p1Id) winnerId = p1Id;
-            else if (bTotal > aTotal && p2Id) winnerId = p2Id;
-            const hasGuess = aPreds.some(p => p) || bPreds.some(p => p);
-            const autoStatus = (hasGuess && winnerId) ? 'completed' : status;
-            // 直接用预测内容（球员名+比分合并的格式），用逗号分隔5个TB
+            if (status === 'completed') {
+                if (guessWinner === 'player1' && p1Id) winnerId = p1Id;
+                else if (guessWinner === 'player2' && p2Id) winnerId = p2Id;
+                else if (aTotal > bTotal && p1Id) winnerId = p1Id;
+                else if (bTotal > aTotal && p2Id) winnerId = p2Id;
+            }
+
+            // 直接用预测内容（球员名+比分合并的格式），用逗号分隔6个TB
             const aTbCombined = aPreds.join(',');
             const bTbCombined = bPreds.join(',');
             const data = {
@@ -2472,7 +2475,7 @@
                 player1_id: p1Id,
                 player2_id: p2Id,
                 winner_id: winnerId,
-                status: autoStatus,
+                status: status,
                 court: document.getElementById('mCourt').value.trim(),
                 match_date: document.getElementById('mMatchDate').value,
                 guess_a_tb: aTbCombined,
@@ -2493,7 +2496,7 @@
             }
             if (result.success) {
                 closeModal('matchModal');
-                const msg = id ? (winnerId ? '比赛已更新，胜者已自动晋级到下一轮' : '比赛已更新') : '比赛已添加';
+                const msg = id ? (status === 'completed' ? '比赛已更新，胜者已自动晋级到下一轮' : '比赛已更新') : '比赛已添加';
                 showToast(msg, 'success');
                 adminLoadMatchList();
             } else {

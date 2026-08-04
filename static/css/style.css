@@ -2565,3 +2565,27 @@ textarea.form-control {
 .export-wrapper .card {
     max-width: none;
 }
+.export-wrapper .match-grid {
+    align-items: stretch;
+}
+.export-wrapper .match-card {
+    height: 100%;
+}
+.export-wrapper .mc-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.export-wrapper .match-guess {
+    flex: 1;
+}
+.export-wrapper .gt-table {
+    table-layout: fixed;
+    height: 100%;
+}
+.export-wrapper .gt-table tbody tr {
+    height: 32px;
+}
+.export-wrapper .gt-table tbody tr.gt-total-row {
+    height: 36px;
+}

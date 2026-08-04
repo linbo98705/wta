@@ -803,7 +803,6 @@
                 const bScoreTxt = bScoreTexts[i] ? bScoreTexts[i].trim() : '';
                 const aSc = aScores[i] ? aScores[i].trim() : '';
                 const bSc = bScores[i] ? bScores[i].trim() : '';
-                if (!aName && !bName && !aScoreTxt && !bScoreTxt && !aSc && !bSc) continue;
                 rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
             }
 

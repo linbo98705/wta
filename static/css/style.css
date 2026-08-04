@@ -2558,3 +2558,10 @@ textarea.form-control {
 .export-wrapper .match-status {
     font-size: 0.75rem;
 }
+.export-wrapper .container {
+    max-width: 1600px;
+    padding: 0 20px;
+}
+.export-wrapper .card {
+    max-width: none;
+}

@@ -2243,7 +2243,11 @@
                 tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;">未找到匹配的比赛</td></tr>';
                 return;
             }
-            tbody.innerHTML = matches.map(m => {
+
+            const activeMatches = matches.filter(m => m.status !== 'completed' && m.status !== 'bye');
+            const collapsedMatches = matches.filter(m => m.status === 'completed' || m.status === 'bye');
+
+            function renderMatchRow(m, isCollapsed) {
                 const score = m.score || '';
                 const reason = m.guess_reason || '';
                 let scoreDisplay = score || '-';
@@ -2255,8 +2259,36 @@
                 if (scoreDisplay !== '-' && reason) scoreDisplay += ' (' + reason + ')';
                 const actionBtns = '<button class="btn btn-outline btn-sm" onclick="adminEditMatch(' + m.id + ')">编辑</button>' +
                     (m.status === 'completed' ? ' <button class="btn btn-warning btn-sm" onclick="adminRevertMatch(' + m.id + ')">撤销</button>' : '');
-                return '<tr><td class="hide-mobile">' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + escapeHtml(m.p1_name || 'TBD') + '</td><td>' + escapeHtml(m.p2_name || 'TBD') + '</td><td>' + scoreDisplay + '</td><td>' + (m.match_date || '-') + '</td><td class="hide-mobile">' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td>' + actionBtns + '</td></tr>';
-            }).join('');
+                const rowClass = isCollapsed ? 'collapsed-match-row' : '';
+                const rowStyle = isCollapsed ? 'display:none;' : '';
+                return '<tr class="' + rowClass + '" style="' + rowStyle + '"><td class="hide-mobile">' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + escapeHtml(m.p1_name || 'TBD') + '</td><td>' + escapeHtml(m.p2_name || 'TBD') + '</td><td>' + scoreDisplay + '</td><td>' + (m.match_date || '-') + '</td><td class="hide-mobile">' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td>' + actionBtns + '</td></tr>';
+            }
+
+            let html = '';
+
+            activeMatches.forEach(m => {
+                html += renderMatchRow(m, false);
+            });
+
+            if (collapsedMatches.length > 0) {
+                html += '<tr class="collapsed-section-toggle" onclick="adminToggleCollapsedMatches(this)" style="cursor:pointer; background:var(--gray-50);"><td colspan="9" style="text-align:center; padding:10px; font-weight:600; color:var(--gray-500);"><span class="toggle-icon" style="display:inline-block; transition:transform 0.2s;">&#9654;</span> 已折叠 ' + collapsedMatches.length + ' 场（已完成/轮空）<span style="font-size:0.75rem; color:var(--gray-400); margin-left:8px;">点击展开</span></td></tr>';
+                collapsedMatches.forEach(m => {
+                    html += renderMatchRow(m, true);
+                });
+            }
+
+            tbody.innerHTML = html;
+        };
+
+        window.adminToggleCollapsedMatches = function(el) {
+            const tbody = el.closest('tbody');
+            const icon = el.querySelector('.toggle-icon');
+            const collapsedRows = tbody.querySelectorAll('.collapsed-match-row');
+            const isHidden = collapsedRows[0] && collapsedRows[0].style.display === 'none';
+            collapsedRows.forEach(row => {
+                row.style.display = isHidden ? '' : 'none';
+            });
+            icon.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
         };
 
         // ── 导出对阵文字版 ──────────────────────────

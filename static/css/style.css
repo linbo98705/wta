@@ -730,6 +730,7 @@ img { max-width: 100%; height: auto; }
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+    align-items: stretch;
 }
 
 .match-card {
@@ -738,6 +739,8 @@ img { max-width: 100%; height: auto; }
     border-radius: var(--radius);
     transition: all var(--transition);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .match-card.collapsed .mc-body {
@@ -794,6 +797,7 @@ img { max-width: 100%; height: auto; }
 .mc-body {
     padding: 0 14px 14px;
     border-top: 1px dashed var(--gray-200);
+    flex: 1;
 }
 
 /* Player inside matchup */
@@ -895,12 +899,15 @@ img { max-width: 100%; height: auto; }
     flex-wrap: wrap;
     gap: 12px;
     padding-bottom: 8px;
+    align-items: stretch;
 }
 .court-column {
     flex: 1 1 100%;
     min-width: 0;
     border-radius: var(--radius);
     padding: 0 0 8px;
+    display: flex;
+    flex-direction: column;
 }
 @media (min-width: 769px) {
     .court-columns {
@@ -937,6 +944,7 @@ img { max-width: 100%; height: auto; }
     flex-direction: column;
     gap: 8px;
     padding: 0 8px;
+    flex: 1;
 }
 
 .match-players {

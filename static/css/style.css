@@ -752,6 +752,28 @@ img { max-width: 100%; height: auto; }
     box-shadow: var(--shadow);
 }
 
+.match-card-top-score {
+    border: 2px solid var(--accent-gold);
+    box-shadow: 0 0 0 3px rgba(200, 169, 81, 0.15);
+}
+.match-card-top-score:hover {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 0 3px rgba(200, 169, 81, 0.25), var(--shadow);
+}
+
+.top-score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #C8A951, #E8D5A3);
+    color: #5a4510;
+    font-weight: 700;
+    font-size: 0.6875rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
 /* Toggle header */
 .match-card-toggle {
     cursor: pointer;

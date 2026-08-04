@@ -2587,5 +2587,29 @@ textarea.form-control {
     height: 32px;
 }
 .export-wrapper .gt-table tbody tr.gt-total-row {
-    height: 36px;
+    height: 44px;
+}
+.export-wrapper .gt-total-row td {
+    vertical-align: middle;
+    overflow: hidden;
+}
+.export-wrapper .gt-reason {
+    max-height: 20px;
+    line-height: 20px;
+    overflow: hidden;
+    margin: 0;
+    padding: 0 6px;
+    font-size: 0.6875rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: inline-block;
+    box-sizing: border-box;
+}
+.export-wrapper .gt-total-row .gt-a,
+.export-wrapper .gt-total-row .gt-b {
+    height: 44px;
+    vertical-align: middle;
+}
+.export-wrapper .gt-total {
+    line-height: 1;
 }

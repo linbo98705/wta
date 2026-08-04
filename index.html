@@ -761,16 +761,18 @@
                 return;
             }
 
-            // 找出当日总分最高的已完成比赛
+            // 找出当日个人总分最高的已完成比赛
             let maxTotal = 0;
             let topScoreMatchIds = new Set();
             filtered.forEach(m => {
                 if (m.status === 'completed') {
-                    const total = (m.guess_a_total || 0) + (m.guess_b_total || 0);
-                    if (total > 0 && total > maxTotal) {
-                        maxTotal = total;
+                    const aTotal = m.guess_a_total || 0;
+                    const bTotal = m.guess_b_total || 0;
+                    const personalMax = Math.max(aTotal, bTotal);
+                    if (personalMax > 0 && personalMax > maxTotal) {
+                        maxTotal = personalMax;
                         topScoreMatchIds = new Set([m.id]);
-                    } else if (total > 0 && total === maxTotal) {
+                    } else if (personalMax > 0 && personalMax === maxTotal) {
                         topScoreMatchIds.add(m.id);
                     }
                 }

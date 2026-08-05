@@ -2056,25 +2056,32 @@ textarea.form-control {
         padding: 14px;
     }
 
-    /* 移动端：表格不强制宽度，自适应屏幕 */
+    /* 移动端：表格允许横向滚动，列宽自适应 */
     .data-table-wrapper,
     .card-body:has(.data-table) {
-        overflow-x: hidden;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .data-table {
-        font-size: 0.75rem;
-        min-width: 0;
-        table-layout: fixed;
-        width: 100%;
+        font-size: 0.8125rem;
+        min-width: 680px;
+        table-layout: auto;
+        width: auto;
     }
 
     .data-table th,
     .data-table td {
-        padding: 5px 4px;
+        padding: 8px 10px;
+        white-space: nowrap;
+        line-height: 1.4;
+    }
+
+    .data-table td:nth-child(3),
+    .data-table td:nth-child(4) {
         white-space: normal;
         word-break: break-all;
-        line-height: 1.3;
+        min-width: 100px;
     }
 
     /* 移动端：隐藏次要列 */

@@ -306,6 +306,17 @@
             </div>
             <div class="form-row">
                 <div class="form-group">
+                    <label>页面主题</label>
+                    <select class="form-control" id="tTheme">
+                        <option value="purple" selected>紫色（默认）</option>
+                        <option value="hard">硬地蓝</option>
+                        <option value="clay">红土橙</option>
+                        <option value="grass">草地绿</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
                     <label>开始日期*</label>
                     <input type="date" class="form-control" id="tStartDate" required>
                 </div>
@@ -741,6 +752,7 @@ async function saveTournament(e) {
         location: document.getElementById('tLocation').value,
         category: document.getElementById('tCategory').value,
         surface: document.getElementById('tSurface').value,
+        theme: document.getElementById('tTheme').value,
         draw_size: parseInt(document.getElementById('tDrawSize').value),
         start_date: document.getElementById('tStartDate').value,
         end_date: document.getElementById('tEndDate').value,
@@ -772,6 +784,7 @@ async function editTournament(id) {
     document.getElementById('tLocation').value = t.location;
     document.getElementById('tCategory').value = t.category;
     document.getElementById('tSurface').value = t.surface;
+    document.getElementById('tTheme').value = t.theme || 'purple';
     document.getElementById('tDrawSize').value = t.draw_size;
     document.getElementById('tStartDate').value = t.start_date;
     document.getElementById('tEndDate').value = t.end_date;

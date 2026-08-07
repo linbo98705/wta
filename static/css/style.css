@@ -10,7 +10,36 @@
     --purple-light: #7B4FA0;
     --purple-lighter: #E8DFF0;
     --purple-bg: #F7F3FA;
+    --purple-rgb: 91, 45, 142;
     --white: #FFFFFF;
+
+/* ── 页面主题覆盖（后台可选，不同赛事不同主题） ── */
+/* 由 main.js 根据赛事 theme 字段在 <body> 上设置 data-theme 属性触发 */
+/* purple 为默认主题，沿用 :root 紫色，无需覆盖 */
+body[data-theme="hard"] {
+    --purple-dark: #173F66;
+    --purple: #2E6FAB;
+    --purple-light: #5C92CB;
+    --purple-lighter: #E2EDF7;
+    --purple-bg: #F0F6FC;
+    --purple-rgb: 46, 111, 171;
+}
+body[data-theme="clay"] {
+    --purple-dark: #7A3315;
+    --purple: #C4602C;
+    --purple-light: #D88860;
+    --purple-lighter: #F6E4D8;
+    --purple-bg: #FBF1EA;
+    --purple-rgb: 196, 96, 44;
+}
+body[data-theme="grass"] {
+    --purple-dark: #1E5520;
+    --purple: #357A35;
+    --purple-light: #5FA05F;
+    --purple-lighter: #E0F0E0;
+    --purple-bg: #F1F8F1;
+    --purple-rgb: 53, 122, 53;
+}
     --black: #1A1A1A;
     --gray-100: #F5F5F5;
     --gray-200: #E5E5E5;
@@ -56,7 +85,7 @@ img { max-width: 100%; height: auto; }
 
 /* ── Top Bar ───────────────────────────── */
 .top-bar {
-    background: #1a0538;
+    background: var(--purple-dark);
     color: rgba(255,255,255,0.6);
     font-size: 0.6875rem;
     padding: 5px 0;
@@ -69,7 +98,7 @@ img { max-width: 100%; height: auto; }
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 2px 12px rgba(91,45,142,0.3);
+    box-shadow: 0 2px 12px rgba(var(--purple-rgb), 0.3);
 }
 
 .nav-container {
@@ -182,14 +211,14 @@ img { max-width: 100%; height: auto; }
 
 .tournament-subnav a:hover {
     color: var(--purple);
-    background: rgba(91,45,142,0.04);
+    background: rgba(var(--purple-rgb), 0.04);
 }
 
 .tournament-subnav a.active {
     color: var(--purple);
     font-weight: 700;
     border-bottom-color: var(--purple);
-    background: rgba(91,45,142,0.06);
+    background: rgba(var(--purple-rgb), 0.06);
 }
 
 /* ── Tournament Header ─────────────────── */
@@ -685,7 +714,7 @@ img { max-width: 100%; height: auto; }
 }
 
 .bracket-player.seed-bye {
-    background: rgba(91, 45, 142, 0.04);
+    background: rgba(var(--purple-rgb), 0.04);
     font-weight: 600;
 }
 
@@ -1354,7 +1383,7 @@ img { max-width: 100%; height: auto; }
 .guess-tb-select:focus {
     border-color: var(--purple);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(91, 45, 142, 0.15);
+    box-shadow: 0 0 0 2px rgba(var(--purple-rgb), 0.15);
 }
 
 .guess-total-input {
@@ -1385,7 +1414,7 @@ img { max-width: 100%; height: auto; }
 .guess-score-input:focus {
     border-color: var(--purple);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(91, 45, 142, 0.15);
+    box-shadow: 0 0 0 2px rgba(var(--purple-rgb), 0.15);
 }
 
 .guess-score-input::placeholder {
@@ -1529,7 +1558,7 @@ img { max-width: 100%; height: auto; }
 .guess-score-input:focus {
     border-color: var(--purple);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(91,45,142,0.1);
+    box-shadow: 0 0 0 2px rgba(var(--purple-rgb), 0.1);
 }
 
 .guess-score-input::placeholder {
@@ -1548,7 +1577,7 @@ img { max-width: 100%; height: auto; }
 .guess-predict-input:focus {
     border-color: var(--purple);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(91,45,142,0.1);
+    box-shadow: 0 0 0 2px rgba(var(--purple-rgb), 0.1);
 }
 
 .guess-predict-input::placeholder {
@@ -1570,7 +1599,7 @@ img { max-width: 100%; height: auto; }
 .guess-ps-input:focus {
     border-color: var(--purple);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(91,45,142,0.1);
+    box-shadow: 0 0 0 2px rgba(var(--purple-rgb), 0.1);
 }
 
 /* ── Top Score List ────────────────────── */
@@ -1863,7 +1892,7 @@ img { max-width: 100%; height: auto; }
 .form-control:focus {
     outline: none;
     border-color: var(--purple);
-    box-shadow: 0 0 0 3px rgba(91,45,142,0.1);
+    box-shadow: 0 0 0 3px rgba(var(--purple-rgb), 0.1);
 }
 
 select.form-control {

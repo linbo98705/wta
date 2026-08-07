@@ -60,6 +60,7 @@ def init_db():
             end_date TEXT NOT NULL,
             draw_size INTEGER NOT NULL DEFAULT 32,
             logo_url TEXT DEFAULT '',
+            theme TEXT DEFAULT 'purple',
             is_active INTEGER DEFAULT 1
         );
 
@@ -167,6 +168,11 @@ def init_db():
         db.execute('ALTER TABLE daily_guesses ADD COLUMN tb6_result TEXT DEFAULT \'\'')
     except sqlite3.OperationalError:
         pass
+    # tournaments.theme 字段增量迁移（后台可选的页面主题，默认紫色）
+    try:
+        db.execute("ALTER TABLE tournaments ADD COLUMN theme TEXT DEFAULT 'purple'")
+    except sqlite3.OperationalError:
+        pass
     db.commit()
     db.close()
 
@@ -244,11 +250,11 @@ def api_create_tournament():
     data = request.json
     db = get_db()
     db.execute('''INSERT INTO tournaments (name, name_cn, location, surface, category,
-                  start_date, end_date, draw_size, logo_url)
-                  VALUES (?,?,?,?,?,?,?,?,?)''',
+                  start_date, end_date, draw_size, logo_url, theme)
+                  VALUES (?,?,?,?,?,?,?,?,?,?)''',
                (data['name'], data['name_cn'], data['location'], data.get('surface', 'Hard'),
                 data.get('category', 'WTA 500'), data['start_date'], data['end_date'],
-                data.get('draw_size', 32), data.get('logo_url', '')))
+                data.get('draw_size', 32), data.get('logo_url', ''), data.get('theme', 'purple')))
     db.commit()
     return jsonify({'id': db.execute('SELECT last_insert_rowid()').fetchone()[0]}), 201
 
@@ -258,7 +264,7 @@ def api_update_tournament(tid):
     db = get_db()
     fields = []
     values = []
-    for k in ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active', 'logo_url']:
+    for k in ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active', 'logo_url', 'theme']:
         if k in data:
             fields.append(f'{k}=?')
             values.append(data[k])

@@ -116,8 +116,18 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
+// ── Tournament Page Theme ────────────────
+// 根据后台为赛事选择的 theme 字段切换页面主题色
+// （purple 紫色默认 / hard 硬地蓝 / clay 红土橙 / grass 草地绿）
+// 在所有赛事页渲染时统一调用，给 <body> 打上 data-theme 属性，
+// 触发 style.css 中对应的 CSS 变量覆盖
+function applyTournamentTheme(tournament) {
+    document.body.dataset.theme = (tournament && tournament.theme) ? tournament.theme : 'purple';
+}
+
 // ── Render Tournament Logo ────────────────
 function renderTournamentLogo(tournament) {
+    applyTournamentTheme(tournament);
     if (!tournament || !tournament.logo_url) return;
     const headerContent = document.querySelector('.tournament-header-content');
     if (!headerContent) return;

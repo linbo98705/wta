@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=25">
+    <link rel="stylesheet" href="static/css/style.css?v=26">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -916,13 +916,20 @@
                 wrapper.style.top = '0';
                 // 根据场地数量决定宽度：单场地用半宽，多场地用全宽
                 const courtCount = cardSection.querySelectorAll('.court-column').length;
-                wrapper.style.width = courtCount <= 1 ? '800px' : '1600px';
+                const exportWidth = courtCount <= 1 ? 800 : 1600;
+                wrapper.style.width = exportWidth + 'px';
                 wrapper.style.background = '#fff';
                 document.body.appendChild(wrapper);
 
                 if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
                 const clonedCard = cardSection.cloneNode(true);
                 wrapper.appendChild(clonedCard);
+
+                // 限制克隆内容中 .container 的最大宽度与导出宽度一致
+                wrapper.querySelectorAll('.container').forEach(el => {
+                    el.style.maxWidth = exportWidth + 'px';
+                    el.style.width = '100%';
+                });
 
                 // 修改克隆内容：左上角显示"赛程"，右上角只显示比赛时间
                 const clonedH3 = clonedCard.querySelector('.card-header h3');

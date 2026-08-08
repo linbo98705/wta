@@ -2632,7 +2632,7 @@ textarea.form-control {
     font-size: 0.75rem;
 }
 .export-wrapper .container {
-    max-width: 1600px;
+    max-width: none;
     padding: 0 20px;
 }
 .export-wrapper .card {

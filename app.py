@@ -108,6 +108,20 @@ def init_db():
             FOREIGN KEY (player2_id) REFERENCES players(id),
             FOREIGN KEY (winner_id) REFERENCES players(id)
         );
+
+        CREATE TABLE IF NOT EXISTS tournament_player_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tournament_id INTEGER NOT NULL,
+            player_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            country TEXT DEFAULT '',
+            country_code TEXT DEFAULT '',
+            ranking INTEGER DEFAULT 999,
+            seed INTEGER DEFAULT 0,
+            entry_type TEXT DEFAULT 'main',
+            FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
+            UNIQUE(tournament_id, player_id)
+        );
     ''')
     # 为已存在的数据库添加竞猜字段（如果缺失）
     for col, col_type in [
@@ -278,6 +292,7 @@ def api_update_tournament(tid):
 def api_delete_tournament(tid):
     db = get_db()
     db.execute('DELETE FROM tournament_players WHERE tournament_id=?', (tid,))
+    db.execute('DELETE FROM tournament_player_snapshots WHERE tournament_id=?', (tid,))
     db.execute('DELETE FROM matches WHERE tournament_id=?', (tid,))
     db.execute('DELETE FROM tournaments WHERE id=?', (tid,))
     db.commit()
@@ -443,13 +458,26 @@ def api_upload_players():
 @app.route('/api/tournaments/<int:tid>/players')
 def api_tournament_players(tid):
     db = get_db()
-    rows = db.execute('''
-        SELECT p.*, tp.seed as t_seed, tp.entry_type
-        FROM tournament_players tp
-        JOIN players p ON tp.player_id = p.id
-        WHERE tp.tournament_id = ?
-        ORDER BY p.ranking ASC
-    ''', (tid,)).fetchall()
+    # 签表生成后使用快照数据，避免球员信息修改影响已生成的赛事
+    snap_count = db.execute(
+        'SELECT COUNT(*) FROM tournament_player_snapshots WHERE tournament_id=?', (tid,)
+    ).fetchone()[0]
+    if snap_count > 0:
+        rows = db.execute('''
+            SELECT player_id as id, name, country, country_code, ranking,
+                   seed as t_seed, entry_type, seed, '' as photo_url, '' as bio
+            FROM tournament_player_snapshots
+            WHERE tournament_id = ?
+            ORDER BY ranking ASC
+        ''', (tid,)).fetchall()
+    else:
+        rows = db.execute('''
+            SELECT p.*, tp.seed as t_seed, tp.entry_type
+            FROM tournament_players tp
+            JOIN players p ON tp.player_id = p.id
+            WHERE tp.tournament_id = ?
+            ORDER BY p.ranking ASC
+        ''', (tid,)).fetchall()
     return jsonify([dict(r) for r in rows])
 
 @app.route('/api/tournaments/<int:tid>/players', methods=['POST'])
@@ -519,20 +547,27 @@ def api_update_tournament_player(tid, pid):
 def api_matches(tid):
     db = get_db()
     round_filter = request.args.get('round', '')
-    if round_filter:
-        rows = db.execute('''
-            SELECT m.*, p1.name as p1_name, '' as p1_country, p1.country as p1_country_name,
-                   p2.name as p2_name, '' as p2_country, p2.country as p2_country_name,
-                   w.name as winner_name
+    # 签表生成后使用快照数据，避免球员信息修改影响已生成的赛事
+    snap_count = db.execute(
+        'SELECT COUNT(*) FROM tournament_player_snapshots WHERE tournament_id=?', (tid,)
+    ).fetchone()[0]
+    use_snapshot = snap_count > 0
+
+    if use_snapshot:
+        base_query = '''
+            SELECT m.*, s1.name as p1_name, '' as p1_country, s1.country as p1_country_name,
+                   s2.name as p2_name, '' as p2_country, s2.country as p2_country_name,
+                   sw.name as winner_name
             FROM matches m
-            LEFT JOIN players p1 ON m.player1_id = p1.id
-            LEFT JOIN players p2 ON m.player2_id = p2.id
-            LEFT JOIN players w ON m.winner_id = w.id
-            WHERE m.tournament_id = ? AND m.round = ?
-            ORDER BY m.match_order
-        ''', (tid, round_filter)).fetchall()
+            LEFT JOIN tournament_player_snapshots s1
+                ON m.player1_id = s1.player_id AND s1.tournament_id = m.tournament_id
+            LEFT JOIN tournament_player_snapshots s2
+                ON m.player2_id = s2.player_id AND s2.tournament_id = m.tournament_id
+            LEFT JOIN tournament_player_snapshots sw
+                ON m.winner_id = sw.player_id AND sw.tournament_id = m.tournament_id
+        '''
     else:
-        rows = db.execute('''
+        base_query = '''
             SELECT m.*, p1.name as p1_name, '' as p1_country, p1.country as p1_country_name,
                    p2.name as p2_name, '' as p2_country, p2.country as p2_country_name,
                    w.name as winner_name
@@ -540,9 +575,18 @@ def api_matches(tid):
             LEFT JOIN players p1 ON m.player1_id = p1.id
             LEFT JOIN players p2 ON m.player2_id = p2.id
             LEFT JOIN players w ON m.winner_id = w.id
-            WHERE m.tournament_id = ?
-            ORDER BY m.match_order
-        ''', (tid,)).fetchall()
+        '''
+
+    if round_filter:
+        rows = db.execute(
+            base_query + ' WHERE m.tournament_id = ? AND m.round = ? ORDER BY m.match_order',
+            (tid, round_filter)
+        ).fetchall()
+    else:
+        rows = db.execute(
+            base_query + ' WHERE m.tournament_id = ? ORDER BY m.match_order',
+            (tid,)
+        ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 @app.route('/api/matches', methods=['POST'])
@@ -728,7 +772,7 @@ def api_generate_draw(tid):
     
     # 获取参赛球员（按种子排序，种子在前）
     players = db.execute('''
-        SELECT p.*, tp.seed as t_seed FROM tournament_players tp
+        SELECT p.*, tp.seed as t_seed, tp.entry_type FROM tournament_players tp
         JOIN players p ON tp.player_id = p.id
         WHERE tp.tournament_id = ?
         ORDER BY tp.seed ASC, p.ranking ASC
@@ -737,6 +781,15 @@ def api_generate_draw(tid):
 
     if len(player_list) < 2:
         return jsonify({'error': 'Need at least 2 players'}), 400
+
+    # 生成签表时创建球员信息快照，冻结当前球员数据
+    db.execute('DELETE FROM tournament_player_snapshots WHERE tournament_id=?', (tid,))
+    for p in player_list:
+        db.execute('''INSERT INTO tournament_player_snapshots
+                      (tournament_id, player_id, name, country, country_code, ranking, seed, entry_type)
+                      VALUES (?,?,?,?,?,?,?,?)''',
+                   (tid, p['id'], p['name'], p.get('country', ''), p.get('country_code', ''),
+                    p.get('ranking', 999), p.get('t_seed', 0), p.get('entry_type', 'main')))
 
     # 删除旧比赛
     db.execute('DELETE FROM matches WHERE tournament_id=?', (tid,))

@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=26">
+    <link rel="stylesheet" href="static/css/style.css?v=27">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -929,6 +929,13 @@
                 wrapper.querySelectorAll('.container').forEach(el => {
                     el.style.maxWidth = exportWidth + 'px';
                     el.style.width = '100%';
+                });
+
+                // 导出时场地铺满：单场地100%，多场地各50%
+                const courtFlex = courtCount <= 1 ? '100%' : 'calc(50% - 6px)';
+                wrapper.querySelectorAll('.court-column').forEach(el => {
+                    el.style.flex = '0 1 ' + courtFlex;
+                    el.style.maxWidth = courtFlex;
                 });
 
                 // 修改克隆内容：左上角显示"赛程"，右上角只显示比赛时间

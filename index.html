@@ -76,7 +76,7 @@
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=8"></script>
-    <script src="js/api.js?v=15"></script>
+    <script src="js/api.js?v=16"></script>
     <script src="js/draw-engine.js?v=12"></script>
 
     <script>
@@ -1281,6 +1281,7 @@
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="adminOpenEntryModal()">+ 添加球员</button>
                         <button class="btn btn-outline btn-sm" onclick="adminRecalcSeeds()">&#128260; 重算种子</button>
+                        <button class="btn btn-outline btn-sm" onclick="adminFreezeSnapshot()">&#128274; 冻结球员数据</button>
                     </div>
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
@@ -2097,6 +2098,15 @@
             const result = await recalcSeeds(parseInt(tid));
             if (result.success) { showToast('种子已重算，共 ' + result.seeded + ' 名种子球员', 'success'); adminLoadEntryList(); }
             else { showToast('重算失败', 'error'); }
+        };
+
+        window.adminFreezeSnapshot = async function() {
+            const tid = document.getElementById('entryTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            if (!confirm('冻结球员数据？将保存当前球员信息快照，之后修改球员排名等不会影响该赛事。已有比赛数据不受影响。')) return;
+            const result = await freezeSnapshot(parseInt(tid));
+            if (result.success) { showToast('球员数据已冻结！共冻结 ' + result.frozen + ' 名球员', 'success'); }
+            else { showToast('冻结失败: ' + (result.error || '未知错误'), 'error'); }
         };
 
         // ── 查找当前正在进行的赛事 ──

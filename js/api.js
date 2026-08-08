@@ -659,6 +659,35 @@ async function batchDeletePlayers(idList) {
  * @returns {Promise<Array>} 球员列表，每个包含 { ...playerFields, t_seed, entry_type }
  */
 async function getTournamentPlayers(tid) {
+    // 签表生成后使用快照数据，避免球员信息修改影响已生成的赛事
+    const { count: snapCount, error: snapErr } = await supabase
+        .from('tournament_player_snapshots')
+        .select('*', { count: 'exact', head: true })
+        .eq('tournament_id', tid);
+
+    if (!snapErr && snapCount > 0) {
+        const { data: snapData, error: snapError2 } = await supabase
+            .from('tournament_player_snapshots')
+            .select('player_id, name, country, country_code, ranking, seed, entry_type')
+            .eq('tournament_id', tid)
+            .order('ranking', { ascending: true });
+
+        if (!snapError2 && snapData) {
+            return snapData.map(row => ({
+                id: row.player_id,
+                name: row.name,
+                country: row.country,
+                country_code: row.country_code,
+                ranking: row.ranking,
+                seed: row.seed,
+                t_seed: row.seed,
+                entry_type: row.entry_type,
+                photo_url: '',
+                bio: '',
+            }));
+        }
+    }
+
     const { data, error } = await supabase
         .from('tournament_players')
         .select('seed, entry_type, player:player_id(id, name, country, country_code, ranking, seed, photo_url, bio)')
@@ -677,6 +706,32 @@ async function getTournamentPlayers(tid) {
             t_seed: row.seed || 0,
             entry_type: row.entry_type || 'main',
             tp_id: row.id, // tournament_players 表的 ID
+        };
+    }).sort((a, b) => (a.ranking || 999) - (b.ranking || 999));
+}
+
+/**
+ * 获取赛事参赛球员（始终读取实时数据，忽略快照）
+ * 用于签表生成和冻结快照等需要最新数据的场景
+ */
+async function getLiveTournamentPlayers(tid) {
+    const { data, error } = await supabase
+        .from('tournament_players')
+        .select('id, seed, entry_type, player:player_id(id, name, country, country_code, ranking, seed, photo_url, bio)')
+        .eq('tournament_id', tid);
+
+    if (error) {
+        console.error('获取赛事参赛球员失败:', error.message);
+        return [];
+    }
+
+    return (data || []).map(row => {
+        const player = row.player || {};
+        return {
+            ...player,
+            t_seed: row.seed || 0,
+            entry_type: row.entry_type || 'main',
+            tp_id: row.id,
         };
     }).sort((a, b) => (a.ranking || 999) - (b.ranking || 999));
 }
@@ -810,16 +865,34 @@ async function recalcSeeds(tid) {
  * @returns {Promise<Array>}
  */
 async function getMatches(tid, roundFilter) {
-    let query = supabase
-        .from('matches')
-        .select(`
-            *,
-            player1:player1_id(name, country, country_code),
-            player2:player2_id(name, country, country_code),
-            winner:winner_id(name)
-        `)
-        .eq('tournament_id', tid)
-        .order('match_order', { ascending: true });
+    // 签表生成后使用快照数据，避免球员信息修改影响已生成的赛事
+    const { count: snapCount, error: snapErr } = await supabase
+        .from('tournament_player_snapshots')
+        .select('*', { count: 'exact', head: true })
+        .eq('tournament_id', tid);
+
+    const useSnapshot = !snapErr && snapCount > 0;
+
+    let query;
+    if (useSnapshot) {
+        // 用快照表 JOIN 球员信息
+        query = supabase
+            .from('matches')
+            .select(`*`)
+            .eq('tournament_id', tid)
+            .order('match_order', { ascending: true });
+    } else {
+        query = supabase
+            .from('matches')
+            .select(`
+                *,
+                player1:player1_id(name, country, country_code),
+                player2:player2_id(name, country, country_code),
+                winner:winner_id(name)
+            `)
+            .eq('tournament_id', tid)
+            .order('match_order', { ascending: true });
+    }
 
     if (roundFilter) {
         query = query.eq('round', roundFilter);
@@ -830,6 +903,27 @@ async function getMatches(tid, roundFilter) {
     if (error) {
         console.error('获取比赛失败:', error.message);
         return [];
+    }
+
+    if (useSnapshot) {
+        // 获取快照数据，构建 player_id → info 映射
+        const { data: snapData } = await supabase
+            .from('tournament_player_snapshots')
+            .select('player_id, name, country, country_code')
+            .eq('tournament_id', tid);
+        const snapMap = {};
+        (snapData || []).forEach(s => { snapMap[s.player_id] = s; });
+
+        return (data || []).map(m => ({
+            ...m,
+            p1_name: (snapMap[m.player1_id] && snapMap[m.player1_id].name) || '',
+            p1_country: (snapMap[m.player1_id] && snapMap[m.player1_id].country) || '',
+            p1_country_code: (snapMap[m.player1_id] && snapMap[m.player1_id].country_code) || '',
+            p2_name: (snapMap[m.player2_id] && snapMap[m.player2_id].name) || '',
+            p2_country: (snapMap[m.player2_id] && snapMap[m.player2_id].country) || '',
+            p2_country_code: (snapMap[m.player2_id] && snapMap[m.player2_id].country_code) || '',
+            winner_name: (snapMap[m.winner_id] && snapMap[m.winner_id].name) || '',
+        }));
     }
 
     // 展平关联数据，保持与旧 API 兼容的字段名
@@ -1391,6 +1485,45 @@ async function autoAdvanceByes(tid, roundOrder, startRoundIdx = 0) {
 }
 
 /**
+ * 冻结球员数据（创建快照，不重新生成签表）
+ * @param {number} tid - 赛事 ID
+ * @returns {Promise<Object>} { success, frozen, error }
+ */
+async function freezeSnapshot(tid) {
+    const players = await getLiveTournamentPlayers(tid);
+    if (!players || players.length === 0) {
+        return { success: false, frozen: 0, error: '该赛事暂无参赛球员' };
+    }
+
+    // 删除旧快照
+    await supabase.from('tournament_player_snapshots').delete().eq('tournament_id', tid);
+
+    // 插入新快照
+    const rows = players.map(p => ({
+        tournament_id: tid,
+        player_id: p.id,
+        name: p.name,
+        country: p.country || '',
+        country_code: p.country_code || '',
+        ranking: p.ranking || 999,
+        seed: p.t_seed || 0,
+        entry_type: p.entry_type || 'main',
+    }));
+
+    const BATCH_SIZE = 200;
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+        const batch = rows.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase.from('tournament_player_snapshots').insert(batch);
+        if (error) {
+            console.error('冻结球员数据失败:', error.message);
+            return { success: false, frozen: 0, error: error.message };
+        }
+    }
+
+    return { success: true, frozen: rows.length };
+}
+
+/**
  * 生成签表（完整移植自 app.py api_generate_draw）
  *
  * 支持 32/64/96/128 签位，遵循 Grand Slam Rule Book 种子放置规则。
@@ -1407,12 +1540,15 @@ async function generateDraw(tid) {
 
     const drawSize = tournament.draw_size;
 
-    // 获取参赛球员（按种子排序，种子在前）
-    const players = await getTournamentPlayers(tid);
+    // 获取参赛球员（按种子排序，种子在前）— 始终读取实时数据
+    const players = await getLiveTournamentPlayers(tid);
 
     if (players.length < 2) {
         return { success: false, matchesCreated: 0, error: 'Need at least 2 players' };
     }
+
+    // 生成签表时创建球员信息快照，冻结当前球员数据
+    await freezeSnapshot(tid);
 
     // 删除旧比赛
     await supabase.from('matches').delete().eq('tournament_id', tid);

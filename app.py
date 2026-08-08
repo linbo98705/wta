@@ -961,6 +961,66 @@ def api_generate_draw(tid):
 
     return jsonify({'success': True, 'matches_created': len(created_matches)})
 
+# 冻结球员数据（不重新生成签表，仅创建快照）
+@app.route('/api/tournaments/<int:tid>/freeze-snapshot', methods=['POST'])
+def api_freeze_snapshot(tid):
+    db = get_db()
+    tournament = db.execute('SELECT * FROM tournaments WHERE id=?', (tid,)).fetchone()
+    if not tournament:
+        return jsonify({'error': 'Tournament not found'}), 404
+
+    players = db.execute('''
+        SELECT p.*, tp.seed as t_seed, tp.entry_type FROM tournament_players tp
+        JOIN players p ON tp.player_id = p.id
+        WHERE tp.tournament_id = ?
+        ORDER BY tp.seed ASC, p.ranking ASC
+    ''', (tid,)).fetchall()
+
+    if not players:
+        return jsonify({'error': '该赛事暂无参赛球员'}), 400
+
+    db.execute('DELETE FROM tournament_player_snapshots WHERE tournament_id=?', (tid,))
+    for p in players:
+        db.execute('''INSERT INTO tournament_player_snapshots
+                      (tournament_id, player_id, name, country, country_code, ranking, seed, entry_type)
+                      VALUES (?,?,?,?,?,?,?,?)''',
+                   (tid, p['id'], p['name'], p.get('country', ''), p.get('country_code', ''),
+                    p.get('ranking', 999), p.get('t_seed', 0), p.get('entry_type', 'main')))
+    db.commit()
+    return jsonify({'success': True, 'frozen': len(players)})
+
+# 批量冻结所有已生成签表但无快照的赛事
+@app.route('/api/freeze-all-snapshots', methods=['POST'])
+def api_freeze_all_snapshots():
+    db = get_db()
+    # 找出有比赛记录但没有快照的赛事
+    tournaments = db.execute('''
+        SELECT DISTINCT t.id, t.name_cn FROM tournaments t
+        JOIN matches m ON t.id = m.tournament_id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM tournament_player_snapshots s WHERE s.tournament_id = t.id
+        )
+    ''').fetchall()
+
+    frozen_count = 0
+    for t in tournaments:
+        tid = t['id']
+        players = db.execute('''
+            SELECT p.*, tp.seed as t_seed, tp.entry_type FROM tournament_players tp
+            JOIN players p ON tp.player_id = p.id
+            WHERE tp.tournament_id = ?
+        ''', (tid,)).fetchall()
+        for p in players:
+            db.execute('''INSERT INTO tournament_player_snapshots
+                          (tournament_id, player_id, name, country, country_code, ranking, seed, entry_type)
+                          VALUES (?,?,?,?,?,?,?,?)''',
+                       (tid, p['id'], p['name'], p.get('country', ''), p.get('country_code', ''),
+                        p.get('ranking', 999), p.get('t_seed', 0), p.get('entry_type', 'main')))
+        frozen_count += 1
+
+    db.commit()
+    return jsonify({'success': True, 'tournaments_frozen': frozen_count})
+
 # 手动触发 Bye 晋级（用于修复历史数据）
 @app.route('/api/tournaments/<int:tid>/advance-byes', methods=['POST'])
 def api_advance_byes(tid):

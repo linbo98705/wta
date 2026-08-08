@@ -154,6 +154,7 @@
                             <option value="">请选择赛事</option>
                         </select>
                         <button class="btn btn-success btn-sm" onclick="generateDraw()">🎲 生成签表</button>
+                        <button class="btn btn-outline btn-sm" onclick="freezeSnapshot()">🔒 冻结球员数据</button>
                         <button class="btn btn-outline btn-sm" onclick="advanceByes()">⏩ 处理轮空晋级</button>
                         <button class="btn btn-primary btn-sm" onclick="openMatchModal()">+ 添加比赛</button>
                     </div>
@@ -1597,6 +1598,19 @@ async function generateDraw() {
         loadMatchList();
     } else {
         showToast('生成失败: ' + (result.error || '未知错误'), 'error');
+    }
+}
+
+async function freezeSnapshot() {
+    const tid = document.getElementById('matchTournamentSelect').value;
+    if (!tid) { showToast('请先选择赛事', 'error'); return; }
+    if (!confirm('冻结球员数据？将保存当前球员信息快照，之后修改球员排名等不会影响该赛事。已有比赛数据不受影响。')) return;
+
+    const result = await api(`/api/tournaments/${tid}/freeze-snapshot`, { method: 'POST' });
+    if (!result.error) {
+        showToast('球员数据已冻结！共冻结 ' + result.frozen + ' 名球员', 'success');
+    } else {
+        showToast('冻结失败: ' + (result.error || '未知错误'), 'error');
     }
 }
 

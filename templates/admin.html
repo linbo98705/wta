@@ -122,6 +122,7 @@
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="openEntryModal()">+ 添加球员</button>
                         <button class="btn btn-outline btn-sm" onclick="recalcSeeds()">🔄 重算种子</button>
+                        <button class="btn btn-outline btn-sm" onclick="freezeSnapshot()">🔒 冻结球员数据</button>
                     </div>
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
@@ -154,7 +155,6 @@
                             <option value="">请选择赛事</option>
                         </select>
                         <button class="btn btn-success btn-sm" onclick="generateDraw()">🎲 生成签表</button>
-                        <button class="btn btn-outline btn-sm" onclick="freezeSnapshot()">🔒 冻结球员数据</button>
                         <button class="btn btn-outline btn-sm" onclick="advanceByes()">⏩ 处理轮空晋级</button>
                         <button class="btn btn-primary btn-sm" onclick="openMatchModal()">+ 添加比赛</button>
                     </div>
@@ -1602,7 +1602,7 @@ async function generateDraw() {
 }
 
 async function freezeSnapshot() {
-    const tid = document.getElementById('matchTournamentSelect').value;
+    const tid = document.getElementById('entryTournamentSelect').value;
     if (!tid) { showToast('请先选择赛事', 'error'); return; }
     if (!confirm('冻结球员数据？将保存当前球员信息快照，之后修改球员排名等不会影响该赛事。已有比赛数据不受影响。')) return;
 

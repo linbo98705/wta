@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=24">
+    <link rel="stylesheet" href="static/css/style.css?v=25">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -914,7 +914,9 @@
                 wrapper.style.position = 'fixed';
                 wrapper.style.left = '-9999px';
                 wrapper.style.top = '0';
-                wrapper.style.width = '1600px';
+                // 根据场地数量决定宽度：单场地用半宽，多场地用全宽
+                const courtCount = cardSection.querySelectorAll('.court-column').length;
+                wrapper.style.width = courtCount <= 1 ? '800px' : '1600px';
                 wrapper.style.background = '#fff';
                 document.body.appendChild(wrapper);
 

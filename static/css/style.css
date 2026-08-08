@@ -2551,11 +2551,12 @@ textarea.form-control {
 
 /* ── Export Wrapper: 强制桌面布局（导出长图时使用） ── */
 .export-wrapper .court-columns {
-    flex-direction: column;
-    flex-wrap: nowrap;
+    flex-direction: row;
+    flex-wrap: wrap;
 }
 .export-wrapper .court-column {
-    flex: 1 1 100%;
+    flex: 0 1 calc(50% - 6px);
+    max-width: calc(50% - 6px);
     min-width: 0;
 }
 .export-wrapper .match-card-toggle {

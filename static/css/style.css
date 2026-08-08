@@ -976,7 +976,8 @@ img { max-width: 100%; height: auto; }
         flex-wrap: wrap;
     }
     .court-column {
-        flex: 1 1 calc(50% - 6px);
+        flex: 0 1 calc(50% - 6px);
+        max-width: calc(50% - 6px);
     }
 }
 .court-column-header {
@@ -2550,10 +2551,12 @@ textarea.form-control {
 
 /* ── Export Wrapper: 强制桌面布局（导出长图时使用） ── */
 .export-wrapper .court-columns {
-    flex-wrap: wrap;
+    flex-direction: column;
+    flex-wrap: nowrap;
 }
 .export-wrapper .court-column {
-    flex: 1 1 calc(50% - 6px);
+    flex: 1 1 100%;
+    min-width: 0;
 }
 .export-wrapper .match-card-toggle {
     padding: 10px 14px;

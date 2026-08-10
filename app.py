@@ -71,6 +71,7 @@ def init_db():
             country TEXT DEFAULT '',
             country_code TEXT NOT NULL DEFAULT '',
             ranking INTEGER DEFAULT 999,
+            doubles_ranking INTEGER DEFAULT 999,
             seed INTEGER DEFAULT 0,
             photo_url TEXT DEFAULT '',
             bio TEXT DEFAULT ''
@@ -120,13 +121,14 @@ def init_db():
             country TEXT DEFAULT '',
             country_code TEXT DEFAULT '',
             ranking INTEGER DEFAULT 999,
+            doubles_ranking INTEGER DEFAULT 999,
             seed INTEGER DEFAULT 0,
             entry_type TEXT DEFAULT 'main',
             FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
             UNIQUE(tournament_id, player_id)
         );
     ''')
-    # 为已存在的数据库添加竞猜字段（如果缺失）
+    # 为已存在的数据库添加增量字段（如果缺失）
     for col, col_type in [
         ('guess_team_a', 'TEXT DEFAULT \'\''),
         ('guess_team_b', 'TEXT DEFAULT \'\''),
@@ -195,6 +197,16 @@ def init_db():
     # tournaments.theme 字段增量迁移（后台可选的页面主题，默认紫色）
     try:
         db.execute("ALTER TABLE tournaments ADD COLUMN theme TEXT DEFAULT 'purple'")
+    except sqlite3.OperationalError:
+        pass
+    # players.doubles_ranking 字段增量迁移
+    try:
+        db.execute('ALTER TABLE players ADD COLUMN doubles_ranking INTEGER DEFAULT 999')
+    except sqlite3.OperationalError:
+        pass
+    # tournament_player_snapshots.doubles_ranking 字段增量迁移
+    try:
+        db.execute('ALTER TABLE tournament_player_snapshots ADD COLUMN doubles_ranking INTEGER DEFAULT 999')
     except sqlite3.OperationalError:
         pass
     db.commit()
@@ -328,10 +340,11 @@ def api_player(pid):
 def api_create_player():
     data = request.json
     db = get_db()
-    db.execute('''INSERT INTO players (name, country, ranking, seed, photo_url, bio)
-                  VALUES (?,?,?,?,?,?)''',
-               (data['name'], data.get('country', ''),
-                data.get('ranking', 999), data.get('seed', 0), data.get('photo_url', ''), data.get('bio', '')))
+    db.execute('''INSERT INTO players (name, country, country_code, ranking, doubles_ranking, seed, photo_url, bio)
+                  VALUES (?,?,?,?,?,?,?,?)''',
+               (data['name'], data.get('country', ''), data.get('country_code', ''),
+                data.get('ranking', 999), data.get('doubles_ranking', 999),
+                data.get('seed', 0), data.get('photo_url', ''), data.get('bio', '')))
     db.commit()
     return jsonify({'id': db.execute('SELECT last_insert_rowid()').fetchone()[0]}), 201
 
@@ -341,7 +354,7 @@ def api_update_player(pid):
     db = get_db()
     fields = []
     values = []
-    for k in ['name', 'country', 'ranking', 'seed', 'photo_url', 'bio']:
+    for k in ['name', 'country', 'country_code', 'ranking', 'doubles_ranking', 'seed', 'photo_url', 'bio']:
         if k in data:
             fields.append(f'{k}=?')
             values.append(data[k])
@@ -378,14 +391,14 @@ def api_batch_create_players():
         existing = db.execute('SELECT id FROM players WHERE name = ?', (name,)).fetchone()
         if existing:
             # 更新已有球员信息
-            db.execute('UPDATE players SET country=?, ranking=? WHERE id=?',
-                       (p.get('country', ''), p.get('ranking', 999), existing[0]))
+            db.execute('UPDATE players SET country=?, country_code=?, ranking=?, doubles_ranking=? WHERE id=?',
+                       (p.get('country', ''), p.get('country_code', ''), p.get('ranking', 999), p.get('doubles_ranking', 999), existing[0]))
             ids.append(existing[0])
             updated += 1
         else:
             # 新增
-            db.execute('INSERT INTO players (name, country, ranking) VALUES (?,?,?)',
-                       (name, p.get('country', ''), p.get('ranking', 999)))
+            db.execute('INSERT INTO players (name, country, country_code, ranking, doubles_ranking) VALUES (?,?,?,?,?)',
+                       (name, p.get('country', ''), p.get('country_code', ''), p.get('ranking', 999), p.get('doubles_ranking', 999)))
             ids.append(db.execute('SELECT last_insert_rowid()').fetchone()[0])
             created += 1
     db.commit()
@@ -433,7 +446,8 @@ def api_upload_players():
                     players_data.append({
                         'name': cols[0],
                         'country': cols[1] if len(cols) > 1 else '',
-                        'ranking': int(cols[2]) if len(cols) > 2 and cols[2].isdigit() else 999
+                        'ranking': int(cols[2]) if len(cols) > 2 and cols[2].isdigit() else 999,
+                        'doubles_ranking': int(cols[3]) if len(cols) > 3 and cols[3].isdigit() else 999
                     })
         elif filename.endswith('.xlsx') or filename.endswith('.xls'):
             # Excel 解析
@@ -454,7 +468,13 @@ def api_upload_players():
                         ranking = int(row[2])
                     except (ValueError, TypeError):
                         ranking = 999
-                players_data.append({'name': name, 'country': country, 'ranking': ranking})
+                doubles_ranking = 999
+                if len(row) > 3 and row[3] is not None:
+                    try:
+                        doubles_ranking = int(row[3])
+                    except (ValueError, TypeError):
+                        doubles_ranking = 999
+                players_data.append({'name': name, 'country': country, 'ranking': ranking, 'doubles_ranking': doubles_ranking})
         else:
             return jsonify({'error': '不支持的文件格式，请上传 .csv 或 .xlsx 文件'}), 400
     except Exception as e:
@@ -475,7 +495,7 @@ def api_tournament_players(tid):
     ).fetchone()[0]
     if snap_count > 0:
         rows = db.execute('''
-            SELECT player_id as id, name, country, country_code, ranking,
+            SELECT player_id as id, name, country, country_code, ranking, doubles_ranking,
                    seed as t_seed, entry_type, seed, '' as photo_url, '' as bio
             FROM tournament_player_snapshots
             WHERE tournament_id = ?
@@ -519,27 +539,59 @@ def api_recalc_seeds(tid):
         return jsonify({'error': 'Tournament not found'}), 404
 
     draw_size = tournament['draw_size']
+    is_doubles = tournament['match_type'] == 'doubles'
     max_seeds = get_num_seeds(draw_size)
-
-    # 获取所有报名球员，按排名升序（排名越小越靠前）
-    players = db.execute('''
-        SELECT tp.*, p.ranking FROM tournament_players tp
-        JOIN players p ON tp.player_id = p.id
-        WHERE tp.tournament_id = ?
-        ORDER BY p.ranking ASC
-    ''', (tid,)).fetchall()
 
     # 先将所有种子清零
     db.execute('UPDATE tournament_players SET seed=0 WHERE tournament_id=?', (tid,))
 
-    # 给排名靠前的球员分配种子（正赛优先）
-    seeded_count = 0
-    for p in players:
-        if seeded_count >= max_seeds:
-            break
-        if p['entry_type'] in ('main', 'wc', 'q'):  # 所有类型都可以成为种子
+    if is_doubles:
+        # 双打：按 doubles_ranking 排序后两两配对，计算排名总和，按总和安排种子
+        players = db.execute('''
+            SELECT tp.*, p.ranking, p.doubles_ranking FROM tournament_players tp
+            JOIN players p ON tp.player_id = p.id
+            WHERE tp.tournament_id = ?
+            ORDER BY p.doubles_ranking ASC
+        ''', (tid,)).fetchall()
+
+        # 两两配对为队伍
+        teams = []
+        for i in range(0, len(players) - 1, 2):
+            p1 = players[i]
+            p2 = players[i + 1]
+            r1 = p1['doubles_ranking'] or 999
+            r2 = p2['doubles_ranking'] or 999
+            teams.append({'members': [p1, p2], 'rank_sum': r1 + r2})
+        if len(players) % 2 == 1:
+            last = players[-1]
+            teams.append({'members': [last], 'rank_sum': last['doubles_ranking'] or 999})
+
+        # 按排名总和升序排序
+        teams.sort(key=lambda t: t['rank_sum'])
+
+        seeded_count = 0
+        for team in teams:
+            if seeded_count >= max_seeds:
+                break
             seeded_count += 1
-            db.execute('UPDATE tournament_players SET seed=? WHERE id=?', (seeded_count, p['id']))
+            for member in team['members']:
+                db.execute('UPDATE tournament_players SET seed=? WHERE id=?', (seeded_count, member['id']))
+    else:
+        # 单打：按 ranking 排序安排种子
+        players = db.execute('''
+            SELECT tp.*, p.ranking FROM tournament_players tp
+            JOIN players p ON tp.player_id = p.id
+            WHERE tp.tournament_id = ?
+            ORDER BY p.ranking ASC
+        ''', (tid,)).fetchall()
+
+        seeded_count = 0
+        for p in players:
+            if seeded_count >= max_seeds:
+                break
+            if p['entry_type'] in ('main', 'wc', 'q'):
+                seeded_count += 1
+                db.execute('UPDATE tournament_players SET seed=? WHERE id=?', (seeded_count, p['id']))
 
     db.commit()
     return jsonify({'success': True, 'seeded': seeded_count, 'max_seeds': max_seeds})
@@ -827,10 +879,11 @@ def api_generate_draw(tid):
     db.execute('DELETE FROM tournament_player_snapshots WHERE tournament_id=?', (tid,))
     for p in player_list:
         db.execute('''INSERT INTO tournament_player_snapshots
-                      (tournament_id, player_id, name, country, country_code, ranking, seed, entry_type)
-                      VALUES (?,?,?,?,?,?,?,?)''',
+                      (tournament_id, player_id, name, country, country_code, ranking, doubles_ranking, seed, entry_type)
+                      VALUES (?,?,?,?,?,?,?,?,?)''',
                    (tid, p['id'], p['name'], p.get('country', ''), p.get('country_code', ''),
-                    p.get('ranking', 999), p.get('t_seed', 0), p.get('entry_type', 'main')))
+                    p.get('ranking', 999), p.get('doubles_ranking', 999),
+                    p.get('t_seed', 0), p.get('entry_type', 'main')))
 
     # 删除旧比赛
     db.execute('DELETE FROM matches WHERE tournament_id=?', (tid,))
@@ -1023,10 +1076,11 @@ def api_freeze_snapshot(tid):
     db.execute('DELETE FROM tournament_player_snapshots WHERE tournament_id=?', (tid,))
     for p in players:
         db.execute('''INSERT INTO tournament_player_snapshots
-                      (tournament_id, player_id, name, country, country_code, ranking, seed, entry_type)
-                      VALUES (?,?,?,?,?,?,?,?)''',
+                      (tournament_id, player_id, name, country, country_code, ranking, doubles_ranking, seed, entry_type)
+                      VALUES (?,?,?,?,?,?,?,?,?)''',
                    (tid, p['id'], p['name'], p.get('country', ''), p.get('country_code', ''),
-                    p.get('ranking', 999), p.get('t_seed', 0), p.get('entry_type', 'main')))
+                    p.get('ranking', 999), p.get('doubles_ranking', 999),
+                    p.get('t_seed', 0), p.get('entry_type', 'main')))
     db.commit()
     return jsonify({'success': True, 'frozen': len(players)})
 
@@ -1053,10 +1107,11 @@ def api_freeze_all_snapshots():
         ''', (tid,)).fetchall()
         for p in players:
             db.execute('''INSERT INTO tournament_player_snapshots
-                          (tournament_id, player_id, name, country, country_code, ranking, seed, entry_type)
-                          VALUES (?,?,?,?,?,?,?,?)''',
+                          (tournament_id, player_id, name, country, country_code, ranking, doubles_ranking, seed, entry_type)
+                          VALUES (?,?,?,?,?,?,?,?,?)''',
                        (tid, p['id'], p['name'], p.get('country', ''), p.get('country_code', ''),
-                        p.get('ranking', 999), p.get('t_seed', 0), p.get('entry_type', 'main')))
+                        p.get('ranking', 999), p.get('doubles_ranking', 999),
+                        p.get('t_seed', 0), p.get('entry_type', 'main')))
         frozen_count += 1
 
     db.commit()

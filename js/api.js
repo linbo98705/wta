@@ -467,6 +467,7 @@ async function createPlayer(data) {
             country: data.country || '',
             country_code: data.country_code || '',
             ranking: data.ranking || 999,
+            doubles_ranking: data.doubles_ranking || 999,
             seed: data.seed || 0,
             photo_url: data.photo_url || '',
             bio: data.bio || '',
@@ -487,7 +488,7 @@ async function createPlayer(data) {
  * @returns {Promise<Object>} { success, error }
  */
 async function updatePlayer(id, data) {
-    const allowed = ['name', 'country', 'country_code', 'ranking', 'seed', 'photo_url', 'bio'];
+    const allowed = ['name', 'country', 'country_code', 'ranking', 'doubles_ranking', 'seed', 'photo_url', 'bio'];
     const updates = {};
     for (const k of allowed) {
         if (data[k] !== undefined) {
@@ -579,6 +580,7 @@ async function batchCreatePlayers(list) {
                     country: p.country || '',
                     country_code: p.country_code || '',
                     ranking: p.ranking || 999,
+                    doubles_ranking: p.doubles_ranking || 999,
                 });
                 ids.push(existingId);
                 updated++;
@@ -588,13 +590,14 @@ async function batchCreatePlayers(list) {
                     country: p.country || '',
                     country_code: p.country_code || '',
                     ranking: p.ranking || 999,
+                    doubles_ranking: p.doubles_ranking || 999,
                 });
             }
         }
 
         if (toUpdate.length > 0) {
             for (const u of toUpdate) {
-                await supabase.from('players').update({ country: u.country, country_code: u.country_code, ranking: u.ranking }).eq('id', u.id);
+                await supabase.from('players').update({ country: u.country, country_code: u.country_code, ranking: u.ranking, doubles_ranking: u.doubles_ranking }).eq('id', u.id);
             }
         }
 
@@ -670,7 +673,7 @@ async function getTournamentPlayers(tid) {
     if (!snapErr && snapCount > 0) {
         const { data: snapData, error: snapError2 } = await supabase
             .from('tournament_player_snapshots')
-            .select('player_id, name, country, country_code, ranking, seed, entry_type')
+            .select('player_id, name, country, country_code, ranking, doubles_ranking, seed, entry_type')
             .eq('tournament_id', tid)
             .order('ranking', { ascending: true });
 
@@ -681,6 +684,7 @@ async function getTournamentPlayers(tid) {
                 country: row.country,
                 country_code: row.country_code,
                 ranking: row.ranking,
+                doubles_ranking: row.doubles_ranking || 999,
                 seed: row.seed,
                 t_seed: row.seed,
                 entry_type: row.entry_type,
@@ -692,7 +696,7 @@ async function getTournamentPlayers(tid) {
 
     const { data, error } = await supabase
         .from('tournament_players')
-        .select('seed, entry_type, player:player_id(id, name, country, country_code, ranking, seed, photo_url, bio)')
+        .select('seed, entry_type, player:player_id(id, name, country, country_code, ranking, doubles_ranking, seed, photo_url, bio)')
         .eq('tournament_id', tid);
 
     if (error) {
@@ -719,7 +723,7 @@ async function getTournamentPlayers(tid) {
 async function getLiveTournamentPlayers(tid) {
     const { data, error } = await supabase
         .from('tournament_players')
-        .select('id, seed, entry_type, player:player_id(id, name, country, country_code, ranking, seed, photo_url, bio)')
+        .select('id, seed, entry_type, player:player_id(id, name, country, country_code, ranking, doubles_ranking, seed, photo_url, bio)')
         .eq('tournament_id', tid);
 
     if (error) {
@@ -818,17 +822,73 @@ async function recalcSeeds(tid) {
     }
 
     const drawSize = tournament.draw_size;
+    const isDoubles = tournament.match_type === 'doubles';
     const maxSeeds = getNumSeeds(drawSize);
+
+    const selectFields = isDoubles
+        ? 'id, seed, player:player_id(ranking, doubles_ranking)'
+        : 'id, seed, player:player_id(ranking)';
 
     const { data: tpRows, error: tpError } = await supabase
         .from('tournament_players')
-        .select('id, seed, player:player_id(ranking)')
+        .select(selectFields)
         .eq('tournament_id', tid);
 
     if (tpError) {
         return { success: false, seeded: 0, maxSeeds, error: tpError.message };
     }
 
+    if (isDoubles) {
+        // 双打：按 doubles_ranking 排序后两两配对，计算排名总和，按总和安排种子
+        const sorted = (tpRows || [])
+            .map(r => ({
+                tp_id: r.id,
+                old_seed: r.seed || 0,
+                doubles_ranking: (r.player && r.player.doubles_ranking) || 999,
+            }))
+            .sort((a, b) => a.doubles_ranking - b.doubles_ranking);
+
+        // 两两配对为队伍
+        const teams = [];
+        for (let i = 0; i + 1 < sorted.length; i += 2) {
+            teams.push({
+                members: [sorted[i], sorted[i + 1]],
+                rankSum: sorted[i].doubles_ranking + sorted[i + 1].doubles_ranking,
+            });
+        }
+        // 奇数球员：最后一个单独成队
+        if (sorted.length % 2 === 1) {
+            teams.push({
+                members: [sorted[sorted.length - 1]],
+                rankSum: sorted[sorted.length - 1].doubles_ranking,
+            });
+        }
+
+        // 按排名总和升序排序（总和越小排名越高）
+        teams.sort((a, b) => a.rankSum - b.rankSum);
+
+        const updates = [];
+        let seeded = 0;
+        for (const team of teams) {
+            const newSeed = seeded < maxSeeds ? seeded + 1 : 0;
+            for (const member of team.members) {
+                if (newSeed !== member.old_seed) {
+                    updates.push({ id: member.tp_id, seed: newSeed });
+                }
+            }
+            if (newSeed > 0) seeded++;
+        }
+
+        if (updates.length > 0) {
+            await Promise.all(
+                updates.map(u => supabase.from('tournament_players').update({ seed: u.seed }).eq('id', u.id))
+            );
+        }
+
+        return { success: true, seeded, maxSeeds, updated: updates.length, error: null };
+    }
+
+    // 单打：按 ranking 排序安排种子
     const sorted = (tpRows || [])
         .map(r => ({
             tp_id: r.id,
@@ -1539,6 +1599,7 @@ async function freezeSnapshot(tid) {
         country: p.country || '',
         country_code: p.country_code || '',
         ranking: p.ranking || 999,
+        doubles_ranking: p.doubles_ranking || 999,
         seed: p.t_seed || 0,
         entry_type: p.entry_type || 'main',
     }));
@@ -1587,12 +1648,12 @@ async function generateDraw(tid) {
     let drawEntries = players; // 用于签表定位的条目（单打=球员，双打=队伍代表）
 
     if (isDoubles) {
-        // 按种子和排名排序后两两配对
+        // 按种子和双打排名排序后两两配对
         const sorted = [...players].sort((a, b) => {
             const sa = a.t_seed || 999;
             const sb = b.t_seed || 999;
             if (sa !== sb) return sa - sb;
-            return (a.ranking || 999) - (b.ranking || 999);
+            return (a.doubles_ranking || 999) - (b.doubles_ranking || 999);
         });
         for (let i = 0; i + 1 < sorted.length; i += 2) {
             teamPartnerMap[sorted[i].id] = sorted[i + 1].id;

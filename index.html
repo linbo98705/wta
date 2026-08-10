@@ -1193,6 +1193,7 @@
     let allPlayersCache = [];
     let entryAllPlayersCache = [];
     let allEntryPlayersCache = [];
+    let entryTournamentType = 'singles';
     let allMatchesCache = [];
 
     async function renderAdmin() {
@@ -1247,10 +1248,10 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <p style="font-size:0.8125rem; color:var(--gray-500); margin-bottom:12px;">支持手动输入或导入 Excel/CSV 文件（格式：中文姓名,国家/地区,排名）。填写完毕后点击「批量保存」。</p>
+                    <p style="font-size:0.8125rem; color:var(--gray-500); margin-bottom:12px;">支持手动输入或导入 Excel/CSV 文件（格式：中文姓名,国家/地区,单打排名,双打排名）。填写完毕后点击「批量保存」。</p>
                     <div style="overflow-x:auto;">
                         <table class="data-table" id="playerEditTable">
-                            <thead><tr><th class="hide-mobile" style="width:30px;">#</th><th>中文姓名</th><th>国家/地区</th><th>排名</th><th style="width:60px;">操作</th></tr></thead>
+                            <thead><tr><th class="hide-mobile" style="width:30px;">#</th><th>中文姓名</th><th>国家/地区</th><th>单打排名</th><th>双打排名</th><th style="width:60px;">操作</th></tr></thead>
                             <tbody id="playerEditBody"></tbody>
                         </table>
                     </div>
@@ -1275,7 +1276,7 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAll" onchange="adminToggleAllCheckboxes(this)"></th><th class="hide-mobile">ID</th><th>姓名</th><th>国家/地区</th><th>排名</th><th>操作</th></tr></thead>
+                        <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAll" onchange="adminToggleAllCheckboxes(this)"></th><th class="hide-mobile">ID</th><th>姓名</th><th>国家/地区</th><th>单打排名</th><th>双打排名</th><th>操作</th></tr></thead>
                         <tbody id="playerTable"></tbody>
                     </table>
                 </div>
@@ -1302,7 +1303,7 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th></tr></thead>
+                        <thead><tr id="entryTableHead"><th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th></tr></thead>
                         <tbody id="entryTable"><tr><td colspan="6" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
                     </table>
                 </div>
@@ -1368,7 +1369,10 @@
                 <div class="form-group"><label>国家/地区</label><input type="text" class="form-control" id="peCountry" placeholder="如：中国"></div>
                 <div class="form-group"><label>国家/地区代码</label><input type="text" class="form-control" id="peCountryCode" placeholder="2位字母，如：CN" maxlength="2" style="width:120px; text-transform:uppercase;"></div>
             </div>
-            <div class="form-group"><label>排名</label><input type="number" class="form-control" id="peRanking" min="1" placeholder="排名" style="width:160px;"></div>
+            <div class="form-row">
+                <div class="form-group"><label>单打排名</label><input type="number" class="form-control" id="peRanking" min="1" placeholder="单打排名" style="width:160px;"></div>
+                <div class="form-group"><label>双打排名</label><input type="number" class="form-control" id="peDoublesRanking" min="1" placeholder="双打排名" style="width:160px;"></div>
+            </div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('playerEditModal')">取消</button>
                 <button type="submit" class="btn btn-primary btn-sm">保存</button>
@@ -1735,9 +1739,9 @@
         };
 
         // ── Player CRUD ──
-        window.adminAddPlayerRow = function(name, country, ranking) {
+        window.adminAddPlayerRow = function(name, country, ranking, doublesRanking) {
             var c = country || '';
-            playerEditRows.push({ name: name || '', country: c, country_code: getCountryCodeByName(c) || '', ranking: ranking || 999 });
+            playerEditRows.push({ name: name || '', country: c, country_code: getCountryCodeByName(c) || '', ranking: ranking || 999, doubles_ranking: doublesRanking || 999 });
             adminRenderPlayerEditRows();
         };
 
@@ -1756,10 +1760,10 @@
         window.adminRenderPlayerEditRows = function() {
             const tbody = document.getElementById('playerEditBody');
             if (playerEditRows.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:20px;color:var(--gray-400);">点击「+ 添加行」开始输入球员</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:20px;color:var(--gray-400);">点击「+ 添加行」开始输入球员</td></tr>';
                 return;
             }
-            tbody.innerHTML = playerEditRows.map((p, i) => '<tr><td class="hide-mobile">' + (i + 1) + '</td><td><input type="text" class="form-control" value="' + escapeHtml(p.name) + '" placeholder="如：郑钦文" onchange="adminUpdatePlayerRow(' + i + ',\'name\',this.value)"></td><td><input type="text" class="form-control" value="' + escapeHtml(p.country) + '" placeholder="如：中国" onchange="adminUpdatePlayerRow(' + i + ',\'country\',this.value)"></td><td><input type="number" class="form-control" value="' + p.ranking + '" min="1" style="width:80px;" onchange="adminUpdatePlayerRow(' + i + ',\'ranking\',parseInt(this.value)||999)"></td><td><button class="btn btn-danger btn-sm" onclick="adminRemovePlayerRow(' + i + ')">&#10005;</button></td></tr>').join('');
+            tbody.innerHTML = playerEditRows.map((p, i) => '<tr><td class="hide-mobile">' + (i + 1) + '</td><td><input type="text" class="form-control" value="' + escapeHtml(p.name) + '" placeholder="如：郑钦文" onchange="adminUpdatePlayerRow(' + i + ',\'name\',this.value)"></td><td><input type="text" class="form-control" value="' + escapeHtml(p.country) + '" placeholder="如：中国" onchange="adminUpdatePlayerRow(' + i + ',\'country\',this.value)"></td><td><input type="number" class="form-control" value="' + (p.ranking < 999 ? p.ranking : '') + '" min="1" style="width:80px;" placeholder="999" onchange="adminUpdatePlayerRow(' + i + ',\'ranking\',parseInt(this.value)||999)"></td><td><input type="number" class="form-control" value="' + (p.doubles_ranking < 999 ? p.doubles_ranking : '') + '" min="1" style="width:80px;" placeholder="999" onchange="adminUpdatePlayerRow(' + i + ',\'doubles_ranking\',parseInt(this.value)||999)"></td><td><button class="btn btn-danger btn-sm" onclick="adminRemovePlayerRow(' + i + ')">&#10005;</button></td></tr>').join('');
         }
 
         window.adminBatchSavePlayers = async function() {
@@ -1795,7 +1799,7 @@
                 countrySel.innerHTML = '<option value="">所有国家/地区</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
             }
             if (allPlayersCache.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无球员</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px;">暂无球员</td></tr>';
                 adminUpdateBatchDelBtn();
                 return;
             }
@@ -1805,11 +1809,11 @@
         window.adminRenderPlayerList = function(players) {
             const tbody = document.getElementById('playerTable');
             if (!players || players.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;color:var(--gray-400);">未找到匹配的球员</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px;color:var(--gray-400);">未找到匹配的球员</td></tr>';
                 adminUpdateBatchDelBtn();
                 return;
             }
-            tbody.innerHTML = players.map(p => '<tr><td><input type="checkbox" class="player-check" value="' + p.id + '" onchange="adminUpdateBatchDelBtn()"></td><td class="hide-mobile">' + p.id + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditPlayer(' + p.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeletePlayer(' + p.id + ')">删除</button></td></tr>').join('');
+            tbody.innerHTML = players.map(p => '<tr><td><input type="checkbox" class="player-check" value="' + p.id + '" onchange="adminUpdateBatchDelBtn()"></td><td class="hide-mobile">' + p.id + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td>' + (p.doubles_ranking && p.doubles_ranking < 999 ? '#' + p.doubles_ranking : '-') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditPlayer(' + p.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeletePlayer(' + p.id + ')">删除</button></td></tr>').join('');
             adminUpdateBatchDelBtn();
         }
 
@@ -1822,7 +1826,7 @@
             }
             if (keyword) {
                 filtered = filtered.filter(function(p) {
-                    return (p.name || '').toLowerCase().includes(keyword) || (p.country || '').toLowerCase().includes(keyword) || String(p.ranking || '').includes(keyword) || String(p.id || '').includes(keyword);
+                    return (p.name || '').toLowerCase().includes(keyword) || (p.country || '').toLowerCase().includes(keyword) || String(p.ranking || '').includes(keyword) || String(p.doubles_ranking || '').includes(keyword) || String(p.id || '').includes(keyword);
                 });
             }
             document.getElementById('playerCount').textContent = '找到 ' + filtered.length + ' / ' + allPlayersCache.length + ' 名球员';
@@ -1889,8 +1893,9 @@
                     if (!name) continue;
                     const country = String(row[1] || '').trim();
                     const ranking = parseInt(row[2]) || 999;
+                    const doubles_ranking = parseInt(row[3]) || 999;
                     const country_code = getCountryCodeByName(country) || '';
-                    playerEditRows.push({ name, country, country_code, ranking });
+                    playerEditRows.push({ name, country, country_code, ranking, doubles_ranking });
                     imported++;
                 }
                 if (imported > 0) {
@@ -1944,6 +1949,7 @@
             document.getElementById('peCountry').value = p.country || '';
             document.getElementById('peCountryCode').value = p.country_code || getCountryCodeByName(p.country || '') || '';
             document.getElementById('peRanking').value = p.ranking < 999 ? p.ranking : '';
+            document.getElementById('peDoublesRanking').value = (p.doubles_ranking && p.doubles_ranking < 999) ? p.doubles_ranking : '';
             document.getElementById('playerEditModalTitle').textContent = '编辑球员';
             openModal('playerEditModal');
         };
@@ -1959,7 +1965,8 @@
                 name: document.getElementById('peName').value.trim(),
                 country: document.getElementById('peCountry').value.trim(),
                 country_code: countryCode,
-                ranking: parseInt(document.getElementById('peRanking').value) || 999
+                ranking: parseInt(document.getElementById('peRanking').value) || 999,
+                doubles_ranking: parseInt(document.getElementById('peDoublesRanking').value) || 999
             });
             if (result.success) {
                 closeModal('playerEditModal');
@@ -2000,10 +2007,21 @@
             if (!tid) { document.getElementById('entryCount').textContent = ''; return; }
             const tournament = await getTournament(parseInt(tid));
             const drawSize = tournament ? (tournament.draw_size || 0) : 0;
+            entryTournamentType = tournament ? (tournament.match_type || 'singles') : 'singles';
+            const isDoubles = entryTournamentType === 'doubles';
             const players = await getTournamentPlayers(parseInt(tid));
             allEntryPlayersCache = Array.isArray(players) ? players : [];
             const count = allEntryPlayersCache.length;
-            document.getElementById('entryCount').textContent = '共 ' + count + ' 名球员 / ' + drawSize + '签';
+            document.getElementById('entryCount').textContent = '共 ' + count + ' 名球员 / ' + drawSize + '签' + (isDoubles ? ' / 双打' : '');
+            // 根据赛事类型更新表头
+            var head = document.getElementById('entryTableHead');
+            if (head) {
+                if (isDoubles) {
+                    head.innerHTML = '<th>种子</th><th>球员1</th><th>球员2</th><th>双打排名1</th><th>双打排名2</th><th>排名总和</th><th>操作</th>';
+                } else {
+                    head.innerHTML = '<th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th>';
+                }
+            }
             var countrySel = document.getElementById('entryCountryFilter');
             if (countrySel) {
                 var countries = [];
@@ -2025,11 +2043,44 @@
 
         window.adminRenderEntryList = function(players) {
             const tbody = document.getElementById('entryTable');
+            const isDoubles = entryTournamentType === 'doubles';
+            var colCount = isDoubles ? 7 : 6;
             if (players.error || !Array.isArray(players) || players.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="' + colCount + '" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
                 return;
             }
-            tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td class="hide-mobile">' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正赛') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
+            if (isDoubles) {
+                // 双打：按 doubles_ranking 排序后两两配对，计算排名总和，按总和排序
+                var sorted = players.slice().sort(function(a, b) {
+                    return (a.doubles_ranking || 999) - (b.doubles_ranking || 999);
+                });
+                var teams = [];
+                for (var i = 0; i + 1 < sorted.length; i += 2) {
+                    var p1 = sorted[i], p2 = sorted[i + 1];
+                    var r1 = p1.doubles_ranking || 999, r2 = p2.doubles_ranking || 999;
+                    teams.push({ p1: p1, p2: p2, rankSum: r1 + r2, seed: p1.t_seed || p2.t_seed || 0 });
+                }
+                if (sorted.length % 2 === 1) {
+                    var last = sorted[sorted.length - 1];
+                    teams.push({ p1: last, p2: null, rankSum: last.doubles_ranking || 999, seed: last.t_seed || 0 });
+                }
+                // 按排名总和升序排序（总和越小排名越高）
+                teams.sort(function(a, b) { return a.rankSum - b.rankSum; });
+                tbody.innerHTML = teams.map(function(t) {
+                    var seedHtml = t.seed > 0 ? '<span class="seed-badge">' + t.seed + '</span>' : '-';
+                    var p1Html = '<div class="player-row"><div class="player-avatar">' + (t.p1.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(t.p1.name) + '</strong></div>';
+                    var p2Html = t.p2 ? '<div class="player-row"><div class="player-avatar">' + (t.p2.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(t.p2.name) + '</strong></div>' : '<span style="color:var(--gray-400);">—</span>';
+                    var r1 = t.p1.doubles_ranking && t.p1.doubles_ranking < 999 ? '#' + t.p1.doubles_ranking : '-';
+                    var r2 = t.p2 && t.p2.doubles_ranking && t.p2.doubles_ranking < 999 ? '#' + t.p2.doubles_ranking : '-';
+                    var sumHtml = '<strong>' + t.rankSum + '</strong>';
+                    var actions = '<button class="btn btn-outline btn-sm" onclick="adminRemoveEntry(' + t.p1.id + ')">移除</button>';
+                    if (t.p2) actions += ' <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + t.p2.id + ')">移除</button>';
+                    return '<tr><td>' + seedHtml + '</td><td>' + p1Html + '</td><td>' + p2Html + '</td><td>' + r1 + '</td><td>' + r2 + '</td><td>' + sumHtml + '</td><td>' + actions + '</td></tr>';
+                }).join('');
+            } else {
+                // 单打：保持原有逻辑
+                tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td class="hide-mobile">' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正赛') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
+            }
         };
 
         window.adminOpenEntryModal = async function() {
@@ -2129,7 +2180,12 @@
             const tid = document.getElementById('entryTournamentSelect').value;
             if (!tid) { showToast('请先选择赛事', 'error'); return; }
             const result = await recalcSeeds(parseInt(tid));
-            if (result.success) { showToast('种子已重算，共 ' + result.seeded + ' 名种子球员', 'success'); adminLoadEntryList(); }
+            if (result.success) {
+                var msg = entryTournamentType === 'doubles'
+                    ? '种子已重算，共 ' + result.seeded + ' 对种子组合（按双打排名总和）'
+                    : '种子已重算，共 ' + result.seeded + ' 名种子球员';
+                showToast(msg, 'success'); adminLoadEntryList();
+            }
             else { showToast('重算失败', 'error'); }
         };
 

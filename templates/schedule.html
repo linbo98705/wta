@@ -99,11 +99,14 @@ const tid = {{ tid }};
 
     // ── Render guess table ──
     // Layout: TB | 球员A预测 | 球员A得分 | 中间得分 | 球员B得分 | 球员B预测
+    // 双打时: TB | 球员1预测 | 球员3预测 | A得分 | B得分 | 球员2预测 | 球员4预测
     function renderGuess(m) {
         const p1Name = m.p1_name || '球员1';
         const p2Name = m.p2_name || '球员2';
         const aPreds = (m.guess_a_tb || '').split(',');
         const bPreds = (m.guess_b_tb || '').split(',');
+        const a2Preds = (m.guess_a2_tb || '').split(',');
+        const b2Preds = (m.guess_b2_tb || '').split(',');
         const aScores = (m.guess_a_tb_score || '').split(',');
         const bScores = (m.guess_b_tb_score || '').split(',');
         const aTotal = m.guess_a_total || 0;
@@ -111,8 +114,12 @@ const tid = {{ tid }};
         const guessWinner = m.guess_winner || '';
         const guessReason = m.guess_reason || '';
 
+        // 检测是否有双打数据
+        const hasDoubles = a2Preds.some(v => v && v.trim()) || b2Preds.some(v => v && v.trim());
+
         const hasData = aPreds.some(v => v && v.trim()) || bPreds.some(v => v && v.trim())
-                     || aScores.some(v => v && v.trim()) || bScores.some(v => v && v.trim());
+                     || aScores.some(v => v && v.trim()) || bScores.some(v => v && v.trim())
+                     || hasDoubles;
         if (!hasData && aTotal === 0 && bTotal === 0) return '';
 
         function predACell(val) {
@@ -136,13 +143,59 @@ const tid = {{ tid }};
 
         let rows = '';
         for (let i = 0; i < 5; i++) {
-            rows += `<tr>
-                <td class="gt-label">TB${i + 1}</td>
-                <td class="gt-a">${predACell(aPreds[i])}</td>
-                <td class="gt-score">${scoreACell(aScores[i])}</td>
-                <td class="gt-score">${scoreBCell(bScores[i])}</td>
-                <td class="gt-b">${predBCell(bPreds[i])}</td>
-            </tr>`;
+            if (hasDoubles) {
+                rows += `<tr>
+                    <td class="gt-label">TB${i + 1}</td>
+                    <td class="gt-a">${predACell(aPreds[i])}</td>
+                    <td class="gt-a">${predACell(a2Preds[i])}</td>
+                    <td class="gt-score">${scoreACell(aScores[i])}</td>
+                    <td class="gt-score">${scoreBCell(bScores[i])}</td>
+                    <td class="gt-b">${predBCell(bPreds[i])}</td>
+                    <td class="gt-b">${predBCell(b2Preds[i])}</td>
+                </tr>`;
+            } else {
+                rows += `<tr>
+                    <td class="gt-label">TB${i + 1}</td>
+                    <td class="gt-a">${predACell(aPreds[i])}</td>
+                    <td class="gt-score">${scoreACell(aScores[i])}</td>
+                    <td class="gt-score">${scoreBCell(bScores[i])}</td>
+                    <td class="gt-b">${predBCell(bPreds[i])}</td>
+                </tr>`;
+            }
+        }
+
+        const reasonA = (aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : '';
+        const reasonB = (bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : '';
+        const totalAcls = aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '');
+        const totalBcls = bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '');
+
+        if (hasDoubles) {
+            return `
+                <div class="match-guess">
+                    <table class="gt-table gt-table-doubles">
+                        <thead>
+                            <tr>
+                                <th class="gt-th-label"></th>
+                                <th class="gt-th-a">${escapeHtml(p1Name)}</th>
+                                <th class="gt-th-a">球员3</th>
+                                <th class="gt-th-score">得分</th>
+                                <th class="gt-th-score">得分</th>
+                                <th class="gt-th-b">${escapeHtml(p2Name)}</th>
+                                <th class="gt-th-b">球员4</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}
+                            <tr class="gt-total-row">
+                                <td class="gt-label" style="font-weight:700;">总分</td>
+                                <td class="gt-a" colspan="2">${reasonA}</td>
+                                <td class="gt-score gt-total ${totalAcls}">${aTotal}</td>
+                                <td class="gt-score gt-total ${totalBcls}">${bTotal}</td>
+                                <td class="gt-b" colspan="2">${reasonB}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
         return `
@@ -160,10 +213,10 @@ const tid = {{ tid }};
                     <tbody>${rows}
                         <tr class="gt-total-row">
                             <td class="gt-label" style="font-weight:700;">总分</td>
-                            <td class="gt-a">${(aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : ''}</td>
-                            <td class="gt-score gt-total ${aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')}">${aTotal}</td>
-                            <td class="gt-score gt-total ${bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')}">${bTotal}</td>
-                            <td class="gt-b">${(bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : ''}</td>
+                            <td class="gt-a">${reasonA}</td>
+                            <td class="gt-score gt-total ${totalAcls}">${aTotal}</td>
+                            <td class="gt-score gt-total ${totalBcls}">${bTotal}</td>
+                            <td class="gt-b">${reasonB}</td>
                         </tr>
                     </tbody>
                 </table>

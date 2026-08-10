@@ -425,8 +425,10 @@
             <!-- 对阵球员展示 -->
             <div class="guess-matchup">
                 <div class="guess-matchup-player" id="matchupP1">球员1</div>
+                <div class="guess-matchup-player" id="matchupP3" style="font-size:0.875rem; color:var(--gray-500);">球员3</div>
                 <div class="guess-matchup-vs">VS</div>
                 <div class="guess-matchup-player" id="matchupP2">球员2</div>
+                <div class="guess-matchup-player" id="matchupP4" style="font-size:0.875rem; color:var(--gray-500);">球员4</div>
             </div>
 
             <!-- 竞猜文本快捷解析 -->
@@ -435,79 +437,103 @@
                     <span>📝 快速解析竞猜内容（分开填写）</span>
                     <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessTextSeparate()">🔍 解析填充</button>
                 </label>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;">
                     <div>
                         <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelA">球员1</label>
                         <textarea class="form-control" id="matchGuessTextInputA" rows="4"
-                            placeholder="每行一个TB，如：&#10;郑钦文 6-3 6-4&#10;郑钦文 7-5 6-2&#10;郑钦文 6-1 4-6 6-3"></textarea>
+                            placeholder="每行一个TB，如：&#10;6-3 6-4&#10;7-5 6-2&#10;6-1 4-6 6-3"></textarea>
+                    </div>
+                    <div>
+                        <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelA2">球员3</label>
+                        <textarea class="form-control" id="matchGuessTextInputA2" rows="4"
+                            placeholder="每行一个TB，如：&#10;6-3 6-4&#10;7-5 6-2"></textarea>
                     </div>
                     <div>
                         <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelB">球员2</label>
                         <textarea class="form-control" id="matchGuessTextInputB" rows="4"
-                            placeholder="每行一个TB，如：&#10;艾拉 3-6 4-6&#10;艾拉 5-7 2-6&#10;艾拉 1-6 6-4 3-6"></textarea>
+                            placeholder="每行一个TB，如：&#10;3-6 4-6&#10;5-7 2-6&#10;1-6 6-4 3-6"></textarea>
+                    </div>
+                    <div>
+                        <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelB2">球员4</label>
+                        <textarea class="form-control" id="matchGuessTextInputB2" rows="4"
+                            placeholder="每行一个TB，如：&#10;3-6 4-6&#10;5-7 2-6"></textarea>
                     </div>
                 </div>
             </div>
 
-            <!-- 竞猜编辑表格：5列 -->
-            <table class="guess-edit-table-5" id="guessEditTable">
+            <!-- 竞猜编辑表格：7列 -->
+            <table class="guess-edit-table-7" id="guessEditTable" style="width:100%; border-collapse:collapse;">
                 <thead>
                     <tr>
                         <th class="ge-score-col">得分</th>
                         <th class="ge-predict-col" id="geHeadA">球员1</th>
+                        <th class="ge-predict-col" id="geHeadA2" style="font-size:0.75rem;">球员3</th>
                         <th class="ge-vs-col">VS</th>
                         <th class="ge-predict-col" id="geHeadB">球员2</th>
+                        <th class="ge-predict-col" id="geHeadB2" style="font-size:0.75rem;">球员4</th>
                         <th class="ge-score-col">得分</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td><select class="guess-ps-input" id="gaPs1"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
-                        <td><input type="text" class="guess-predict-input" id="gaPred1" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gaPred1" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="ga2Pred1" placeholder="球员名 比分" style="width:100%;"></td>
                         <td class="ge-tb-cell">TB1</td>
-                        <td><input type="text" class="guess-predict-input" id="gbPred1" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gbPred1" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="gb2Pred1" placeholder="球员名 比分" style="width:100%;"></td>
                         <td><select class="guess-ps-input" id="gbPs1"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
                     </tr>
                     <tr>
                         <td><select class="guess-ps-input" id="gaPs2"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
-                        <td><input type="text" class="guess-predict-input" id="gaPred2" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gaPred2" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="ga2Pred2" placeholder="球员名 比分" style="width:100%;"></td>
                         <td class="ge-tb-cell">TB2</td>
-                        <td><input type="text" class="guess-predict-input" id="gbPred2" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gbPred2" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="gb2Pred2" placeholder="球员名 比分" style="width:100%;"></td>
                         <td><select class="guess-ps-input" id="gbPs2"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
                     </tr>
                     <tr>
                         <td><select class="guess-ps-input" id="gaPs3"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
-                        <td><input type="text" class="guess-predict-input" id="gaPred3" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gaPred3" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="ga2Pred3" placeholder="球员名 比分" style="width:100%;"></td>
                         <td class="ge-tb-cell">TB3</td>
-                        <td><input type="text" class="guess-predict-input" id="gbPred3" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gbPred3" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="gb2Pred3" placeholder="球员名 比分" style="width:100%;"></td>
                         <td><select class="guess-ps-input" id="gbPs3"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
                     </tr>
                     <tr>
                         <td><select class="guess-ps-input" id="gaPs4"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
-                        <td><input type="text" class="guess-predict-input" id="gaPred4" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gaPred4" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="ga2Pred4" placeholder="球员名 比分" style="width:100%;"></td>
                         <td class="ge-tb-cell">TB4</td>
-                        <td><input type="text" class="guess-predict-input" id="gbPred4" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gbPred4" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="gb2Pred4" placeholder="球员名 比分" style="width:100%;"></td>
                         <td><select class="guess-ps-input" id="gbPs4"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
                     </tr>
                     <tr>
                         <td><select class="guess-ps-input" id="gaPs5"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
-                        <td><input type="text" class="guess-predict-input" id="gaPred5" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gaPred5" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="ga2Pred5" placeholder="球员名 比分" style="width:100%;"></td>
                         <td class="ge-tb-cell">TB5</td>
-                        <td><input type="text" class="guess-predict-input" id="gbPred5" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gbPred5" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="gb2Pred5" placeholder="球员名 比分" style="width:100%;"></td>
                         <td><select class="guess-ps-input" id="gbPs5"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
                     </tr>
                     <tr>
                         <td><select class="guess-ps-input" id="gaPs6"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
-                        <td><input type="text" class="guess-predict-input" id="gaPred6" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gaPred6" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="ga2Pred6" placeholder="球员名 比分" style="width:100%;"></td>
                         <td class="ge-tb-cell">TB6</td>
-                        <td><input type="text" class="guess-predict-input" id="gbPred6" placeholder="球员名 比分"></td>
+                        <td><input type="text" class="guess-predict-input" id="gbPred6" placeholder="球员名 比分" style="width:100%;"></td>
+                        <td><input type="text" class="guess-predict-input" id="gb2Pred6" placeholder="球员名 比分" style="width:100%;"></td>
                         <td><select class="guess-ps-input" id="gbPs6"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
                     </tr>
                 </tbody>
                 <tfoot>
                     <tr>
                         <td class="ge-total-cell"><span id="geTotalA">0</span></td>
-                        <td colspan="3" class="ge-total-label">TOTAL POINTS</td>
+                        <td colspan="5" class="ge-total-label">TOTAL POINTS</td>
                         <td class="ge-total-cell"><span id="geTotalB">0</span></td>
                     </tr>
                 </tfoot>
@@ -1304,8 +1330,16 @@ async function openMatchModal(mid, tid) {
     document.getElementById('mPlayer2').value = '';
     document.getElementById('matchupP1').textContent = '球员1';
     document.getElementById('matchupP2').textContent = '球员2';
+    document.getElementById('matchupP3').textContent = '球员3';
+    document.getElementById('matchupP4').textContent = '球员4';
     document.getElementById('geHeadA').textContent = '球员1';
     document.getElementById('geHeadB').textContent = '球员2';
+    document.getElementById('geHeadA2').textContent = '球员3';
+    document.getElementById('geHeadB2').textContent = '球员4';
+    document.getElementById('guessLabelA').textContent = '球员1';
+    document.getElementById('guessLabelA2').textContent = '球员3';
+    document.getElementById('guessLabelB').textContent = '球员2';
+    document.getElementById('guessLabelB2').textContent = '球员4';
     document.getElementById('geTotalA').textContent = '0';
     document.getElementById('geTotalB').textContent = '0';
     document.getElementById('mGuessWinner').value = '';
@@ -1317,6 +1351,8 @@ async function openMatchModal(mid, tid) {
         document.getElementById('gbPs' + i).value = '';
         document.getElementById('gaPred' + i).value = '';
         document.getElementById('gbPred' + i).value = '';
+        document.getElementById('ga2Pred' + i).value = '';
+        document.getElementById('gb2Pred' + i).value = '';
     }
 
     // 绑定得分自动计算
@@ -1345,15 +1381,41 @@ async function openMatchModal(mid, tid) {
             document.getElementById('matchupP2').textContent = p2Name;
             document.getElementById('geHeadA').textContent = p1Name;
             document.getElementById('geHeadB').textContent = p2Name;
+            // 球员3、球员4（双打扩展）
+            const p3Name = m.p3_name || '';
+            const p4Name = m.p4_name || '';
+            if (p3Name) {
+                document.getElementById('matchupP3').textContent = p3Name;
+                document.getElementById('geHeadA2').textContent = p3Name;
+                document.getElementById('guessLabelA2').textContent = p3Name;
+            }
+            if (p4Name) {
+                document.getElementById('matchupP4').textContent = p4Name;
+                document.getElementById('geHeadB2').textContent = p4Name;
+                document.getElementById('guessLabelB2').textContent = p4Name;
+            }
 
             // 解析 TB 预测和得分
-            const aPreds = (m.guess_a_tb || '').split(',');
-            const bPreds = (m.guess_b_tb || '').split(',');
+            const aEntries = (m.guess_a_tb || '').split(',');
+            const bEntries = (m.guess_b_tb || '').split(',');
+            const a2Entries = (m.guess_a2_tb || '').split(',');
+            const b2Entries = (m.guess_b2_tb || '').split(',');
             const aScores = (m.guess_a_tb_score || '').split(',');
             const bScores = (m.guess_b_tb_score || '').split(',');
             for (let i = 1; i <= 6; i++) {
-                document.getElementById('gaPred' + i).value = aPreds[i-1] || '';
-                document.getElementById('gbPred' + i).value = bPreds[i-1] || '';
+                let aText = (aEntries[i - 1] || '').trim();
+                let bText = (bEntries[i - 1] || '').trim();
+                let a2Text = (a2Entries[i - 1] || '').trim();
+                let b2Text = (b2Entries[i - 1] || '').trim();
+                // 兼容旧格式：name|score -> name score
+                if (aText.includes('|')) aText = aText.replace('|', ' ');
+                if (bText.includes('|')) bText = bText.replace('|', ' ');
+                if (a2Text.includes('|')) a2Text = a2Text.replace('|', ' ');
+                if (b2Text.includes('|')) b2Text = b2Text.replace('|', ' ');
+                document.getElementById('gaPred' + i).value = aText;
+                document.getElementById('gbPred' + i).value = bText;
+                document.getElementById('ga2Pred' + i).value = a2Text;
+                document.getElementById('gb2Pred' + i).value = b2Text;
                 // TB3~TB6得分强制为空；其他默认为空而非0
                 if (i >= 3) {
                     document.getElementById('gaPs' + i).value = '';
@@ -1395,82 +1457,75 @@ function calcTotals() {
     elB.style.color = totalB > totalA ? 'white' : '';
 }
 
-// ── 竞猜内容文本解析（分开解析两个球员） ────────────────────
+// ── 竞猜内容文本解析（分开解析四名球员） ────────────────────
 function parseMatchGuessTextSeparate() {
     const textA = document.getElementById('matchGuessTextInputA').value.trim();
     const textB = document.getElementById('matchGuessTextInputB').value.trim();
-    if (!textA && !textB) {
+    const textA2 = document.getElementById('matchGuessTextInputA2').value.trim();
+    const textB2 = document.getElementById('matchGuessTextInputB2').value.trim();
+    if (!textA && !textB && !textA2 && !textB2) {
         showToast('请先输入竞猜内容', 'error');
         return;
     }
 
     const p1Name = document.getElementById('matchupP1').textContent.trim();
     const p2Name = document.getElementById('matchupP2').textContent.trim();
-    const linesA = textA.split('\n').filter(l => l.trim());
-    const linesB = textB.split('\n').filter(l => l.trim());
+    const p3Name = document.getElementById('matchupP3').textContent.trim();
+    const p4Name = document.getElementById('matchupP4').textContent.trim();
     const maxTb = 6;
     let parsedCount = 0;
 
-    // 只清空有输入的那一侧，另一侧保留
-    if (textA) {
-        for (let i = 1; i <= maxTb; i++) {
-            document.getElementById('gaPred' + i).value = '';
-            document.getElementById('gaPs' + i).value = '';
-        }
-    }
-    if (textB) {
-        for (let i = 1; i <= maxTb; i++) {
-            document.getElementById('gbPred' + i).value = '';
-            document.getElementById('gbPs' + i).value = '';
-        }
-    }
+    // 各侧清空逻辑（a2/b2 无得分列，ps 为 null）
+    const sides = [
+        { text: textA, pred: 'gaPred', ps: 'gaPs', name: p1Name, defaultName: '球员1' },
+        { text: textA2, pred: 'ga2Pred', ps: null, name: p3Name, defaultName: '球员3' },
+        { text: textB, pred: 'gbPred', ps: 'gbPs', name: p2Name, defaultName: '球员2' },
+        { text: textB2, pred: 'gb2Pred', ps: null, name: p4Name, defaultName: '球员4' },
+    ];
 
-    // 解析A侧，只识别TB开头
-    for (let i = 0; i < linesA.length; i++) {
-        let line = linesA[i].trim();
-        const tbMatch = line.match(/^\s*TB\s*(\d+)\s*[:：\s]?/i);
-        if (!tbMatch) continue;
-        const tbIndex = parseInt(tbMatch[1]);
-        if (tbIndex > maxTb) continue;
-        line = line.substring(tbMatch[0].length).trim();
-        // 如果只填了比分，自动补球员名
-        if (line && !line.match(/[^\d\s\-–\/]/) && p1Name && p1Name !== '球员1') {
-            line = p1Name + ' ' + line;
+    for (const side of sides) {
+        if (!side.text) continue;
+        const lines = side.text.split('\n').filter(l => l.trim());
+        // 清空该侧
+        for (let i = 1; i <= maxTb; i++) {
+            document.getElementById(side.pred + i).value = '';
+            if (side.ps) document.getElementById(side.ps + i).value = '';
         }
-        if (line) {
-            document.getElementById('gaPred' + tbIndex).value = line;
-        }
-    }
-
-    // 解析B侧，只识别TB开头
-    for (let i = 0; i < linesB.length; i++) {
-        let line = linesB[i].trim();
-        const tbMatch = line.match(/^\s*TB\s*(\d+)\s*[:：\s]?/i);
-        if (!tbMatch) continue;
-        const tbIndex = parseInt(tbMatch[1]);
-        if (tbIndex > maxTb) continue;
-        line = line.substring(tbMatch[0].length).trim();
-        // 如果只填了比分，自动补球员名
-        if (line && !line.match(/[^\d\s\-–\/]/) && p2Name && p2Name !== '球员2') {
-            line = p2Name + ' ' + line;
-        }
-        if (line) {
-            document.getElementById('gbPred' + tbIndex).value = line;
+        // 解析TB开头
+        for (const rawLine of lines) {
+            let line = rawLine.trim();
+            const tbMatch = line.match(/^\s*TB\s*(\d+)\s*[:：\s]?/i);
+            if (!tbMatch) continue;
+            const tbIndex = parseInt(tbMatch[1]);
+            if (tbIndex > maxTb) continue;
+            line = line.substring(tbMatch[0].length).trim();
+            // 如果只填了比分，自动补球员名
+            if (line && !line.match(/[^\d\s\-–\/]/) && side.name && side.name !== side.defaultName) {
+                line = side.name + ' ' + line;
+            }
+            if (line) {
+                document.getElementById(side.pred + tbIndex).value = line;
+            }
         }
     }
 
     // 统计解析到的行数
     for (let i = 1; i <= maxTb; i++) {
-        if (document.getElementById('gaPred' + i).value || document.getElementById('gbPred' + i).value) {
+        if (document.getElementById('gaPred' + i).value || document.getElementById('gbPred' + i).value ||
+            document.getElementById('ga2Pred' + i).value || document.getElementById('gb2Pred' + i).value) {
             parsedCount++;
         }
     }
 
     // 更新标签与球员名一致
     const labelA = document.getElementById('guessLabelA');
+    const labelA2 = document.getElementById('guessLabelA2');
     const labelB = document.getElementById('guessLabelB');
+    const labelB2 = document.getElementById('guessLabelB2');
     if (labelA && p1Name && p1Name !== '球员1') labelA.textContent = p1Name;
+    if (labelA2 && p3Name && p3Name !== '球员3') labelA2.textContent = p3Name;
     if (labelB && p2Name && p2Name !== '球员2') labelB.textContent = p2Name;
+    if (labelB2 && p4Name && p4Name !== '球员4') labelB2.textContent = p4Name;
 
     // 更新总分
     calcTotals();
@@ -1479,6 +1534,8 @@ function parseMatchGuessTextSeparate() {
         // 解析成功后清空文本框，避免下次解析时误判两侧都有内容
         document.getElementById('matchGuessTextInputA').value = '';
         document.getElementById('matchGuessTextInputB').value = '';
+        document.getElementById('matchGuessTextInputA2').value = '';
+        document.getElementById('matchGuessTextInputB2').value = '';
         showToast(`成功解析 ${parsedCount} 个TB的竞猜内容`, 'success');
     } else {
         showToast('未能解析到有效内容，请检查格式（每行需以TB开头）', 'error');
@@ -1513,6 +1570,8 @@ async function saveMatch(e) {
         // 收集竞猜数据
         const aPreds = [1,2,3,4,5,6].map(i => document.getElementById('gaPred' + i).value.trim());
         const bPreds = [1,2,3,4,5,6].map(i => document.getElementById('gbPred' + i).value.trim());
+        const a2Preds = [1,2,3,4,5,6].map(i => document.getElementById('ga2Pred' + i).value.trim());
+        const b2Preds = [1,2,3,4,5,6].map(i => document.getElementById('gb2Pred' + i).value.trim());
         const aScores = [1,2,3,4,5,6].map(i => i >= 3 ? '' : ((document.getElementById('gaPs' + i).value || '').trim()));
         const bScores = [1,2,3,4,5,6].map(i => i >= 3 ? '' : ((document.getElementById('gbPs' + i).value || '').trim()));
 
@@ -1544,6 +1603,8 @@ async function saveMatch(e) {
             match_date: document.getElementById('mMatchDate').value || '',
             guess_a_tb: aPreds.join(','),
             guess_b_tb: bPreds.join(','),
+            guess_a2_tb: a2Preds.join(','),
+            guess_b2_tb: b2Preds.join(','),
             guess_a_total: aTotal,
             guess_b_total: bTotal,
             guess_a_tb_score: aScores.join(','),

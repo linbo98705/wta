@@ -963,6 +963,7 @@ async function updateMatch(mid, data) {
         'guess_team_a', 'guess_team_b', 'guess_a_tb', 'guess_b_tb',
         'guess_a_total', 'guess_b_total',
         'guess_a_tb_score', 'guess_b_tb_score', 'guess_winner', 'guess_reason',
+        'guess_a2_tb', 'guess_b2_tb',
     ];
     const updates = {};
     for (const k of allowed) {
@@ -1183,6 +1184,8 @@ async function createMatch(data) {
             guess_team_b: data.guess_team_b || '',
             guess_a_tb: data.guess_a_tb || '',
             guess_b_tb: data.guess_b_tb || '',
+            guess_a2_tb: data.guess_a2_tb || '',
+            guess_b2_tb: data.guess_b2_tb || '',
             guess_a_total: data.guess_a_total || 0,
             guess_b_total: data.guess_b_total || 0,
             guess_a_tb_score: data.guess_a_tb_score || '',

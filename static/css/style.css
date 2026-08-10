@@ -1123,6 +1123,13 @@ img { max-width: 100%; height: auto; }
 .gt-b { text-align: right; word-break: break-word; }
 .gt-score { width: 55px; text-align: center; background: var(--purple-bg); }
 
+/* 双打四列表格 */
+.gt-table-doubles { table-layout: fixed; }
+.gt-table-doubles .gt-a:nth-child(2),
+.gt-table-doubles .gt-b:nth-last-child(2) { font-size: 0.75rem; opacity: 0.85; }
+.gt-table-doubles th.gt-th-a:nth-child(3),
+.gt-table-doubles th.gt-th-b:nth-last-child(2) { font-size: 0.75rem; opacity: 0.85; }
+
 .gt-total-cell {
     text-align: center;
 }
@@ -1491,6 +1498,36 @@ img { max-width: 100%; height: auto; }
     letter-spacing: 0.06em;
     font-size: 0.875rem;
     padding: 10px 8px;
+}
+
+/* 7列表格（双打四球员） */
+.guess-edit-table-7 {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin: 12px 0;
+}
+.guess-edit-table-7 thead th {
+    padding: 8px 6px;
+    font-weight: 600;
+    text-align: center;
+    font-size: 0.75rem;
+    color: white;
+}
+.guess-edit-table-7 tbody td {
+    padding: 4px 4px;
+    text-align: center;
+    border-bottom: 1px solid var(--gray-200);
+    vertical-align: middle;
+}
+.guess-edit-table-7 .guess-predict-input {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
 }
 
 .guess-matchup {
@@ -2169,6 +2206,19 @@ textarea.form-control {
 
     .guess-edit-table-5 {
         font-size: 0.75rem;
+    }
+
+    .guess-edit-table-7 {
+        font-size: 0.6875rem;
+    }
+
+    .guess-edit-table-7 thead th {
+        padding: 6px 3px;
+        font-size: 0.625rem;
+    }
+
+    .guess-edit-table-7 tbody td {
+        padding: 3px 2px;
     }
 
     .guess-edit-table-5 thead th {

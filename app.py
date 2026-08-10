@@ -135,6 +135,9 @@ def init_db():
         ('guess_b_tb_score', 'TEXT DEFAULT \'\''),
         ('guess_winner', 'TEXT DEFAULT \'\''),
         ('guess_reason', 'TEXT DEFAULT \'\''),
+        # 双打扩展：四名球员的竞猜内容
+        ('guess_a2_tb', 'TEXT DEFAULT \'\''),
+        ('guess_b2_tb', 'TEXT DEFAULT \'\''),
         # 旧字段（向后兼容，不再使用）
         ('guess_team_a_score', 'TEXT DEFAULT \'\''),
         ('guess_team_b_score', 'TEXT DEFAULT \'\''),
@@ -595,14 +598,16 @@ def api_create_match():
     db = get_db()
     db.execute('''INSERT INTO matches (tournament_id, round, match_order, player1_id, player2_id,
                   winner_id, score, court, status,
-                  guess_team_a, guess_team_b, guess_a_tb, guess_b_tb, guess_a_total, guess_b_total)
-                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                  guess_team_a, guess_team_b, guess_a_tb, guess_b_tb, guess_a_total, guess_b_total,
+                  guess_a2_tb, guess_b2_tb)
+                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
                (data['tournament_id'], data['round'], data.get('match_order', 0),
                 data.get('player1_id'), data.get('player2_id'), data.get('winner_id'),
                 data.get('score', ''), data.get('court', ''), data.get('status', 'scheduled'),
                 data.get('guess_team_a', ''), data.get('guess_team_b', ''),
                 data.get('guess_a_tb', ''), data.get('guess_b_tb', ''),
-                data.get('guess_a_total', 0), data.get('guess_b_total', 0)))
+                data.get('guess_a_total', 0), data.get('guess_b_total', 0),
+                data.get('guess_a2_tb', ''), data.get('guess_b2_tb', '')))
     db.commit()
     return jsonify({'id': db.execute('SELECT last_insert_rowid()').fetchone()[0]}), 201
 
@@ -704,7 +709,8 @@ def api_update_match(mid):
     values = []
     for k in ['player1_id', 'player2_id', 'winner_id', 'score', 'court', 'status', 'round', 'match_order',
               'guess_team_a', 'guess_team_b', 'guess_a_tb', 'guess_b_tb', 'guess_a_total', 'guess_b_total',
-              'guess_a_tb_score', 'guess_b_tb_score', 'guess_winner', 'guess_reason']:
+              'guess_a_tb_score', 'guess_b_tb_score', 'guess_winner', 'guess_reason',
+              'guess_a2_tb', 'guess_b2_tb']:
         if k in data:
             fields.append(f'{k}=?')
             values.append(data[k])

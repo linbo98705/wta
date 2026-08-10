@@ -1530,6 +1530,17 @@ img { max-width: 100%; height: auto; }
     font-size: 0.8125rem;
 }
 
+/* 单打模式：隐藏球员3/4列（第3列和第6列） */
+#matchModal.match-type-singles .doubles-only { display: none !important; }
+#matchModal.match-type-singles .guess-edit-table-7 thead th:nth-child(3),
+#matchModal.match-type-singles .guess-edit-table-7 thead th:nth-child(6) { display: none; }
+#matchModal.match-type-singles .guess-edit-table-7 tbody td:nth-child(3),
+#matchModal.match-type-singles .guess-edit-table-7 tbody td:nth-child(6) { display: none; }
+/* 单打模式：文本输入网格变为2列 */
+#matchModal.match-type-singles #guessTextInputGrid { grid-template-columns: 1fr 1fr !important; }
+/* 单打模式：VS 列宽度 */
+#matchModal.match-type-singles .guess-edit-table-7 .ge-tb-cell { font-size: 0.75rem; }
+
 .guess-matchup {
     display: flex;
     align-items: center;

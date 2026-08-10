@@ -1397,6 +1397,7 @@
                 <div class="form-group"><label>签位大小*</label><select class="form-control" id="tDrawSize"><option value="16">16签</option><option value="32" selected>32签</option><option value="64">64签</option><option value="96">96签</option><option value="128">128签</option></select></div>
             </div>
             <div class="form-row">
+                <div class="form-group"><label>比赛类型*</label><select class="form-control" id="tMatchType"><option value="singles" selected>单打</option><option value="doubles">双打</option></select></div>
                 <div class="form-group"><label>开始日期*</label><input type="date" class="form-control" id="tStartDate" required></div>
                 <div class="form-group"><label>结束日期*</label><input type="date" class="form-control" id="tEndDate" required></div>
             </div>
@@ -1483,25 +1484,27 @@
             <input type="hidden" id="mOrder" value="1">
             <input type="hidden" id="mPlayer1">
             <input type="hidden" id="mPlayer2">
+            <input type="hidden" id="mPlayer3">
+            <input type="hidden" id="mPlayer4">
             <div class="guess-matchup">
                 <div class="guess-matchup-player" id="matchupP1">球员1</div>
-                <div class="guess-matchup-player" id="matchupP3" style="font-size:0.875rem; color:var(--gray-500);">球员3</div>
+                <div class="guess-matchup-player doubles-only" id="matchupP3" style="font-size:0.875rem; color:var(--gray-500);">球员3</div>
                 <div class="guess-matchup-vs">VS</div>
                 <div class="guess-matchup-player" id="matchupP2">球员2</div>
-                <div class="guess-matchup-player" id="matchupP4" style="font-size:0.875rem; color:var(--gray-500);">球员4</div>
+                <div class="guess-matchup-player doubles-only" id="matchupP4" style="font-size:0.875rem; color:var(--gray-500);">球员4</div>
             </div>
             <div class="form-group" style="margin-top: 12px;">
                 <label style="display:flex; justify-content:space-between; align-items:center;">
                     <span>📝 快速解析竞猜内容（分开填写）</span>
                     <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessTextSeparate()">🔍 解析填充</button>
                 </label>
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;" id="guessTextInputGrid">
                     <div>
                         <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelA">球员1</label>
                         <textarea class="form-control" id="matchGuessTextInputA" rows="4"
                             placeholder="每行一个TB，如：&#10;6-3 6-4&#10;7-5 6-2&#10;6-1 4-6 6-3"></textarea>
                     </div>
-                    <div>
+                    <div class="doubles-only">
                         <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelA2">球员3</label>
                         <textarea class="form-control" id="matchGuessTextInputA2" rows="4"
                             placeholder="每行一个TB，如：&#10;6-3 6-4&#10;7-5 6-2"></textarea>
@@ -1511,7 +1514,7 @@
                         <textarea class="form-control" id="matchGuessTextInputB" rows="4"
                             placeholder="每行一个TB，如：&#10;3-6 4-6&#10;5-7 2-6&#10;1-6 6-4 3-6"></textarea>
                     </div>
-                    <div>
+                    <div class="doubles-only">
                         <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelB2">球员4</label>
                         <textarea class="form-control" id="matchGuessTextInputB2" rows="4"
                             placeholder="每行一个TB，如：&#10;3-6 4-6&#10;5-7 2-6"></textarea>
@@ -1656,6 +1659,7 @@
                 category: document.getElementById('tCategory').value,
                 surface: document.getElementById('tSurface').value,
                 draw_size: parseInt(document.getElementById('tDrawSize').value),
+                match_type: document.getElementById('tMatchType').value,
                 start_date: document.getElementById('tStartDate').value,
                 end_date: document.getElementById('tEndDate').value,
                 court_order: document.getElementById('tCourtOrder').value.trim(),
@@ -1704,6 +1708,7 @@
             document.getElementById('tCategory').value = t.category;
             document.getElementById('tSurface').value = t.surface;
             document.getElementById('tDrawSize').value = t.draw_size;
+            document.getElementById('tMatchType').value = t.match_type || 'singles';
             document.getElementById('tStartDate').value = t.start_date;
             document.getElementById('tEndDate').value = t.end_date;
             document.getElementById('tCourtOrder').value = t.court_order || '';
@@ -2221,6 +2226,8 @@
             const filtered = allMatchesCache.filter(m => {
                 return (m.p1_name || '').toLowerCase().includes(keyword) ||
                     (m.p2_name || '').toLowerCase().includes(keyword) ||
+                    (m.p3_name || '').toLowerCase().includes(keyword) ||
+                    (m.p4_name || '').toLowerCase().includes(keyword) ||
                     (m.round || '').toLowerCase().includes(keyword) ||
                     (m.court || '').toLowerCase().includes(keyword) ||
                     (m.match_date || '').includes(keyword);
@@ -2252,7 +2259,12 @@
                     (m.status === 'completed' ? ' <button class="btn btn-warning btn-sm" onclick="adminRevertMatch(' + m.id + ')">撤销</button>' : '');
                 const rowClass = isCollapsed ? 'collapsed-match-row' : '';
                 const rowStyle = isCollapsed ? 'display:none;' : '';
-                return '<tr class="' + rowClass + '" style="' + rowStyle + '"><td class="hide-mobile">' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + escapeHtml(m.p1_name || 'TBD') + '</td><td>' + escapeHtml(m.p2_name || 'TBD') + '</td><td>' + scoreDisplay + '</td><td>' + (m.match_date || '-') + '</td><td class="hide-mobile">' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td>' + actionBtns + '</td></tr>';
+                // 双打：显示搭档名
+                let p1Display = escapeHtml(m.p1_name || 'TBD');
+                let p2Display = escapeHtml(m.p2_name || 'TBD');
+                if (m.p3_name) p1Display += ' / <span style="font-size:0.8125rem; color:var(--gray-500);">' + escapeHtml(m.p3_name) + '</span>';
+                if (m.p4_name) p2Display += ' / <span style="font-size:0.8125rem; color:var(--gray-500);">' + escapeHtml(m.p4_name) + '</span>';
+                return '<tr class="' + rowClass + '" style="' + rowStyle + '"><td class="hide-mobile">' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + p1Display + '</td><td>' + p2Display + '</td><td>' + scoreDisplay + '</td><td>' + (m.match_date || '-') + '</td><td class="hide-mobile">' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td>' + actionBtns + '</td></tr>';
             }
 
             let html = '';
@@ -2383,12 +2395,25 @@
         window.adminOpenMatchModal = async function(mid) {
             const tid = document.getElementById('matchTournamentSelect').value;
             if (!tid) { showToast('请先选择赛事', 'error'); return; }
+
+            // 获取赛事 match_type，设置弹窗模式（单打/双打）
+            const tournament = await getTournament(parseInt(tid));
+            const matchType = (tournament && tournament.match_type) || 'singles';
+            const modal = document.getElementById('matchModal');
+            modal.classList.remove('match-type-singles', 'match-type-doubles');
+            modal.classList.add(matchType === 'doubles' ? 'match-type-doubles' : 'match-type-singles');
+            // 单打模式：tfoot colspan 从 5 改为 3
+            const tfootLabel = modal.querySelector('.guess-edit-table-7 tfoot td.ge-total-label');
+            if (tfootLabel) tfootLabel.setAttribute('colspan', matchType === 'doubles' ? '5' : '3');
+
             document.getElementById('matchForm').reset();
             document.getElementById('mId').value = '';
             document.getElementById('mRound').value = '';
             document.getElementById('mOrder').value = '1';
             document.getElementById('mPlayer1').value = '';
             document.getElementById('mPlayer2').value = '';
+            document.getElementById('mPlayer3').value = '';
+            document.getElementById('mPlayer4').value = '';
             document.getElementById('mMatchDate').value = '';
             document.getElementById('mCourt').value = '';
             document.getElementById('matchupP1').textContent = '球员1';
@@ -2429,6 +2454,8 @@
                     document.getElementById('mOrder').value = m.match_order;
                     document.getElementById('mPlayer1').value = m.player1_id || '';
                     document.getElementById('mPlayer2').value = m.player2_id || '';
+                    document.getElementById('mPlayer3').value = m.player3_id || '';
+                    document.getElementById('mPlayer4').value = m.player4_id || '';
                     document.getElementById('mStatus').value = m.status || 'scheduled';
                     document.getElementById('mMatchDate').value = m.match_date || '';
                     document.getElementById('mCourt').value = m.court || '';
@@ -2668,6 +2695,8 @@
                 const status = document.getElementById('mStatus').value;
                 const p1Id = document.getElementById('mPlayer1').value ? parseInt(document.getElementById('mPlayer1').value) : null;
                 const p2Id = document.getElementById('mPlayer2').value ? parseInt(document.getElementById('mPlayer2').value) : null;
+                const p3Id = document.getElementById('mPlayer3').value ? parseInt(document.getElementById('mPlayer3').value) : null;
+                const p4Id = document.getElementById('mPlayer4').value ? parseInt(document.getElementById('mPlayer4').value) : null;
                 const aPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gaPred' + i).value.trim());
                 const bPreds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('gbPred' + i).value.trim());
                 const a2Preds = [1, 2, 3, 4, 5, 6].map(i => document.getElementById('ga2Pred' + i).value.trim());
@@ -2700,6 +2729,8 @@
                     match_order: isNaN(matchOrder) ? 1 : matchOrder,
                     player1_id: p1Id,
                     player2_id: p2Id,
+                    player3_id: p3Id,
+                    player4_id: p4Id,
                     winner_id: winnerId,
                     status: status,
                     court: document.getElementById('mCourt').value.trim(),

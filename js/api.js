@@ -257,8 +257,9 @@ function calcAdvanceToNextRound(winnerId, currentIdx, allNextMatches) {
 
     const nxt = allNextMatches[nextIdx];
     const slot = (currentIdx % 2 === 1) ? 'player1_id' : 'player2_id';
+    const partnerSlot = (currentIdx % 2 === 1) ? 'player3_id' : 'player4_id';
 
-    return { id: nxt.id, slot, winnerId };
+    return { id: nxt.id, slot, partnerSlot, winnerId };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -318,6 +319,7 @@ async function createTournament(data) {
             start_date: data.start_date,
             end_date: data.end_date,
             draw_size: data.draw_size || 32,
+            match_type: data.match_type || 'singles',
             logo_url: data.logo_url || '',
             court_order: data.court_order || '',
         })
@@ -372,7 +374,7 @@ async function uploadTournamentLogo(file, tournamentId) {
  */
 async function updateTournament(id, data) {
     // 过滤有效字段
-    const allowed = ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active', 'logo_url', 'court_order'];
+    const allowed = ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'match_type', 'is_active', 'logo_url', 'court_order'];
     const updates = {};
     for (const k of allowed) {
         if (data[k] !== undefined) {
@@ -888,6 +890,8 @@ async function getMatches(tid, roundFilter) {
                 *,
                 player1:player1_id(name, country, country_code),
                 player2:player2_id(name, country, country_code),
+                player3:player3_id(name, country, country_code),
+                player4:player4_id(name, country, country_code),
                 winner:winner_id(name)
             `)
             .eq('tournament_id', tid)
@@ -922,6 +926,8 @@ async function getMatches(tid, roundFilter) {
             p2_name: (snapMap[m.player2_id] && snapMap[m.player2_id].name) || '',
             p2_country: (snapMap[m.player2_id] && snapMap[m.player2_id].country) || '',
             p2_country_code: (snapMap[m.player2_id] && snapMap[m.player2_id].country_code) || '',
+            p3_name: (snapMap[m.player3_id] && snapMap[m.player3_id].name) || '',
+            p4_name: (snapMap[m.player4_id] && snapMap[m.player4_id].name) || '',
             winner_name: (snapMap[m.winner_id] && snapMap[m.winner_id].name) || '',
         }));
     }
@@ -935,6 +941,10 @@ async function getMatches(tid, roundFilter) {
         p2_name: (m.player2 && m.player2.name) || '',
         p2_country: (m.player2 && m.player2.country) || '',
         p2_country_code: (m.player2 && m.player2.country_code) || '',
+        p3_name: (m.player3 && m.player3.name) || '',
+        p3_country: (m.player3 && m.player3.country) || '',
+        p4_name: (m.player4 && m.player4.name) || '',
+        p4_country: (m.player4 && m.player4.country) || '',
         winner_name: (m.winner && m.winner.name) || '',
     }));
 }
@@ -959,7 +969,7 @@ async function updateMatch(mid, data) {
 
     // 过滤有效字段
     const allowed = [
-        'player1_id', 'player2_id', 'winner_id', 'score', 'court', 'match_date', 'status', 'round', 'match_order',
+        'player1_id', 'player2_id', 'player3_id', 'player4_id', 'winner_id', 'score', 'court', 'match_date', 'status', 'round', 'match_order',
         'guess_team_a', 'guess_team_b', 'guess_a_tb', 'guess_b_tb',
         'guess_a_total', 'guess_b_total',
         'guess_a_tb_score', 'guess_b_tb_score', 'guess_winner', 'guess_reason',
@@ -1041,9 +1051,16 @@ async function updateMatch(mid, data) {
                 if (curIdx !== null && nextMatches) {
                     const advance = calcAdvanceToNextRound(newWinner, curIdx, nextMatches);
                     if (advance) {
+                        const updateData = { [advance.slot]: advance.winnerId };
+                        // 双打：同时晋级伙伴（player3_id 或 player4_id）
+                        if (newWinner === match.player1_id && match.player3_id) {
+                            updateData[advance.partnerSlot] = match.player3_id;
+                        } else if (newWinner === match.player2_id && match.player4_id) {
+                            updateData[advance.partnerSlot] = match.player4_id;
+                        }
                         await supabase
                             .from('matches')
-                            .update({ [advance.slot]: advance.winnerId })
+                            .update(updateData)
                             .eq('id', advance.id);
 
                         // 如果双方都就位，状态改为 scheduled
@@ -1136,9 +1153,10 @@ async function revertMatchResult(mid) {
                         if (nextIdx < nextMatches.length) {
                             const nxt = nextMatches[nextIdx];
                             const slot = (curIdx % 2 === 1) ? 'player1_id' : 'player2_id';
+                            const partnerSlot = (curIdx % 2 === 1) ? 'player3_id' : 'player4_id';
 
-                            // 清除对应位置的球员
-                            const updateData = { [slot]: null };
+                            // 清除对应位置的球员及双打伙伴
+                            const updateData = { [slot]: null, [partnerSlot]: null };
 
                             // 检查清除后双方是否都空了，如果都空了则状态改回 pending
                             const remainingP1 = slot === 'player1_id' ? null : nxt.player1_id;
@@ -1175,6 +1193,8 @@ async function createMatch(data) {
             match_order: data.match_order || 0,
             player1_id: data.player1_id || null,
             player2_id: data.player2_id || null,
+            player3_id: data.player3_id || null,
+            player4_id: data.player4_id || null,
             winner_id: data.winner_id || null,
             score: data.score || '',
             court: data.court || '',
@@ -1448,8 +1468,14 @@ async function autoAdvanceByes(tid, roundOrder, startRoundIdx = 0) {
 
             // Bye 场景：一个有效球员 + 一个空位
             let byeWinner = null;
-            if (p1 && !p2) byeWinner = p1;
-            else if (p2 && !p1) byeWinner = p2;
+            let byePartner = null;
+            if (p1 && !p2) {
+                byeWinner = p1;
+                byePartner = m.player3_id || null;
+            } else if (p2 && !p1) {
+                byeWinner = p2;
+                byePartner = m.player4_id || null;
+            }
             if (!byeWinner) continue;
 
             const curIdx = posMap[m.id];
@@ -1464,9 +1490,13 @@ async function autoAdvanceByes(tid, roundOrder, startRoundIdx = 0) {
             // 晋级到下一轮
             const advance = calcAdvanceToNextRound(byeWinner, curIdx, nextMatches);
             if (advance) {
+                const updateData = { [advance.slot]: advance.winnerId };
+                if (byePartner) {
+                    updateData[advance.partnerSlot] = byePartner;
+                }
                 await supabase
                     .from('matches')
-                    .update({ [advance.slot]: advance.winnerId })
+                    .update(updateData)
                     .eq('id', advance.id);
 
                 // 如果双方都就位，状态改为 scheduled
@@ -1542,12 +1572,43 @@ async function generateDraw(tid) {
     }
 
     const drawSize = tournament.draw_size;
+    const isDoubles = tournament.match_type === 'doubles';
 
     // 获取参赛球员（按种子排序，种子在前）— 始终读取实时数据
     const players = await getLiveTournamentPlayers(tid);
 
     if (players.length < 2) {
         return { success: false, matchesCreated: 0, error: 'Need at least 2 players' };
+    }
+
+    // 双打：将球员两两配对为队伍
+    // teamPartnerMap[player_id] = partner_id
+    let teamPartnerMap = {};
+    let drawEntries = players; // 用于签表定位的条目（单打=球员，双打=队伍代表）
+
+    if (isDoubles) {
+        // 按种子和排名排序后两两配对
+        const sorted = [...players].sort((a, b) => {
+            const sa = a.t_seed || 999;
+            const sb = b.t_seed || 999;
+            if (sa !== sb) return sa - sb;
+            return (a.ranking || 999) - (b.ranking || 999);
+        });
+        for (let i = 0; i + 1 < sorted.length; i += 2) {
+            teamPartnerMap[sorted[i].id] = sorted[i + 1].id;
+            teamPartnerMap[sorted[i + 1].id] = sorted[i].id;
+        }
+        // 每队取第一名球员（种子/排名较高者）作为签表定位代表
+        drawEntries = sorted.filter((_, i) => i % 2 === 0);
+    }
+
+    // 双打辅助：为比赛对象添加伙伴字段
+    function withPartners(obj, p1Id, p2Id) {
+        if (isDoubles) {
+            if (p1Id && teamPartnerMap[p1Id]) obj.player3_id = teamPartnerMap[p1Id];
+            if (p2Id && teamPartnerMap[p2Id]) obj.player4_id = teamPartnerMap[p2Id];
+        }
+        return obj;
     }
 
     // 生成签表时创建球员信息快照，冻结当前球员数据
@@ -1574,7 +1635,7 @@ async function generateDraw(tid) {
         const filled = new Array(128).fill(null);
 
         // 放置种子（按 128 签种子位置表）
-        const seededPlayers = players
+        const seededPlayers = drawEntries
             .filter(p => (p.t_seed || 0) > 0)
             .sort((a, b) => a.t_seed - b.t_seed);
         for (const p of seededPlayers) {
@@ -1586,7 +1647,7 @@ async function generateDraw(tid) {
         }
 
         // 收集非种子并随机排列
-        const nonSeeded = shuffleArray(players.filter(p => (p.t_seed || 0) === 0));
+        const nonSeeded = shuffleArray(drawEntries.filter(p => (p.t_seed || 0) === 0));
 
         // 成对填入非种子到不含种子的配对中
         let nsIdx = 0;
@@ -1594,7 +1655,7 @@ async function generateDraw(tid) {
             let hasSeed = false;
             for (const j of [i, i + 1]) {
                 if (filled[j]) {
-                    const pp = players.find(pl => pl.id === filled[j]);
+                    const pp = drawEntries.find(pl => pl.id === filled[j]);
                     if (pp && (pp.t_seed || 0) > 0) {
                         hasSeed = true;
                     }
@@ -1609,7 +1670,7 @@ async function generateDraw(tid) {
 
         // 构建 playerMap 用于快速查找种子信息
         const playerMapForSeeds = {};
-        players.forEach(p => { playerMapForSeeds[p.id] = p; });
+        drawEntries.forEach(p => { playerMapForSeeds[p.id] = p; });
 
         // 记录 R128 中种子轮空 → R64 的自动晋级信息
         const seedByeWinners = {};
@@ -1659,7 +1720,7 @@ async function generateDraw(tid) {
                 }
             }
 
-            toInsert.push({
+            toInsert.push(withPartners({
                 tournament_id: tid,
                 round: firstRound,
                 match_order: matchOrder,
@@ -1667,7 +1728,7 @@ async function generateDraw(tid) {
                 player2_id: p2,
                 winner_id: winnerId,
                 status: status,
-            });
+            }, p1, p2));
         }
 
         // 创建后续轮次，R64 自动填入晋级种子
@@ -1678,14 +1739,14 @@ async function generateDraw(tid) {
                 matchOrder++;
                 if (roundName === 'R64' && seedByeWinners[i]) {
                     const sw = seedByeWinners[i];
-                    toInsert.push({
+                    toInsert.push(withPartners({
                         tournament_id: tid,
                         round: roundName,
                         match_order: matchOrder,
                         player1_id: sw.player1 || null,
                         player2_id: sw.player2 || null,
                         status: 'scheduled',
-                    });
+                    }, sw.player1 || null, sw.player2 || null));
                 } else {
                     toInsert.push({
                         tournament_id: tid,
@@ -1698,7 +1759,7 @@ async function generateDraw(tid) {
         }
     } else {
         // ═══ 非96签（32/64/128签）原有逻辑 ═══
-        const filled = fillDrawPositions(players, totalSlots, drawSize);
+        const filled = fillDrawPositions(drawEntries, totalSlots, drawSize);
 
         const firstRound = rounds[0];
         const firstRoundMatches = totalSlots / 2;
@@ -1708,14 +1769,14 @@ async function generateDraw(tid) {
             const p2 = filled[i * 2 + 1];
             matchOrder++;
             const hasBoth = p1 !== null && p2 !== null;
-            toInsert.push({
+            toInsert.push(withPartners({
                 tournament_id: tid,
                 round: firstRound,
                 match_order: matchOrder,
                 player1_id: p1,
                 player2_id: p2,
                 status: hasBoth ? 'scheduled' : 'bye',
-            });
+            }, p1, p2));
         }
 
         // 创建后续轮次占位

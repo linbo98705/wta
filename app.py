@@ -61,6 +61,7 @@ def init_db():
             draw_size INTEGER NOT NULL DEFAULT 32,
             logo_url TEXT DEFAULT '',
             theme TEXT DEFAULT 'purple',
+            match_type TEXT DEFAULT 'singles',
             is_active INTEGER DEFAULT 1
         );
 
@@ -93,6 +94,8 @@ def init_db():
             match_order INTEGER DEFAULT 0,
             player1_id INTEGER,
             player2_id INTEGER,
+            player3_id INTEGER,
+            player4_id INTEGER,
             winner_id INTEGER,
             score TEXT DEFAULT '',
             court TEXT DEFAULT '',
@@ -138,6 +141,10 @@ def init_db():
         # 双打扩展：四名球员的竞猜内容
         ('guess_a2_tb', 'TEXT DEFAULT \'\''),
         ('guess_b2_tb', 'TEXT DEFAULT \'\''),
+        # 双打扩展：球员3/4 和比赛类型
+        ('player3_id', 'INTEGER'),
+        ('player4_id', 'INTEGER'),
+        ('match_type', 'TEXT DEFAULT \'singles\''),
         # 旧字段（向后兼容，不再使用）
         ('guess_team_a_score', 'TEXT DEFAULT \'\''),
         ('guess_team_b_score', 'TEXT DEFAULT \'\''),
@@ -267,11 +274,12 @@ def api_create_tournament():
     data = request.json
     db = get_db()
     db.execute('''INSERT INTO tournaments (name, name_cn, location, surface, category,
-                  start_date, end_date, draw_size, logo_url, theme)
-                  VALUES (?,?,?,?,?,?,?,?,?,?)''',
+                  start_date, end_date, draw_size, logo_url, theme, match_type)
+                  VALUES (?,?,?,?,?,?,?,?,?,?,?)''',
                (data['name'], data['name_cn'], data['location'], data.get('surface', 'Hard'),
                 data.get('category', 'WTA 500'), data['start_date'], data['end_date'],
-                data.get('draw_size', 32), data.get('logo_url', ''), data.get('theme', 'purple')))
+                data.get('draw_size', 32), data.get('logo_url', ''), data.get('theme', 'purple'),
+                data.get('match_type', 'singles')))
     db.commit()
     return jsonify({'id': db.execute('SELECT last_insert_rowid()').fetchone()[0]}), 201
 
@@ -281,7 +289,7 @@ def api_update_tournament(tid):
     db = get_db()
     fields = []
     values = []
-    for k in ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active', 'logo_url', 'theme']:
+    for k in ['name', 'name_cn', 'location', 'surface', 'category', 'start_date', 'end_date', 'draw_size', 'is_active', 'logo_url', 'theme', 'match_type']:
         if k in data:
             fields.append(f'{k}=?')
             values.append(data[k])
@@ -560,12 +568,17 @@ def api_matches(tid):
         base_query = '''
             SELECT m.*, s1.name as p1_name, '' as p1_country, s1.country as p1_country_name,
                    s2.name as p2_name, '' as p2_country, s2.country as p2_country_name,
+                   s3.name as p3_name, s4.name as p4_name,
                    sw.name as winner_name
             FROM matches m
             LEFT JOIN tournament_player_snapshots s1
                 ON m.player1_id = s1.player_id AND s1.tournament_id = m.tournament_id
             LEFT JOIN tournament_player_snapshots s2
                 ON m.player2_id = s2.player_id AND s2.tournament_id = m.tournament_id
+            LEFT JOIN tournament_player_snapshots s3
+                ON m.player3_id = s3.player_id AND s3.tournament_id = m.tournament_id
+            LEFT JOIN tournament_player_snapshots s4
+                ON m.player4_id = s4.player_id AND s4.tournament_id = m.tournament_id
             LEFT JOIN tournament_player_snapshots sw
                 ON m.winner_id = sw.player_id AND sw.tournament_id = m.tournament_id
         '''
@@ -573,10 +586,13 @@ def api_matches(tid):
         base_query = '''
             SELECT m.*, p1.name as p1_name, '' as p1_country, p1.country as p1_country_name,
                    p2.name as p2_name, '' as p2_country, p2.country as p2_country_name,
+                   p3.name as p3_name, p4.name as p4_name,
                    w.name as winner_name
             FROM matches m
             LEFT JOIN players p1 ON m.player1_id = p1.id
             LEFT JOIN players p2 ON m.player2_id = p2.id
+            LEFT JOIN players p3 ON m.player3_id = p3.id
+            LEFT JOIN players p4 ON m.player4_id = p4.id
             LEFT JOIN players w ON m.winner_id = w.id
         '''
 
@@ -597,12 +613,14 @@ def api_create_match():
     data = request.json
     db = get_db()
     db.execute('''INSERT INTO matches (tournament_id, round, match_order, player1_id, player2_id,
-                  winner_id, score, court, status,
+                  player3_id, player4_id, winner_id, score, court, status,
                   guess_team_a, guess_team_b, guess_a_tb, guess_b_tb, guess_a_total, guess_b_total,
                   guess_a2_tb, guess_b2_tb)
-                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
                (data['tournament_id'], data['round'], data.get('match_order', 0),
-                data.get('player1_id'), data.get('player2_id'), data.get('winner_id'),
+                data.get('player1_id'), data.get('player2_id'),
+                data.get('player3_id'), data.get('player4_id'),
+                data.get('winner_id'),
                 data.get('score', ''), data.get('court', ''), data.get('status', 'scheduled'),
                 data.get('guess_team_a', ''), data.get('guess_team_b', ''),
                 data.get('guess_a_tb', ''), data.get('guess_b_tb', ''),
@@ -611,12 +629,13 @@ def api_create_match():
     db.commit()
     return jsonify({'id': db.execute('SELECT last_insert_rowid()').fetchone()[0]}), 201
 
-def _advance_winner_by_idx(db, winner_id, current_idx, all_next_matches):
+def _advance_winner_by_idx(db, winner_id, current_idx, all_next_matches, partner_id=None):
     """
     将胜者晋级到下一轮对应比赛。
     current_idx: 当前比赛在当前轮次中的 1-indexed 位置。
     all_next_matches: 下一轮所有比赛按 match_order 排序的列表。
     奇数位置(1,3,5...)→player1，偶数位置(2,4,6...)→player2。
+    双打时 partner_id 也一起晋级到 player3_id/player4_id。
     """
     if not all_next_matches or winner_id is None:
         return
@@ -624,10 +643,17 @@ def _advance_winner_by_idx(db, winner_id, current_idx, all_next_matches):
     if next_idx < len(all_next_matches):
         nxt = all_next_matches[next_idx]
         slot = 'player1_id' if (current_idx % 2 == 1) else 'player2_id'
-        db.execute(
-            f'UPDATE matches SET {slot}=? WHERE id=?',
-            (winner_id, nxt['id'])
-        )
+        partner_slot = 'player3_id' if (current_idx % 2 == 1) else 'player4_id'
+        if partner_id:
+            db.execute(
+                f'UPDATE matches SET {slot}=?, {partner_slot}=? WHERE id=?',
+                (winner_id, partner_id, nxt['id'])
+            )
+        else:
+            db.execute(
+                f'UPDATE matches SET {slot}=? WHERE id=?',
+                (winner_id, nxt['id'])
+            )
         # 如果双方都就位，状态改为 scheduled
         refreshed = db.execute(
             'SELECT player1_id, player2_id FROM matches WHERE id=?', (nxt['id'],)
@@ -675,10 +701,13 @@ def _auto_advance_byes(db, tid, round_order, start_round_idx=None):
                 continue
             p1, p2 = m['player1_id'], m['player2_id']
             # Bye 场景：一个有效球员 + 一个空位
+            bye_partner = None
             if p1 and not p2:
                 bye_winner = p1
+                bye_partner = m['player3_id']
             elif p2 and not p1:
                 bye_winner = p2
+                bye_partner = m['player4_id']
             else:
                 continue
 
@@ -692,7 +721,7 @@ def _auto_advance_byes(db, tid, round_order, start_round_idx=None):
                 (bye_winner, m['id'])
             )
             # 晋级到下一轮
-            _advance_winner_by_idx(db, bye_winner, cur_idx, next_matches)
+            _advance_winner_by_idx(db, bye_winner, cur_idx, next_matches, bye_partner)
 
 
 @app.route('/api/matches/<int:mid>', methods=['PUT'])
@@ -707,7 +736,7 @@ def api_update_match(mid):
 
     fields = []
     values = []
-    for k in ['player1_id', 'player2_id', 'winner_id', 'score', 'court', 'status', 'round', 'match_order',
+    for k in ['player1_id', 'player2_id', 'player3_id', 'player4_id', 'winner_id', 'score', 'court', 'status', 'round', 'match_order',
               'guess_team_a', 'guess_team_b', 'guess_a_tb', 'guess_b_tb', 'guess_a_total', 'guess_b_total',
               'guess_a_tb_score', 'guess_b_tb_score', 'guess_winner', 'guess_reason',
               'guess_a2_tb', 'guess_b2_tb']:
@@ -754,7 +783,13 @@ def api_update_match(mid):
                         cur_idx = ci + 1
                         break
                 if cur_idx is not None:
-                    _advance_winner_by_idx(db, new_winner, cur_idx, next_matches)
+                    # 双打：同时晋级伙伴
+                    adv_partner = None
+                    if new_winner == match['player1_id']:
+                        adv_partner = match['player3_id']
+                    elif new_winner == match['player2_id']:
+                        adv_partner = match['player4_id']
+                    _advance_winner_by_idx(db, new_winner, cur_idx, next_matches, adv_partner)
 
     db.commit()
     return jsonify({'success': True})

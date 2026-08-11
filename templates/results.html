@@ -105,7 +105,7 @@ const tid = {{ tid }};
         const guessWinner = m.guess_winner || '';
         const guessReason = m.guess_reason || '';
 
-        const hasDoubles = a2Preds.some(v => v && v.trim()) || b2Preds.some(v => v && v.trim());
+        const hasDoubles = !!(t && t.match_type === 'doubles');
         const hasData = aPreds.some(v => v && v.trim()) || bPreds.some(v => v && v.trim())
                      || aScores.some(v => v && v.trim()) || bScores.some(v => v && v.trim())
                      || hasDoubles;

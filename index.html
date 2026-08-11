@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=27">
+    <link rel="stylesheet" href="static/css/style.css?v=28">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -673,6 +673,7 @@
         function renderGuessSchedule(m) {
             const p1Name = m.p1_name || '球员1';
             const p2Name = m.p2_name || '球员2';
+            const isDoubles = !!(t && t.match_type === 'doubles');
             // guess_a_tb 格式: "name1|score1,name2|score2,..." 或 "球员名6-4 6-3,..."
             // 解析函数：数字前面为名字，数字开始后面全为比分
             function parseEntry(entry) {
@@ -696,6 +697,15 @@
             const bNames = bParsed.map(p => p.name);
             const aScoreTexts = aParsed.map(p => p.score);
             const bScoreTexts = bParsed.map(p => p.score);
+            // 双打：解析球员3/4数据
+            const a2Entries = isDoubles ? (m.guess_a2_tb || '').split(',') : [];
+            const b2Entries = isDoubles ? (m.guess_b2_tb || '').split(',') : [];
+            const a2Parsed = a2Entries.map(parseEntry);
+            const b2Parsed = b2Entries.map(parseEntry);
+            const a2Names = a2Parsed.map(p => p.name);
+            const b2Names = b2Parsed.map(p => p.name);
+            const a2ScoreTexts = a2Parsed.map(p => p.score);
+            const b2ScoreTexts = b2Parsed.map(p => p.score);
             const aScores = (m.guess_a_tb_score || '').split(',');
             const bScores = (m.guess_b_tb_score || '').split(',');
             const aTotal = m.guess_a_total || 0;
@@ -744,7 +754,15 @@
                 const aSc = aScores[i] ? aScores[i].trim() : '';
                 const bSc = bScores[i] ? bScores[i].trim() : '';
                 if (!aName && !bName && !aScoreTxt && !bScoreTxt && !aSc && !bSc) continue;
-                rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
+                if (isDoubles) {
+                    rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-a">' + predACell(a2Names[i], a2ScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td><td class="gt-b">' + predBCell(b2Names[i], b2ScoreTexts[i]) + '</td></tr>';
+                } else {
+                    rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
+                }
+            }
+
+            if (isDoubles) {
+                return '<div class="match-guess"><table class="gt-table gt-table-doubles"><thead><tr><th class="gt-th-label"></th><th class="gt-th-a">' + escapeHtml(p1Name) + '</th><th class="gt-th-a">球员3</th><th class="gt-th-score">得分</th><th class="gt-th-score">得分</th><th class="gt-th-b">' + escapeHtml(p2Name) + '</th><th class="gt-th-b">球员4</th></tr></thead><tbody>' + rows + '<tr class="gt-total-row"><td class="gt-label" style="font-weight:700;">总分</td><td class="gt-a" colspan="2">' + ((aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : '') + '</td><td class="gt-score gt-total ' + (aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')) + '">' + aTotal + '</td><td class="gt-score gt-total ' + (bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')) + '">' + bTotal + '</td><td class="gt-b" colspan="2">' + ((bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : '') + '</td></tr></tbody></table></div>';
             }
 
             return '<div class="match-guess"><table class="gt-table"><thead><tr><th class="gt-th-label"></th><th class="gt-th-a">' + escapeHtml(p1Name) + '</th><th class="gt-th-score">得分</th><th class="gt-th-score">得分</th><th class="gt-th-b">' + escapeHtml(p2Name) + '</th></tr></thead><tbody>' + rows + '<tr class="gt-total-row"><td class="gt-label" style="font-weight:700;">总分</td><td class="gt-a">' + ((aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : '') + '</td><td class="gt-score gt-total ' + (aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')) + '">' + aTotal + '</td><td class="gt-score gt-total ' + (bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')) + '">' + bTotal + '</td><td class="gt-b">' + ((bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : '') + '</td></tr></tbody></table></div>';
@@ -1526,7 +1544,7 @@
                 </div>
             </div>
             <table class="guess-edit-table-7" id="guessEditTable" style="width:100%; border-collapse:collapse;">
-                <thead><tr><th class="ge-score-col">得分</th><th class="ge-predict-col" id="geHeadA">球员1</th><th class="ge-predict-col" id="geHeadA2" style="font-size:0.75rem;">球员3</th><th class="ge-vs-col">VS</th><th class="ge-predict-col" id="geHeadB">球员2</th><th class="ge-predict-col" id="geHeadB2" style="font-size:0.75rem;">球员4</th><th class="ge-score-col">得分</th></tr></thead>
+                <thead><tr><th class="ge-score-col">得分</th><th class="ge-predict-col" id="geHeadA">球员1</th><th class="ge-predict-col doubles-only" id="geHeadA2" style="font-size:0.75rem;">球员3</th><th class="ge-vs-col">VS</th><th class="ge-predict-col" id="geHeadB">球员2</th><th class="ge-predict-col doubles-only" id="geHeadB2" style="font-size:0.75rem;">球员4</th><th class="ge-score-col">得分</th></tr></thead>
                 <tbody>
                     <tr><td><select class="guess-ps-input" id="gaPs1"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred1" placeholder="球员名 比分" style="width:100%;"></td><td><input type="text" class="guess-predict-input" id="ga2Pred1" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB1</td><td><input type="text" class="guess-predict-input" id="gbPred1" placeholder="球员名 比分" style="width:100%;"></td><td><input type="text" class="guess-predict-input" id="gb2Pred1" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs1"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td></tr>
                     <tr><td><select class="guess-ps-input" id="gaPs2"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred2" placeholder="球员名 比分" style="width:100%;"></td><td><input type="text" class="guess-predict-input" id="ga2Pred2" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB2</td><td><input type="text" class="guess-predict-input" id="gbPred2" placeholder="球员名 比分" style="width:100%;"></td><td><input type="text" class="guess-predict-input" id="gb2Pred2" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs2"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td></tr>
@@ -2461,6 +2479,21 @@
             // 单打模式：tfoot colspan 从 5 改为 3
             const tfootLabel = modal.querySelector('.guess-edit-table-7 tfoot td.ge-total-label');
             if (tfootLabel) tfootLabel.setAttribute('colspan', matchType === 'doubles' ? '5' : '3');
+
+            // 单打模式：通过 JS 显式隐藏双打相关元素（移动端 CSS 缓存兜底）
+            const isSingles = matchType !== 'doubles';
+            modal.querySelectorAll('.doubles-only').forEach(el => {
+                el.style.display = isSingles ? 'none' : '';
+            });
+            // tbody 第3、6列（球员3/4 输入框）没有 doubles-only class，需单独处理
+            modal.querySelectorAll('.guess-edit-table-7 tbody tr').forEach(tr => {
+                const tds = tr.querySelectorAll('td');
+                if (tds[2]) tds[2].style.display = isSingles ? 'none' : '';
+                if (tds[5]) tds[5].style.display = isSingles ? 'none' : '';
+            });
+            // 单打模式：文本输入网格变为2列
+            const textGrid = document.getElementById('guessTextInputGrid');
+            if (textGrid) textGrid.style.gridTemplateColumns = isSingles ? '1fr 1fr' : '1fr 1fr 1fr 1fr';
 
             document.getElementById('matchForm').reset();
             document.getElementById('mId').value = '';

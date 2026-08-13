@@ -206,7 +206,10 @@ function buildBracket(matches, playerMap, startRound) {
             const finalCenterX0 = finalColX0 + COL_WIDTH / 2;
             const finalMTop = (totalH - MATCH_HEIGHT) / 2;
             const scoreY0 = finalMTop + MATCH_HEIGHT + 14;
-            const fs = (finalMatch0.guess_a_total || 0) + '-' + (finalMatch0.guess_b_total || 0);
+            const isP1Win0 = finalMatch0.winner_id === finalMatch0.player1_id;
+            const champSc = isP1Win0 ? (finalMatch0.guess_a_total || 0) : (finalMatch0.guess_b_total || 0);
+            const runnerSc = isP1Win0 ? (finalMatch0.guess_b_total || 0) : (finalMatch0.guess_a_total || 0);
+            const fs = champSc + '-' + runnerSc;
             const fr = finalMatch0.guess_reason || '';
             svgParts.push('<text x="' + finalCenterX0 + '" y="' + scoreY0 + '" text-anchor="middle" '
                 + 'font-size="11" fill="#5B2D8E" font-weight="700" style="pointer-events:none;">'
@@ -326,8 +329,11 @@ function buildBracket(matches, playerMap, startRound) {
                 + '<span style="font-size:1.75rem; line-height:1;">\uD83C\uDFC6</span>'
                 + '<div><div style="font-size:0.6875rem; font-weight:700; color:#9a7b1f; letter-spacing:0.05em; text-transform:uppercase;">冠军</div>'
                 + '<div style="font-size:1rem; font-weight:700; color:var(--purple-dark);">' + escapeHtml(champName || '') + trophyFlag(champId) + '</div></div></div>';
-            // 决赛比分
-            const finalScore = (finalMatch.guess_a_total || 0) + '-' + (finalMatch.guess_b_total || 0);
+            // 决赛比分（冠军分数在前）
+            const isP1Champ = finalMatch.winner_id === finalMatch.player1_id;
+            const champScore = isP1Champ ? (finalMatch.guess_a_total || 0) : (finalMatch.guess_b_total || 0);
+            const runnerScore = isP1Champ ? (finalMatch.guess_b_total || 0) : (finalMatch.guess_a_total || 0);
+            const finalScore = champScore + '-' + runnerScore;
             const finalReason = finalMatch.guess_reason || '';
             html += '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:70px; padding:8px 12px;">'
                 + '<div style="font-size:0.625rem; font-weight:700; color:var(--gray-500); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:2px;">决赛比分</div>'

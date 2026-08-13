@@ -197,6 +197,28 @@ function buildBracket(matches, playerMap, startRound) {
         }
     }
 
+    // ── 决赛比分（决赛是最后一列，没有连线到下一轮，需单独绘制）──
+    const finalRoundIdx0 = roundOrder.indexOf('F');
+    if (finalRoundIdx0 >= 0 && finalRoundIdx0 === numCols - 1) {
+        const finalMatch0 = roundData[finalRoundIdx0][0];
+        if (finalMatch0 && finalMatch0.status === 'completed') {
+            const finalColX0 = seqOffset + finalRoundIdx0 * (COL_WIDTH + COL_GAP);
+            const finalCenterX0 = finalColX0 + COL_WIDTH / 2;
+            const finalMTop = (totalH - MATCH_HEIGHT) / 2;
+            const scoreY0 = finalMTop + MATCH_HEIGHT + 14;
+            const fs = (finalMatch0.guess_a_total || 0) + '-' + (finalMatch0.guess_b_total || 0);
+            const fr = finalMatch0.guess_reason || '';
+            svgParts.push('<text x="' + finalCenterX0 + '" y="' + scoreY0 + '" text-anchor="middle" '
+                + 'font-size="11" fill="#5B2D8E" font-weight="700" style="pointer-events:none;">'
+                + fs + '</text>');
+            if (fr) {
+                svgParts.push('<text x="' + finalCenterX0 + '" y="' + (scoreY0 + 13) + '" text-anchor="middle" '
+                    + 'font-size="8" fill="#7a5c9e" font-weight="500" style="pointer-events:none;">'
+                    + fr + '</text>');
+            }
+        }
+    }
+
     // ── 输出 HTML ──
     let html = '';
 
@@ -304,6 +326,14 @@ function buildBracket(matches, playerMap, startRound) {
                 + '<span style="font-size:1.75rem; line-height:1;">\uD83C\uDFC6</span>'
                 + '<div><div style="font-size:0.6875rem; font-weight:700; color:#9a7b1f; letter-spacing:0.05em; text-transform:uppercase;">冠军</div>'
                 + '<div style="font-size:1rem; font-weight:700; color:var(--purple-dark);">' + escapeHtml(champName || '') + trophyFlag(champId) + '</div></div></div>';
+            // 决赛比分
+            const finalScore = (finalMatch.guess_a_total || 0) + '-' + (finalMatch.guess_b_total || 0);
+            const finalReason = finalMatch.guess_reason || '';
+            html += '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:70px; padding:8px 12px;">'
+                + '<div style="font-size:0.625rem; font-weight:700; color:var(--gray-500); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:2px;">决赛比分</div>'
+                + '<div style="font-size:1.5rem; font-weight:800; color:var(--purple); line-height:1.2;">' + finalScore + '</div>'
+                + (finalReason ? '<div style="font-size:0.6875rem; color:var(--gray-500); margin-top:2px;">' + finalReason + '</div>' : '')
+                + '</div>';
             // 亚军
             html += '<div style="flex:1; display:flex; align-items:center; gap:10px; padding:12px 16px; '
                 + 'background:linear-gradient(135deg, #f5f5f5 0%, #ececec 100%); border-radius:10px; '

@@ -696,7 +696,7 @@ async function getTournamentPlayers(tid) {
 
     const { data, error } = await supabase
         .from('tournament_players')
-        .select('seed, entry_type, player:player_id(id, name, country, country_code, ranking, doubles_ranking, seed, photo_url, bio)')
+        .select('seed, entry_type, partner_id, player:player_id(id, name, country, country_code, ranking, doubles_ranking, seed, photo_url, bio)')
         .eq('tournament_id', tid);
 
     if (error) {
@@ -711,6 +711,7 @@ async function getTournamentPlayers(tid) {
             ...player,
             t_seed: row.seed || 0,
             entry_type: row.entry_type || 'main',
+            partner_id: row.partner_id || null,
             tp_id: row.id, // tournament_players 表的 ID
         };
     }).sort((a, b) => (a.ranking || 999) - (b.ranking || 999));
@@ -749,14 +750,17 @@ async function getLiveTournamentPlayers(tid) {
  * @returns {Promise<Object>} { success, error }
  */
 async function addTournamentPlayer(tid, data) {
+    const insertData = {
+        tournament_id: tid,
+        player_id: data.player_id,
+        seed: data.seed || 0,
+        entry_type: data.entry_type || 'main',
+    };
+    if (data.partner_id) insertData.partner_id = data.partner_id;
+
     const { error } = await supabase
         .from('tournament_players')
-        .insert({
-            tournament_id: tid,
-            player_id: data.player_id,
-            seed: data.seed || 0,
-            entry_type: data.entry_type || 'main',
-        });
+        .insert(insertData);
 
     if (error) {
         if (error.code === '23505') {
@@ -774,6 +778,23 @@ async function addTournamentPlayer(tid, data) {
  * @returns {Promise<Object>} { success, error }
  */
 async function removeTournamentPlayer(tid, pid) {
+    // 查找搭档，如果有则同时删除（双打组整体移除）
+    const { data: rows } = await supabase
+        .from('tournament_players')
+        .select('partner_id')
+        .eq('tournament_id', tid)
+        .eq('player_id', pid)
+        .limit(1);
+
+    const partnerId = rows && rows[0] ? rows[0].partner_id : null;
+    if (partnerId) {
+        await supabase
+            .from('tournament_players')
+            .delete()
+            .eq('tournament_id', tid)
+            .eq('player_id', partnerId);
+    }
+
     const { error } = await supabase
         .from('tournament_players')
         .delete()
@@ -783,7 +804,7 @@ async function removeTournamentPlayer(tid, pid) {
     if (error) {
         return { success: false, error: error.message };
     }
-    return { success: true, error: null };
+    return { success: true, error: null, partnerRemoved: !!partnerId };
 }
 
 /**

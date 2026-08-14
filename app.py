@@ -129,6 +129,11 @@ def init_db():
         );
     ''')
     # 为已存在的数据库添加增量字段（如果缺失）
+    # partner_id 列（双打搭档）
+    try:
+        db.execute('ALTER TABLE tournament_players ADD COLUMN partner_id INTEGER DEFAULT NULL')
+    except (sqlite3.OperationalError, sqlite3.IntegrityError):
+        pass
     for col, col_type in [
         ('guess_team_a', 'TEXT DEFAULT \'\''),
         ('guess_team_b', 'TEXT DEFAULT \'\''),
@@ -503,7 +508,7 @@ def api_tournament_players(tid):
         ''', (tid,)).fetchall()
     else:
         rows = db.execute('''
-            SELECT p.*, tp.seed as t_seed, tp.entry_type
+            SELECT p.*, tp.seed as t_seed, tp.entry_type, tp.partner_id
             FROM tournament_players tp
             JOIN players p ON tp.player_id = p.id
             WHERE tp.tournament_id = ?
@@ -523,9 +528,37 @@ def api_add_tournament_player(tid):
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Player already in tournament'}), 400
 
+# 双打报名：同时添加两名球员并互设 partner_id
+@app.route('/api/tournaments/<int:tid>/players/doubles', methods=['POST'])
+def api_add_doubles_pair(tid):
+    data = request.json
+    p1 = data.get('player1_id')
+    p2 = data.get('player2_id')
+    entry_type = data.get('entry_type', 'main')
+    if not p1 or not p2:
+        return jsonify({'error': '请选择两名球员'}), 400
+    if p1 == p2:
+        return jsonify({'error': '两名球员不能相同'}), 400
+    db = get_db()
+    try:
+        # 添加球员1，partner 指向球员2
+        db.execute('INSERT INTO tournament_players (tournament_id, player_id, seed, entry_type, partner_id) VALUES (?,?,?,?,?)',
+                   (tid, p1, 0, entry_type, p2))
+        tp1_id = db.execute('SELECT id FROM tournament_players WHERE tournament_id=? AND player_id=?', (tid, p1)).fetchone()['id']
+        # 添加球员2，partner 指向球员1
+        db.execute('INSERT INTO tournament_players (tournament_id, player_id, seed, entry_type, partner_id) VALUES (?,?,?,?,?)',
+                   (tid, p2, 0, entry_type, p1))
+        tp2_id = db.execute('SELECT id FROM tournament_players WHERE tournament_id=? AND player_id=?', (tid, p2)).fetchone()['id']
+        db.commit()
+        return jsonify({'success': True, 'tp1_id': tp1_id, 'tp2_id': tp2_id}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': '球员已在赛事中'}), 400
+
 @app.route('/api/tournaments/<int:tid>/players/<int:pid>', methods=['DELETE'])
 def api_remove_tournament_player(tid, pid):
     db = get_db()
+    # 清除搭档的 partner_id 引用
+    db.execute('UPDATE tournament_players SET partner_id=NULL WHERE tournament_id=? AND partner_id=?', (tid, pid))
     db.execute('DELETE FROM tournament_players WHERE tournament_id=? AND player_id=?', (tid, pid))
     db.commit()
     return jsonify({'success': True})

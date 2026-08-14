@@ -121,6 +121,7 @@
                             <option value="">请选择赛事</option>
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="openEntryModal()">+ 添加球员</button>
+                        <button class="btn btn-primary btn-sm" onclick="openDoublesEntryModal()" style="background:var(--accent-green);">+ 双打报名</button>
                         <button class="btn btn-outline btn-sm" onclick="recalcSeeds()">🔄 重算种子</button>
                         <button class="btn btn-outline btn-sm" onclick="freezeSnapshot()">🔒 冻结球员数据</button>
                     </div>
@@ -131,6 +132,7 @@
                             <tr>
                                 <th>种子</th>
                                 <th>球员</th>
+                                <th>搭档</th>
                                 <th>国家</th>
                                 <th>排名</th>
                                 <th>入围类型</th>
@@ -138,7 +140,7 @@
                             </tr>
                         </thead>
                         <tbody id="entryTable">
-                            <tr><td colspan="6" class="text-center" style="padding:40px;">请先选择赛事</td></tr>
+                            <tr><td colspan="7" class="text-center" style="padding:40px;">请先选择赛事</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -403,6 +405,59 @@
             <div class="modal-actions">
                 <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('entryEditModal')">取消</button>
                 <button type="submit" class="btn btn-primary btn-sm">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Doubles Entry Modal -->
+<div class="modal-overlay" id="doublesEntryModal">
+    <div class="modal" style="max-width:600px;">
+        <div class="modal-header">
+            <h3>双打报名</h3>
+            <button class="modal-close" onclick="closeModal('doublesEntryModal')">&times;</button>
+        </div>
+        <form id="doublesEntryForm" onsubmit="saveDoublesEntry(event)">
+            <div class="form-group">
+                <label>球员 1*</label>
+                <input type="hidden" id="dPlayer1Id" required>
+                <div class="player-search-select">
+                    <input type="text" class="form-control" id="dPlayer1Search"
+                        placeholder="搜索球员姓名/国家..."
+                        autocomplete="off"
+                        oninput="filterDoublesPlayers(1)"
+                        onfocus="showDoublesDropdown(1)"
+                        onblur="setTimeout(()=>hideDoublesDropdown(1),200)">
+                    <div class="player-search-dropdown" id="doublesPlayer1Dropdown"></div>
+                </div>
+                <p id="dPlayer1Selected" style="font-size:0.8125rem; color:var(--accent-green); margin-top:4px; display:none;">✓ 已选择: <span id="dPlayer1SelectedName"></span></p>
+            </div>
+            <div class="form-group">
+                <label>球员 2*</label>
+                <input type="hidden" id="dPlayer2Id" required>
+                <div class="player-search-select">
+                    <input type="text" class="form-control" id="dPlayer2Search"
+                        placeholder="搜索球员姓名/国家..."
+                        autocomplete="off"
+                        oninput="filterDoublesPlayers(2)"
+                        onfocus="showDoublesDropdown(2)"
+                        onblur="setTimeout(()=>hideDoublesDropdown(2),200)">
+                    <div class="player-search-dropdown" id="doublesPlayer2Dropdown"></div>
+                </div>
+                <p id="dPlayer2Selected" style="font-size:0.8125rem; color:var(--accent-green); margin-top:4px; display:none;">✓ 已选择: <span id="dPlayer2SelectedName"></span></p>
+            </div>
+            <div class="form-group">
+                <label>入围类型</label>
+                <select class="form-control" id="dEntryType">
+                    <option value="main">正赛</option>
+                    <option value="wc">外卡 (WC)</option>
+                    <option value="q">资格赛 (Q)</option>
+                </select>
+            </div>
+            <p style="font-size:0.75rem; color:var(--gray-400);">两名球员将作为搭档同时添加，种子排位自动计算</p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('doublesEntryModal')">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm" style="background:var(--accent-green);">添加搭档</button>
             </div>
         </form>
     </div>
@@ -1109,16 +1164,22 @@ async function loadEntryList() {
     document.getElementById('entryCount').style.color = count >= drawSize ? 'var(--accent-green)' : (count >= drawSize * 0.75 ? 'var(--accent-gold)' : 'var(--accent-red)');
     
     if (players.error || !Array.isArray(players) || players.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
         return;
     }
-    tbody.innerHTML = players.map(p => `
+    // 构建 partner_id -> name 映射
+    const partnerMap = {};
+    players.forEach(p => { partnerMap[p.id] = p.name; });
+    tbody.innerHTML = players.map(p => {
+        const partnerName = p.partner_id ? (partnerMap[p.partner_id] || '') : '';
+        return `
         <tr>
             <td>${p.t_seed > 0 ? `<span class="seed-badge">${p.t_seed}</span>` : '-'}</td>
             <td><div class="player-row">
                 <div class="player-avatar">${(p.name[0] || '').toUpperCase()}</div>
                 <strong>${p.name}</strong>
             </div></td>
+            <td>${partnerName ? `<span style="color:var(--accent-green);">${escapeHtml(partnerName)}</span>` : '-'}</td>
             <td>${countryFlag('', p.country)} ${p.country}</td>
             <td>${p.ranking < 999 ? `#${p.ranking}` : '-'}</td>
             <td>${p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正赛'}</td>
@@ -1127,7 +1188,8 @@ async function loadEntryList() {
                 <button class="btn btn-danger btn-sm" onclick="removeEntry(${p.id})">移除</button>
             </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
 async function openEntryModal() {
@@ -1218,6 +1280,105 @@ async function saveEntry(e) {
         // 自动重算种子
         await api(`/api/tournaments/${tid}/recalc-seeds`, { method: 'POST' });
         showToast('球员已添加，种子已自动计算', 'success');
+        loadEntryList();
+    } else {
+        showToast('添加失败: ' + (result.error || '未知错误'), 'error');
+    }
+}
+
+// ── Doubles Entry Management ────────────────────
+async function openDoublesEntryModal() {
+    const tid = document.getElementById('entryTournamentSelect').value;
+    if (!tid) { showToast('请先选择赛事', 'error'); return; }
+
+    entryAllPlayersCache = await api('/api/players');
+    if (!Array.isArray(entryAllPlayersCache)) entryAllPlayersCache = [];
+
+    // Reset both selections
+    for (let i = 1; i <= 2; i++) {
+        document.getElementById(`dPlayer${i}Id`).value = '';
+        document.getElementById(`dPlayer${i}Search`).value = '';
+        document.getElementById(`dPlayer${i}Selected`).style.display = 'none';
+    }
+    renderDoublesDropdown(1, entryAllPlayersCache);
+    renderDoublesDropdown(2, entryAllPlayersCache);
+    openModal('doublesEntryModal');
+}
+
+function renderDoublesDropdown(slot, players) {
+    const dropdown = document.getElementById(`doublesPlayer${slot}Dropdown`);
+    if (!players || players.length === 0) {
+        dropdown.innerHTML = '<div class="player-search-empty">未找到匹配球员</div>';
+        return;
+    }
+    // 排除已选的另一名球员
+    const otherSlot = slot === 1 ? 2 : 1;
+    const otherId = document.getElementById(`dPlayer${otherSlot}Id`).value;
+    const filtered = otherId ? players.filter(p => p.id != otherId) : players;
+    dropdown.innerHTML = filtered.map(p => `
+        <div class="player-search-item" data-pid="${p.id}" data-pname="${escapeHtml(p.name)}" onmousedown="selectDoublesPlayer(${slot}, this.dataset.pid, this.dataset.pname)">
+            <div class="player-avatar">${(p.name[0] || '').toUpperCase()}</div>
+            <div class="player-search-item-info">
+                <strong>${escapeHtml(p.name)}</strong>
+                <span>${escapeHtml(p.country || '')} ${p.ranking < 999 ? '#'+p.ranking : ''}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterDoublesPlayers(slot) {
+    const keyword = (document.getElementById(`dPlayer${slot}Search`).value || '').trim().toLowerCase();
+    document.getElementById(`dPlayer${slot}Id`).value = '';
+    document.getElementById(`dPlayer${slot}Selected`).style.display = 'none';
+    if (!keyword) {
+        renderDoublesDropdown(slot, entryAllPlayersCache);
+        return;
+    }
+    const filtered = entryAllPlayersCache.filter(p => {
+        return (p.name || '').toLowerCase().includes(keyword)
+            || (p.country || '').toLowerCase().includes(keyword)
+            || String(p.ranking || '').includes(keyword);
+    });
+    renderDoublesDropdown(slot, filtered);
+}
+
+function showDoublesDropdown(slot) {
+    document.getElementById(`doublesPlayer${slot}Dropdown`).style.display = 'block';
+}
+
+function hideDoublesDropdown(slot) {
+    document.getElementById(`doublesPlayer${slot}Dropdown`).style.display = 'none';
+}
+
+function selectDoublesPlayer(slot, id, name) {
+    document.getElementById(`dPlayer${slot}Id`).value = id;
+    document.getElementById(`dPlayer${slot}Search`).value = name;
+    document.getElementById(`dPlayer${slot}SelectedName`).textContent = name;
+    document.getElementById(`dPlayer${slot}Selected`).style.display = 'block';
+    hideDoublesDropdown(slot);
+    // 刷新另一侧下拉，排除已选球员
+    const otherSlot = slot === 1 ? 2 : 1;
+    renderDoublesDropdown(otherSlot, entryAllPlayersCache);
+}
+
+async function saveDoublesEntry(e) {
+    e.preventDefault();
+    const tid = document.getElementById('entryTournamentSelect').value;
+    const p1 = document.getElementById('dPlayer1Id').value;
+    const p2 = document.getElementById('dPlayer2Id').value;
+    if (!p1 || !p2) { showToast('请为两名球员都选择球员', 'error'); return; }
+    if (p1 === p2) { showToast('两名球员不能相同', 'error'); return; }
+
+    const data = {
+        player1_id: parseInt(p1),
+        player2_id: parseInt(p2),
+        entry_type: document.getElementById('dEntryType').value,
+    };
+    const result = await api(`/api/tournaments/${tid}/players/doubles`, { method: 'POST', body: JSON.stringify(data) });
+    if (!result.error) {
+        closeModal('doublesEntryModal');
+        await api(`/api/tournaments/${tid}/recalc-seeds`, { method: 'POST' });
+        showToast('双打搭档已添加，种子已自动计算', 'success');
         loadEntryList();
     } else {
         showToast('添加失败: ' + (result.error || '未知错误'), 'error');

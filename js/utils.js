@@ -214,7 +214,7 @@ const COUNTRY_CODE_MAP = {
 
 function getCountryCodeByName(name) {
     if (!name) return '';
-    const key = String(name).trim();
+    const key = String(name).trim().replace(/\s+/g, '');
     if (COUNTRY_CODE_MAP[key]) return COUNTRY_CODE_MAP[key];
     for (const k in COUNTRY_CODE_MAP) {
         if (k.toLowerCase() === key.toLowerCase()) return COUNTRY_CODE_MAP[k];

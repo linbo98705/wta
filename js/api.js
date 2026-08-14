@@ -849,7 +849,7 @@ async function recalcSeeds(tid) {
     const maxSeeds = getNumSeeds(drawSize);
 
     const selectFields = isDoubles
-        ? 'id, seed, player:player_id(ranking, doubles_ranking)'
+        ? 'id, seed, partner_id, player:player_id(id, ranking, doubles_ranking)'
         : 'id, seed, player:player_id(ranking)';
 
     const { data: tpRows, error: tpError } = await supabase
@@ -862,28 +862,51 @@ async function recalcSeeds(tid) {
     }
 
     if (isDoubles) {
-        // 双打：按 doubles_ranking 排序后两两配对，计算排名总和，按总和安排种子
-        const sorted = (tpRows || [])
-            .map(r => ({
-                tp_id: r.id,
-                old_seed: r.seed || 0,
-                doubles_ranking: (r.player && r.player.doubles_ranking) || 999,
-            }))
-            .sort((a, b) => a.doubles_ranking - b.doubles_ranking);
-
-        // 两两配对为队伍
+        // 双打：优先使用 partner_id 配对，无 partner_id 的按 doubles_ranking 自动配对
+        const playerMap = {};
+        (tpRows || []).forEach(r => { playerMap[r.player.id] = r; });
+        const paired = new Set();
         const teams = [];
-        for (let i = 0; i + 1 < sorted.length; i += 2) {
+
+        // 1. 先处理有 partner_id 的球员
+        (tpRows || []).forEach(r => {
+            if (paired.has(r.player.id)) return;
+            if (r.partner_id && playerMap[r.partner_id] && !paired.has(r.partner_id)) {
+                const partner = playerMap[r.partner_id];
+                paired.add(r.player.id);
+                paired.add(partner.player.id);
+                const dr1 = (r.player && r.player.doubles_ranking) || 999;
+                const dr2 = (partner.player && partner.player.doubles_ranking) || 999;
+                teams.push({
+                    members: [
+                        { tp_id: r.id, old_seed: r.seed || 0, doubles_ranking: dr1 },
+                        { tp_id: partner.id, old_seed: partner.seed || 0, doubles_ranking: dr2 },
+                    ],
+                    rankSum: dr1 + dr2,
+                });
+            }
+        });
+
+        // 2. 无 partner_id 的球员按 doubles_ranking 排序后两两配对
+        const unpaired = (tpRows || []).filter(r => !paired.has(r.player.id));
+        unpaired.sort((a, b) => ((a.player && a.player.doubles_ranking) || 999) - ((b.player && b.player.doubles_ranking) || 999));
+        for (let i = 0; i + 1 < unpaired.length; i += 2) {
+            const dr1 = (unpaired[i].player && unpaired[i].player.doubles_ranking) || 999;
+            const dr2 = (unpaired[i + 1].player && unpaired[i + 1].player.doubles_ranking) || 999;
             teams.push({
-                members: [sorted[i], sorted[i + 1]],
-                rankSum: sorted[i].doubles_ranking + sorted[i + 1].doubles_ranking,
+                members: [
+                    { tp_id: unpaired[i].id, old_seed: unpaired[i].seed || 0, doubles_ranking: dr1 },
+                    { tp_id: unpaired[i + 1].id, old_seed: unpaired[i + 1].seed || 0, doubles_ranking: dr2 },
+                ],
+                rankSum: dr1 + dr2,
             });
         }
-        // 奇数球员：最后一个单独成队
-        if (sorted.length % 2 === 1) {
+        if (unpaired.length % 2 === 1) {
+            const last = unpaired[unpaired.length - 1];
+            const dr1 = (last.player && last.player.doubles_ranking) || 999;
             teams.push({
-                members: [sorted[sorted.length - 1]],
-                rankSum: sorted[sorted.length - 1].doubles_ranking,
+                members: [{ tp_id: last.id, old_seed: last.seed || 0, doubles_ranking: dr1 }],
+                rankSum: dr1,
             });
         }
 

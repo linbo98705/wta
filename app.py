@@ -557,11 +557,14 @@ def api_add_doubles_pair(tid):
 @app.route('/api/tournaments/<int:tid>/players/<int:pid>', methods=['DELETE'])
 def api_remove_tournament_player(tid, pid):
     db = get_db()
-    # 清除搭档的 partner_id 引用
-    db.execute('UPDATE tournament_players SET partner_id=NULL WHERE tournament_id=? AND partner_id=?', (tid, pid))
+    # 查找搭档，如果有则同时删除搭档（双打组整体移除）
+    row = db.execute('SELECT partner_id FROM tournament_players WHERE tournament_id=? AND player_id=?', (tid, pid)).fetchone()
+    partner_id = row['partner_id'] if row else None
+    if partner_id:
+        db.execute('DELETE FROM tournament_players WHERE tournament_id=? AND player_id=?', (tid, partner_id))
     db.execute('DELETE FROM tournament_players WHERE tournament_id=? AND player_id=?', (tid, pid))
     db.commit()
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'partner_removed': partner_id is not None})
 
 # 自动重算种子
 @app.route('/api/tournaments/<int:tid>/recalc-seeds', methods=['POST'])

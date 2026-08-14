@@ -673,7 +673,7 @@ async function getTournamentPlayers(tid) {
     if (!snapErr && snapCount > 0) {
         const { data: snapData, error: snapError2 } = await supabase
             .from('tournament_player_snapshots')
-            .select('player_id, name, country, country_code, ranking, doubles_ranking, seed, entry_type')
+            .select('player_id, name, country, country_code, ranking, doubles_ranking, seed, entry_type, partner_id')
             .eq('tournament_id', tid)
             .order('ranking', { ascending: true });
 
@@ -688,6 +688,7 @@ async function getTournamentPlayers(tid) {
                 seed: row.seed,
                 t_seed: row.seed,
                 entry_type: row.entry_type,
+                partner_id: row.partner_id || null,
                 photo_url: '',
                 bio: '',
             }));
@@ -724,7 +725,7 @@ async function getTournamentPlayers(tid) {
 async function getLiveTournamentPlayers(tid) {
     const { data, error } = await supabase
         .from('tournament_players')
-        .select('id, seed, entry_type, player:player_id(id, name, country, country_code, ranking, doubles_ranking, seed, photo_url, bio)')
+        .select('id, seed, entry_type, partner_id, player:player_id(id, name, country, country_code, ranking, doubles_ranking, seed, photo_url, bio)')
         .eq('tournament_id', tid);
 
     if (error) {
@@ -738,6 +739,7 @@ async function getLiveTournamentPlayers(tid) {
             ...player,
             t_seed: row.seed || 0,
             entry_type: row.entry_type || 'main',
+            partner_id: row.partner_id || null,
             tp_id: row.id,
         };
     }).sort((a, b) => (a.ranking || 999) - (b.ranking || 999));
@@ -1623,6 +1625,7 @@ async function freezeSnapshot(tid) {
         doubles_ranking: p.doubles_ranking || 999,
         seed: p.t_seed || 0,
         entry_type: p.entry_type || 'main',
+        partner_id: p.partner_id || null,
     }));
 
     const BATCH_SIZE = 200;

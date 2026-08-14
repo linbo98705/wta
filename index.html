@@ -76,7 +76,7 @@
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=8"></script>
-    <script src="js/api.js?v=16"></script>
+    <script src="js/api.js?v=17"></script>
     <script src="js/draw-engine.js?v=13"></script>
 
     <script>
@@ -331,9 +331,20 @@
             `;
         }
 
+        var isDoubles = !!(t && t.match_type === 'doubles');
+        window._frontIsDoubles = isDoubles;
+        if (isDoubles) {
+            var theadRow = document.querySelector('.data-table thead tr');
+            if (theadRow) {
+                theadRow.innerHTML = '<th style="width:40px;">序号</th><th style="width:180px;">球员1</th><th style="width:180px;">球员2</th><th style="width:140px;">国家/地区</th><th style="width:80px;">排名总和</th><th style="width:50px;">种子</th><th style="width:80px;">入围类型</th>';
+            }
+            var loadingTd = document.querySelector('#playerTableBody tr td');
+            if (loadingTd) loadingTd.setAttribute('colspan', '7');
+        }
+
         const players = await getTournamentPlayers(tid);
         if (!Array.isArray(players)) {
-            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="6" class="text-center">加载失败</td></tr>';
+            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="' + (isDoubles ? 7 : 6) + '" class="text-center">加载失败</td></tr>';
             return;
         }
 
@@ -353,36 +364,98 @@
     window.frontFilterPlayerList = function() {
         const players = window._frontPlayersCache || [];
         const countryFilter = document.getElementById('frontPlayerCountryFilter') ? document.getElementById('frontPlayerCountryFilter').value : '';
-        var filtered = players;
-        if (countryFilter) {
-            filtered = filtered.filter(function(p) { return (p.country || '') === countryFilter; });
-        }
-        document.getElementById('playerCount').textContent = '共 ' + players.length + ' 名球员';
+        const isDoubles = !!window._frontIsDoubles;
+        var colCount = isDoubles ? 7 : 6;
 
-        if (filtered.length === 0) {
-            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="6"><div class="empty-state"><h3>暂无球员</h3><p>没有找到匹配的球员</p></div></td></tr>';
-            return;
-        }
+        if (isDoubles) {
+            // 双打：优先使用 partner_id 配对，无 partner_id 的按 doubles_ranking 自动配对
+            var playerMap = {};
+            players.forEach(function(p) { playerMap[p.id] = p; });
+            var paired = new Set();
+            var teams = [];
+            // 1. 先处理有 partner_id 的球员
+            players.forEach(function(p) {
+                if (paired.has(p.id)) return;
+                if (p.partner_id && playerMap[p.partner_id] && !paired.has(p.partner_id)) {
+                    var partner = playerMap[p.partner_id];
+                    paired.add(p.id);
+                    paired.add(partner.id);
+                    var r1 = p.doubles_ranking || 999, r2 = partner.doubles_ranking || 999;
+                    teams.push({ p1: p, p2: partner, rankSum: r1 + r2, seed: p.t_seed || partner.t_seed || 0, entryType: p.entry_type || partner.entry_type || 'main' });
+                }
+            });
+            // 2. 无 partner_id 的球员按 doubles_ranking 排序后两两配对
+            var unpaired = players.filter(function(p) { return !paired.has(p.id); });
+            unpaired.sort(function(a, b) { return (a.doubles_ranking || 999) - (b.doubles_ranking || 999); });
+            for (var i = 0; i + 1 < unpaired.length; i += 2) {
+                var p1 = unpaired[i], p2 = unpaired[i + 1];
+                var r1 = p1.doubles_ranking || 999, r2 = p2.doubles_ranking || 999;
+                teams.push({ p1: p1, p2: p2, rankSum: r1 + r2, seed: p1.t_seed || p2.t_seed || 0, entryType: p1.entry_type || p2.entry_type || 'main' });
+            }
+            if (unpaired.length % 2 === 1) {
+                var last = unpaired[unpaired.length - 1];
+                teams.push({ p1: last, p2: null, rankSum: last.doubles_ranking || 999, seed: last.t_seed || 0, entryType: last.entry_type || 'main' });
+            }
+            // 按排名总和升序排序
+            teams.sort(function(a, b) { return a.rankSum - b.rankSum; });
 
-        document.getElementById('playerTableBody').innerHTML = filtered.map((p, idx) => `
-            <tr>
-                <td>${idx + 1}</td>
-                <td>
-                    <div class="player-row">
-                        <div class="player-avatar">${(p.name[0] || '').toUpperCase()}</div>
-                        <strong>${escapeHtml(p.name)}</strong>
-                    </div>
-                </td>
-                <td>${countryFlag(p.country_code || '', p.country)} ${escapeHtml(p.country)}</td>
-                <td>${p.ranking < 999 ? '#' + p.ranking : '-'}</td>
-                <td>
-                    ${p.t_seed > 0
-                        ? '<span class="seed-badge">' + p.t_seed + '</span>'
-                        : '<span class="seed-badge empty">-</span>'}
-                </td>
-                <td>${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正赛'}</td>
-            </tr>
-        `).join('');
+            // 国家筛选：任一球员匹配即显示
+            var filteredTeams = teams;
+            if (countryFilter) {
+                filteredTeams = teams.filter(function(t) {
+                    return (t.p1.country || '') === countryFilter || (t.p2 && (t.p2.country || '') === countryFilter);
+                });
+            }
+
+            document.getElementById('playerCount').textContent = '共 ' + teams.length + ' 组搭档';
+
+            if (filteredTeams.length === 0) {
+                document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="' + colCount + '"><div class="empty-state"><h3>暂无球员</h3><p>没有找到匹配的球员</p></div></td></tr>';
+                return;
+            }
+
+            document.getElementById('playerTableBody').innerHTML = filteredTeams.map(function(t, idx) {
+                var p1Html = '<div class="player-row"><div class="player-avatar">' + (t.p1.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(t.p1.name) + '</strong></div>';
+                var p2Html = t.p2 ? '<div class="player-row"><div class="player-avatar">' + (t.p2.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(t.p2.name) + '</strong></div>' : '<span style="color:var(--gray-400);">—</span>';
+                var c1 = countryFlag(t.p1.country_code || '', t.p1.country) + ' ' + escapeHtml(t.p1.country || '');
+                var c2 = t.p2 ? '<br>' + countryFlag(t.p2.country_code || '', t.p2.country) + ' ' + escapeHtml(t.p2.country || '') : '';
+                var seedHtml = t.seed > 0 ? '<span class="seed-badge">' + t.seed + '</span>' : '<span class="seed-badge empty">-</span>';
+                var entryHtml = t.entryType === 'wc' ? '外卡 (WC)' : t.entryType === 'q' ? '资格赛 (Q)' : '正赛';
+                return '<tr><td>' + (idx + 1) + '</td><td>' + p1Html + '</td><td>' + p2Html + '</td><td>' + c1 + c2 + '</td><td><strong>' + t.rankSum + '</strong></td><td>' + seedHtml + '</td><td>' + entryHtml + '</td></tr>';
+            }).join('');
+        } else {
+            // 单打：原有逻辑
+            var filtered = players;
+            if (countryFilter) {
+                filtered = filtered.filter(function(p) { return (p.country || '') === countryFilter; });
+            }
+            document.getElementById('playerCount').textContent = '共 ' + players.length + ' 名球员';
+
+            if (filtered.length === 0) {
+                document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="' + colCount + '"><div class="empty-state"><h3>暂无球员</h3><p>没有找到匹配的球员</p></div></td></tr>';
+                return;
+            }
+
+            document.getElementById('playerTableBody').innerHTML = filtered.map((p, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td>
+                        <div class="player-row">
+                            <div class="player-avatar">${(p.name[0] || '').toUpperCase()}</div>
+                            <strong>${escapeHtml(p.name)}</strong>
+                        </div>
+                    </td>
+                    <td>${countryFlag(p.country_code || '', p.country)} ${escapeHtml(p.country)}</td>
+                    <td>${p.ranking < 999 ? '#' + p.ranking : '-'}</td>
+                    <td>
+                        ${p.t_seed > 0
+                            ? '<span class="seed-badge">' + p.t_seed + '</span>'
+                            : '<span class="seed-badge empty">-</span>'}
+                    </td>
+                    <td>${p.entry_type === 'wc' ? '外卡 (WC)' : p.entry_type === 'q' ? '资格赛 (Q)' : '正赛'}</td>
+                </tr>
+            `).join('');
+        }
     };
 
     // ── 导出参赛名单为长图（按网页原样） ──────────────

@@ -1213,7 +1213,7 @@ def get_num_seeds(draw_size):
         return 32
     elif draw_size >= 64:
         return 16
-    elif draw_size >= 32:
+    elif draw_size >= 24:
         return 8
     else:
         return 4

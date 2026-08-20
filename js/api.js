@@ -32,7 +32,7 @@ function getNumSeeds(draw_size) {
     if (draw_size >= 128) return 32;
     if (draw_size >= 96) return 32;
     if (draw_size >= 64) return 16;
-    if (draw_size >= 32) return 8;
+    if (draw_size >= 24) return 8;
     return 4;
 }
 

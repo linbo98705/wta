@@ -41,12 +41,12 @@ body[data-theme="grass"] {
     --purple-rgb: 53, 122, 53;
 }
 body[data-theme="purple-orange"] {
-    --purple-dark: #3D0A5C;
-    --purple: #7B2CBF;
-    --purple-light: #E8590C;
+    --purple-dark: #2D0A5E;
+    --purple: #E8590C;
+    --purple-light: #FF8C42;
     --purple-lighter: #FFE8D6;
-    --purple-bg: #F8F0FC;
-    --purple-rgb: 123, 44, 191;
+    --purple-bg: #FFF5EB;
+    --purple-rgb: 232, 89, 12;
 }
     --black: #1A1A1A;
     --gray-100: #F5F5F5;

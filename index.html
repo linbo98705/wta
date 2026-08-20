@@ -494,12 +494,19 @@
             wrapper.style.position = 'fixed';
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
-            wrapper.style.width = '1600px';
+            wrapper.style.width = '800px';
             wrapper.style.background = '#fff';
             document.body.appendChild(wrapper);
 
             if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
             wrapper.appendChild(tableSection.cloneNode(true));
+
+            // 让克隆的表格按内容宽度自适应，避免过宽
+            const clonedTables = wrapper.querySelectorAll('.data-table');
+            clonedTables.forEach(function(tbl) {
+                tbl.style.width = 'auto';
+                tbl.style.margin = '0 auto';
+            });
 
             // 恢复原页面显示
             if (exportBtn) exportBtn.style.display = '';

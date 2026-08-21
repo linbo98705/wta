@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=35">
+    <link rel="stylesheet" href="static/css/style.css?v=36">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -974,9 +974,9 @@
                     const isTopScore = topScoreMatchIds.has(m.id);
                     const topScoreClass = isTopScore ? ' match-card-top-score' : '';
                     const p1Display = escapeHtml(m.p1_name || 'TBD') + countryFlag(m.p1_country_code || '', m.p1_country || '')
-                        + (m.p3_name ? ' / ' + escapeHtml(m.p3_name) + countryFlag(m.p3_country_code || '', m.p3_country || '') : '');
+                        + (m.p3_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + escapeHtml(m.p3_name) + countryFlag(m.p3_country_code || '', m.p3_country || '') : '');
                     const p2Display = escapeHtml(m.p2_name || 'TBD') + countryFlag(m.p2_country_code || '', m.p2_country || '')
-                        + (m.p4_name ? ' / ' + escapeHtml(m.p4_name) + countryFlag(m.p4_country_code || '', m.p4_country || '') : '');
+                        + (m.p4_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + escapeHtml(m.p4_name) + countryFlag(m.p4_country_code || '', m.p4_country || '') : '');
                     const topScoreBadge = isTopScore ? '<span class="top-score-badge" title="当日最高分">&#127942; 当日最高分</span>' : '';
 
                     html += '<div class="match-card' + collapsedClass + topScoreClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + topScoreBadge + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p1Display + '</strong>' : p1Display) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p2Display + '</strong>' : p2Display) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + (m.status === 'scheduled' ? '' : renderGuessSchedule(m)) + '</div></div>';

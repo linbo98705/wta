@@ -778,6 +778,8 @@ img { max-width: 100%; height: auto; }
     overflow: visible;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .match-card.collapsed .mc-body {
@@ -891,6 +893,10 @@ img { max-width: 100%; height: auto; }
     display: inline-block;
     vertical-align: middle;
 }
+/* 双打球员名分隔：PC显示/，移动端换行 */
+.mc-sep-pc { display: inline; }
+.mc-mob-br { display: none; }
+
 .mc-player-name .seed-badge {
     width: 20px;
     height: 20px;
@@ -972,13 +978,10 @@ img { max-width: 100%; height: auto; }
 }
 @media (min-width: 769px) {
     .court-columns {
-        flex-wrap: wrap;
+        flex-direction: column;
+        flex-wrap: nowrap;
     }
     .court-column {
-        flex: 0 1 calc(50% - 6px);
-        max-width: calc(50% - 6px);
-    }
-    .court-column:only-child {
         flex: 1 1 100%;
         max-width: 100%;
     }
@@ -1011,6 +1014,8 @@ img { max-width: 100%; height: auto; }
     gap: 8px;
     padding: 0 8px;
     flex: 1;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .match-players {
@@ -2348,11 +2353,14 @@ textarea.form-control {
         align-self: center;
     }
     .mc-player-name {
-        white-space: nowrap;
+        white-space: normal;
         text-align: center;
         line-height: 1.3;
         font-size: 0.75rem;
+        word-break: keep-all;
     }
+    .mc-sep-pc { display: none; }
+    .mc-mob-br { display: block; }
     .mc-win-reason {
         font-size: 0.625rem;
         white-space: nowrap;
@@ -2605,7 +2613,8 @@ textarea.form-control {
     }
     .mc-player-name {
         font-size: 0.6875rem;
-        white-space: nowrap;
+        white-space: normal;
+        word-break: keep-all;
     }
     .mc-player-score {
         font-size: 0.8125rem;

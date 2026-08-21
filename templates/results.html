@@ -261,7 +261,7 @@ const tid = {{ tid }};
                         <div class="mc-toggle-matchup">
                             <div class="mc-player mc-player-left ${m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser'}">
                                 <div class="mc-player-col">
-                                    <span class="mc-player-name"><strong>${m.p1_name || 'TBD'}${m.p3_name ? ' / ' + m.p3_name : ''}</strong>
+                                    <span class="mc-player-name"><strong>${m.p1_name || 'TBD'}${m.p3_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + m.p3_name : ''}</strong>
                                     ${m.winner_id === m.player1_id ? ' 🏆' : ''}</span>
                                 </div>
                                 ${m.p1_country ? countryFlag(m.p1_country, m.p1_country_name) : ''}${m.p3_country ? countryFlag(m.p3_country, m.p3_country_name) : ''}
@@ -270,7 +270,7 @@ const tid = {{ tid }};
                             <div class="mc-player mc-player-right ${m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser'}">
                                 ${m.p2_country ? countryFlag(m.p2_country, m.p2_country_name) : ''}${m.p4_country ? countryFlag(m.p4_country, m.p4_country_name) : ''}
                                 <div class="mc-player-col">
-                                    <span class="mc-player-name"><strong>${m.p2_name || 'TBD'}${m.p4_name ? ' / ' + m.p4_name : ''}</strong>
+                                    <span class="mc-player-name"><strong>${m.p2_name || 'TBD'}${m.p4_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + m.p4_name : ''}</strong>
                                     ${m.winner_id === m.player2_id ? ' 🏆' : ''}</span>
                                 </div>
                             </div>

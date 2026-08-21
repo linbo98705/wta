@@ -582,25 +582,32 @@ def api_recalc_seeds(tid):
     db.execute('UPDATE tournament_players SET seed=0 WHERE tournament_id=?', (tid,))
 
     if is_doubles:
-        # 双打：按 doubles_ranking 排序后两两配对，计算排名总和，按总和安排种子
+        # 双打：按 partner_id 组队（保持报名时的组队），计算排名总和，按总和安排种子
         players = db.execute('''
             SELECT tp.*, p.ranking, p.doubles_ranking FROM tournament_players tp
             JOIN players p ON tp.player_id = p.id
             WHERE tp.tournament_id = ?
-            ORDER BY p.doubles_ranking ASC
         ''', (tid,)).fetchall()
 
-        # 两两配对为队伍
+        # 按 partner_id 组队
         teams = []
-        for i in range(0, len(players) - 1, 2):
-            p1 = players[i]
-            p2 = players[i + 1]
-            r1 = p1['doubles_ranking'] or 999
-            r2 = p2['doubles_ranking'] or 999
-            teams.append({'members': [p1, p2], 'rank_sum': r1 + r2})
-        if len(players) % 2 == 1:
-            last = players[-1]
-            teams.append({'members': [last], 'rank_sum': last['doubles_ranking'] or 999})
+        seen = set()
+        for p in players:
+            if p['player_id'] in seen:
+                continue
+            partner_id = p['partner_id']
+            if partner_id:
+                partner = next((pp for pp in players if pp['player_id'] == partner_id), None)
+                if partner:
+                    r1 = p['doubles_ranking'] or 999
+                    r2 = partner['doubles_ranking'] or 999
+                    teams.append({'members': [p, partner], 'rank_sum': r1 + r2})
+                    seen.add(p['player_id'])
+                    seen.add(partner['player_id'])
+                    continue
+            # 没有搭档的球员单独成队
+            teams.append({'members': [p], 'rank_sum': p['doubles_ranking'] or 999})
+            seen.add(p['player_id'])
 
         # 按排名总和升序排序
         teams.sort(key=lambda t: t['rank_sum'])
@@ -903,7 +910,7 @@ def api_generate_draw(tid):
     
     # 获取参赛球员（按种子排序，种子在前）
     players = db.execute('''
-        SELECT p.*, tp.seed as t_seed, tp.entry_type FROM tournament_players tp
+        SELECT p.*, tp.seed as t_seed, tp.entry_type, tp.partner_id FROM tournament_players tp
         JOIN players p ON tp.player_id = p.id
         WHERE tp.tournament_id = ?
         ORDER BY tp.seed ASC, p.ranking ASC
@@ -1046,42 +1053,127 @@ def api_generate_draw(tid):
                     'player2_id': seed_bye_winners.get(i, {}).get('player2')
                 })
     else:
-        # ─── 非96签（32/64/128签）原有逻辑 ───
-        # 按WTA规则填充签表
-        filled = fill_draw_positions(player_list, total_slots, draw_size)
+        # ─── 非96签（32/64/128/24签） ───
+        is_doubles = tournament['match_type'] == 'doubles'
 
-        first_round = rounds[0]
-        first_round_matches = total_slots // 2
+        if is_doubles:
+            # 双打：按 partner_id 组队，每队作为整体放入签表
+            team_map = {}
+            seen = set()
+            for p in player_list:
+                if p['id'] in seen:
+                    continue
+                partner_pid = p.get('partner_id')
+                if partner_pid:
+                    partner = next((pp for pp in player_list if pp['id'] == partner_pid), None)
+                    if partner:
+                        team_id = p['id']
+                        team_map[team_id] = {
+                            'id': team_id,
+                            't_seed': p.get('t_seed', 0),
+                            'members': [p, partner]
+                        }
+                        seen.add(p['id'])
+                        seen.add(partner['id'])
+                        continue
+                # 没有搭档的球员单独成队
+                team_map[p['id']] = {
+                    'id': p['id'],
+                    't_seed': p.get('t_seed', 0),
+                    'members': [p]
+                }
+                seen.add(p['id'])
 
-        for i in range(first_round_matches):
-            p1 = filled[i * 2]
-            p2 = filled[i * 2 + 1]
-            match_order += 1
-            db.execute('''INSERT INTO matches (tournament_id, round, match_order, player1_id, player2_id, status)
-                          VALUES (?,?,?,?,?,?)''',
-                       (tid, first_round, match_order, p1, p2, 'scheduled' if p1 and p2 else 'bye'))
-            created_matches.append({
-                'round': first_round,
-                'match_order': match_order,
-                'player1_id': p1,
-                'player2_id': p2
-            })
+            team_list = list(team_map.values())
+            filled = fill_draw_positions(team_list, total_slots, draw_size)
 
-        # 创建后续轮次占位
-        for r_idx in range(1, len(rounds)):
-            round_name = rounds[r_idx]
-            num_matches = total_slots // (2 ** (r_idx + 1))
-            for i in range(num_matches):
+            first_round = rounds[0]
+            first_round_matches = total_slots // 2
+
+            for i in range(first_round_matches):
+                team_a_id = filled[i * 2]
+                team_b_id = filled[i * 2 + 1]
+
+                p1_id = None
+                p3_id = None
+                p2_id = None
+                p4_id = None
+
+                if team_a_id is not None and team_a_id in team_map:
+                    members = team_map[team_a_id]['members']
+                    p1_id = members[0]['id']
+                    if len(members) > 1:
+                        p3_id = members[1]['id']
+
+                if team_b_id is not None and team_b_id in team_map:
+                    members = team_map[team_b_id]['members']
+                    p2_id = members[0]['id']
+                    if len(members) > 1:
+                        p4_id = members[1]['id']
+
                 match_order += 1
-                db.execute('''INSERT INTO matches (tournament_id, round, match_order, status)
-                              VALUES (?,?,?,?)''',
-                           (tid, round_name, match_order, 'pending'))
+                status = 'scheduled' if p1_id and p2_id else 'bye'
+                db.execute('''INSERT INTO matches (tournament_id, round, match_order, player1_id, player2_id, player3_id, player4_id, status)
+                              VALUES (?,?,?,?,?,?,?,?)''',
+                           (tid, first_round, match_order, p1_id, p2_id, p3_id, p4_id, status))
                 created_matches.append({
-                    'round': round_name,
+                    'round': first_round,
                     'match_order': match_order,
-                    'player1_id': None,
-                    'player2_id': None
+                    'player1_id': p1_id,
+                    'player2_id': p2_id
                 })
+
+            # 创建后续轮次占位
+            for r_idx in range(1, len(rounds)):
+                round_name = rounds[r_idx]
+                num_matches = total_slots // (2 ** (r_idx + 1))
+                for i in range(num_matches):
+                    match_order += 1
+                    db.execute('''INSERT INTO matches (tournament_id, round, match_order, status)
+                                  VALUES (?,?,?,?)''',
+                               (tid, round_name, match_order, 'pending'))
+                    created_matches.append({
+                        'round': round_name,
+                        'match_order': match_order,
+                        'player1_id': None,
+                        'player2_id': None
+                    })
+        else:
+            # 单打：按WTA规则填充签表
+            filled = fill_draw_positions(player_list, total_slots, draw_size)
+
+            first_round = rounds[0]
+            first_round_matches = total_slots // 2
+
+            for i in range(first_round_matches):
+                p1 = filled[i * 2]
+                p2 = filled[i * 2 + 1]
+                match_order += 1
+                db.execute('''INSERT INTO matches (tournament_id, round, match_order, player1_id, player2_id, status)
+                              VALUES (?,?,?,?,?,?)''',
+                           (tid, first_round, match_order, p1, p2, 'scheduled' if p1 and p2 else 'bye'))
+                created_matches.append({
+                    'round': first_round,
+                    'match_order': match_order,
+                    'player1_id': p1,
+                    'player2_id': p2
+                })
+
+            # 创建后续轮次占位
+            for r_idx in range(1, len(rounds)):
+                round_name = rounds[r_idx]
+                num_matches = total_slots // (2 ** (r_idx + 1))
+                for i in range(num_matches):
+                    match_order += 1
+                    db.execute('''INSERT INTO matches (tournament_id, round, match_order, status)
+                                  VALUES (?,?,?,?)''',
+                               (tid, round_name, match_order, 'pending'))
+                    created_matches.append({
+                        'round': round_name,
+                        'match_order': match_order,
+                        'player1_id': None,
+                        'player2_id': None
+                    })
 
     db.commit()
 

@@ -1034,7 +1034,11 @@ async function getMatches(tid, roundFilter) {
             p2_country: (snapMap[m.player2_id] && snapMap[m.player2_id].country) || '',
             p2_country_code: (snapMap[m.player2_id] && snapMap[m.player2_id].country_code) || '',
             p3_name: (snapMap[m.player3_id] && snapMap[m.player3_id].name) || '',
+            p3_country: (snapMap[m.player3_id] && snapMap[m.player3_id].country) || '',
+            p3_country_code: (snapMap[m.player3_id] && snapMap[m.player3_id].country_code) || '',
             p4_name: (snapMap[m.player4_id] && snapMap[m.player4_id].name) || '',
+            p4_country: (snapMap[m.player4_id] && snapMap[m.player4_id].country) || '',
+            p4_country_code: (snapMap[m.player4_id] && snapMap[m.player4_id].country_code) || '',
             winner_name: (snapMap[m.winner_id] && snapMap[m.winner_id].name) || '',
         }));
     }
@@ -1050,8 +1054,10 @@ async function getMatches(tid, roundFilter) {
         p2_country_code: (m.player2 && m.player2.country_code) || '',
         p3_name: (m.player3 && m.player3.name) || '',
         p3_country: (m.player3 && m.player3.country) || '',
+        p3_country_code: (m.player3 && m.player3.country_code) || '',
         p4_name: (m.player4 && m.player4.name) || '',
         p4_country: (m.player4 && m.player4.country) || '',
+        p4_country_code: (m.player4 && m.player4.country_code) || '',
         winner_name: (m.winner && m.winner.name) || '',
     }));
 }

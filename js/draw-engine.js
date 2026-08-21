@@ -23,7 +23,7 @@ const roundLabels = {
 
 // ── 布局常量 ────────────────────────────────
 const MATCH_HEIGHT = 52;   // 每场比赛高度（px）
-const COL_WIDTH = 210;     // 列宽（px）
+const COL_WIDTH = 260;     // 列宽（px）
 const COL_GAP = 56;        // 列间距，含连线空间（px）
 const SECTION_COL_WIDTH = 28; // 区标签列宽度（px）
 const SEQ_COL_WIDTH = 40;  // 序号列宽度（px）
@@ -54,11 +54,13 @@ function renderMatch(m, playerMap) {
     if (m.status === 'bye') {
         const topName = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : '';
         const bottomName = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : '';
+        const topDisplay = m.p1_name ? '<span>' + m.p1_name + '</span>' + playerFlag(m.player1_id) + (m.p3_name ? ' / <span>' + m.p3_name + '</span>' + playerFlag(m.player3_id) : '') : '';
+        const bottomDisplay = m.p2_name ? '<span>' + m.p2_name + '</span>' + playerFlag(m.player2_id) + (m.p4_name ? ' / <span>' + m.p4_name + '</span>' + playerFlag(m.player4_id) : '') : '';
         const topHtml = m.player1_id
-            ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + topName + '">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '') + '<span>' + topName + '</span>' + playerFlag(m.player1_id) + '</div></div>'
+            ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + topName + '">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '') + topDisplay + '</div></div>'
             : '<div class="bracket-player bye-label"><div class="bracket-player-name"><span>Bye</span></div></div>';
         const bottomHtml = m.player2_id
-            ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + bottomName + '">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span>' : '') + '<span>' + bottomName + '</span>' + playerFlag(m.player2_id) + '</div></div>'
+            ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + bottomName + '">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span>' : '') + bottomDisplay + '</div></div>'
             : '<div class="bracket-player bye-label"><div class="bracket-player-name"><span>Bye</span></div></div>';
         return topHtml + bottomHtml;
     }
@@ -69,16 +71,18 @@ function renderMatch(m, playerMap) {
 
     const p1Full = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : '\u2014';
     const p2Full = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : '\u2014';
+    const p1Display = m.p1_name ? '<span>' + m.p1_name + '</span>' + playerFlag(m.player1_id) + (m.p3_name ? ' / <span>' + m.p3_name + '</span>' + playerFlag(m.player3_id) : '') : '<span>\u2014</span>';
+    const p2Display = m.p2_name ? '<span>' + m.p2_name + '</span>' + playerFlag(m.player2_id) + (m.p4_name ? ' / <span>' + m.p4_name + '</span>' + playerFlag(m.player4_id) : '') : '<span>\u2014</span>';
 
     return '<div class="bracket-player ' + p1Class + '">'
         + '<div class="bracket-player-name" title="' + p1Full + '">'
         + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '')
-        + '<span>' + p1Full + '</span>' + playerFlag(m.player1_id)
+        + p1Display
         + '</div></div>'
         + '<div class="bracket-player ' + p2Class + '">'
         + '<div class="bracket-player-name" title="' + p2Full + '">'
         + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span>' : '')
-        + '<span>' + p2Full + '</span>' + playerFlag(m.player2_id)
+        + p2Display
         + '</div></div>';
 }
 

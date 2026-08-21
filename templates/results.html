@@ -137,10 +137,10 @@ const tid = {{ tid }};
             if (hasDoubles) {
                 rows += `<tr>
                     <td class="gt-label">TB${i + 1}</td>
-                    <td class="gt-a"><div>${predACell(aPreds[i])}</div><div>${predACell(a2Preds[i])}</div></td>
+                    <td class="gt-a"><span>${predACell(aPreds[i])}</span> / <span>${predACell(a2Preds[i])}</span></td>
                     <td class="gt-score">${scoreACell(aScores[i])}</td>
                     <td class="gt-score">${scoreBCell(bScores[i])}</td>
-                    <td class="gt-b"><div>${predBCell(bPreds[i])}</div><div>${predBCell(b2Preds[i])}</div></td>
+                    <td class="gt-b"><span>${predBCell(bPreds[i])}</span> / <span>${predBCell(b2Preds[i])}</span></td>
                 </tr>`;
             } else {
                 rows += `<tr>
@@ -261,16 +261,16 @@ const tid = {{ tid }};
                         <div class="mc-toggle-matchup">
                             <div class="mc-player mc-player-left ${m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser'}">
                                 <div class="mc-player-col">
-                                    <span class="mc-player-name"><strong>${m.p1_name || 'TBD'}</strong>
+                                    <span class="mc-player-name"><strong>${m.p1_name || 'TBD'}${m.p3_name ? ' / ' + m.p3_name : ''}</strong>
                                     ${m.winner_id === m.player1_id ? ' 🏆' : ''}</span>
                                 </div>
-                                ${m.p1_country ? countryFlag(m.p1_country, m.p1_country_name) : ''}
+                                ${m.p1_country ? countryFlag(m.p1_country, m.p1_country_name) : ''}${m.p3_country ? countryFlag(m.p3_country, m.p3_country_name) : ''}
                             </div>
                             <div class="mc-vs-text">VS</div>
                             <div class="mc-player mc-player-right ${m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser'}">
-                                ${m.p2_country ? countryFlag(m.p2_country, m.p2_country_name) : ''}
+                                ${m.p2_country ? countryFlag(m.p2_country, m.p2_country_name) : ''}${m.p4_country ? countryFlag(m.p4_country, m.p4_country_name) : ''}
                                 <div class="mc-player-col">
-                                    <span class="mc-player-name"><strong>${m.p2_name || 'TBD'}</strong>
+                                    <span class="mc-player-name"><strong>${m.p2_name || 'TBD'}${m.p4_name ? ' / ' + m.p4_name : ''}</strong>
                                     ${m.winner_id === m.player2_id ? ' 🏆' : ''}</span>
                                 </div>
                             </div>

@@ -654,9 +654,10 @@ def api_matches(tid):
 
     if use_snapshot:
         base_query = '''
-            SELECT m.*, s1.name as p1_name, '' as p1_country, s1.country as p1_country_name,
-                   s2.name as p2_name, '' as p2_country, s2.country as p2_country_name,
-                   s3.name as p3_name, s4.name as p4_name,
+            SELECT m.*, s1.name as p1_name, s1.country_code as p1_country, s1.country as p1_country_name,
+                   s2.name as p2_name, s2.country_code as p2_country, s2.country as p2_country_name,
+                   s3.name as p3_name, s3.country_code as p3_country, s3.country as p3_country_name,
+                   s4.name as p4_name, s4.country_code as p4_country, s4.country as p4_country_name,
                    sw.name as winner_name
             FROM matches m
             LEFT JOIN tournament_player_snapshots s1
@@ -672,9 +673,10 @@ def api_matches(tid):
         '''
     else:
         base_query = '''
-            SELECT m.*, p1.name as p1_name, '' as p1_country, p1.country as p1_country_name,
-                   p2.name as p2_name, '' as p2_country, p2.country as p2_country_name,
-                   p3.name as p3_name, p4.name as p4_name,
+            SELECT m.*, p1.name as p1_name, p1.country_code as p1_country, p1.country as p1_country_name,
+                   p2.name as p2_name, p2.country_code as p2_country, p2.country as p2_country_name,
+                   p3.name as p3_name, p3.country_code as p3_country, p3.country as p3_country_name,
+                   p4.name as p4_name, p4.country_code as p4_country, p4.country as p4_country_name,
                    w.name as winner_name
             FROM matches m
             LEFT JOIN players p1 ON m.player1_id = p1.id

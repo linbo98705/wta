@@ -1133,6 +1133,9 @@ img { max-width: 100%; height: auto; }
 
 /* 双打四列表格 */
 .gt-table-doubles { table-layout: fixed; }
+.gt-table-doubles .gc-pred-wrap { display: inline-flex; flex-direction: row; align-items: center; gap: 4px; }
+.gt-table-doubles .gc-a-text, .gt-table-doubles .gc-b-text { display: inline; }
+.gt-table-doubles .gc-a-score-text, .gt-table-doubles .gc-b-score-text { display: inline; }
 
 .gt-total-cell {
     text-align: center;

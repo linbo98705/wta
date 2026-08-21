@@ -589,25 +589,34 @@ def api_recalc_seeds(tid):
             WHERE tp.tournament_id = ?
         ''', (tid,)).fetchall()
 
-        # 按 partner_id 组队
+        # 按 partner_id 组队，无 partner_id 的按 doubles_ranking 自动配对
         teams = []
-        seen = set()
+        paired = set()
         for p in players:
-            if p['player_id'] in seen:
+            if p['player_id'] in paired:
                 continue
             partner_id = p['partner_id']
             if partner_id:
                 partner = next((pp for pp in players if pp['player_id'] == partner_id), None)
-                if partner:
+                if partner and partner['player_id'] not in paired:
                     r1 = p['doubles_ranking'] or 999
                     r2 = partner['doubles_ranking'] or 999
                     teams.append({'members': [p, partner], 'rank_sum': r1 + r2})
-                    seen.add(p['player_id'])
-                    seen.add(partner['player_id'])
-                    continue
-            # 没有搭档的球员单独成队
-            teams.append({'members': [p], 'rank_sum': p['doubles_ranking'] or 999})
-            seen.add(p['player_id'])
+                    paired.add(p['player_id'])
+                    paired.add(partner['player_id'])
+
+        # 无 partner_id 的球员按 doubles_ranking 排序后两两配对
+        unpaired = [p for p in players if p['player_id'] not in paired]
+        unpaired.sort(key=lambda p: p['doubles_ranking'] or 999)
+        for i in range(0, len(unpaired) - 1, 2):
+            p1 = unpaired[i]
+            p2 = unpaired[i + 1]
+            r1 = p1['doubles_ranking'] or 999
+            r2 = p2['doubles_ranking'] or 999
+            teams.append({'members': [p1, p2], 'rank_sum': r1 + r2})
+        if len(unpaired) % 2 == 1:
+            last = unpaired[-1]
+            teams.append({'members': [last], 'rank_sum': last['doubles_ranking'] or 999})
 
         # 按排名总和升序排序
         teams.sort(key=lambda t: t['rank_sum'])
@@ -1057,32 +1066,49 @@ def api_generate_draw(tid):
         is_doubles = tournament['match_type'] == 'doubles'
 
         if is_doubles:
-            # 双打：按 partner_id 组队，每队作为整体放入签表
+            # 双打：按 partner_id 组队，无 partner_id 的按 doubles_ranking 自动配对
             team_map = {}
-            seen = set()
+            paired = set()
+
+            # 1. 先处理有 partner_id 的球员
             for p in player_list:
-                if p['id'] in seen:
+                if p['id'] in paired:
                     continue
                 partner_pid = p.get('partner_id')
                 if partner_pid:
                     partner = next((pp for pp in player_list if pp['id'] == partner_pid), None)
-                    if partner:
+                    if partner and partner['id'] not in paired:
                         team_id = p['id']
                         team_map[team_id] = {
                             'id': team_id,
                             't_seed': p.get('t_seed', 0),
                             'members': [p, partner]
                         }
-                        seen.add(p['id'])
-                        seen.add(partner['id'])
-                        continue
-                # 没有搭档的球员单独成队
-                team_map[p['id']] = {
-                    'id': p['id'],
-                    't_seed': p.get('t_seed', 0),
-                    'members': [p]
+                        paired.add(p['id'])
+                        paired.add(partner['id'])
+
+            # 2. 无 partner_id 的球员按 doubles_ranking 排序后两两配对
+            unpaired = [p for p in player_list if p['id'] not in paired]
+            unpaired.sort(key=lambda p: p.get('doubles_ranking', 999) or 999)
+            for i in range(0, len(unpaired) - 1, 2):
+                p1 = unpaired[i]
+                p2 = unpaired[i + 1]
+                team_id = p1['id']
+                team_map[team_id] = {
+                    'id': team_id,
+                    't_seed': p1.get('t_seed', 0),
+                    'members': [p1, p2]
                 }
-                seen.add(p['id'])
+                paired.add(p1['id'])
+                paired.add(p2['id'])
+            if len(unpaired) % 2 == 1:
+                last = unpaired[-1]
+                team_map[last['id']] = {
+                    'id': last['id'],
+                    't_seed': last.get('t_seed', 0),
+                    'members': [last]
+                }
+                paired.add(last['id'])
 
             team_list = list(team_map.values())
             filled = fill_draw_positions(team_list, total_slots, draw_size)

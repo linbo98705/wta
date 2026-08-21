@@ -765,8 +765,8 @@ img { max-width: 100%; height: auto; }
 /* ── Schedule / Results ────────────────── */
 .match-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    grid-template-columns: 1fr;
+    gap: 8px;
     align-items: stretch;
 }
 
@@ -815,41 +815,34 @@ img { max-width: 100%; height: auto; }
 .match-card-toggle {
     cursor: pointer;
     user-select: none;
-    padding: 10px 14px;
+    padding: 8px 14px;
 }
 
-.mc-toggle-top {
+.mc-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
-}
-
-.mc-toggle-top .toggle-icon {
-    margin-left: auto;
-}
-
-.mc-toggle-matchup {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 8px 0 4px;
+    flex-wrap: nowrap;
+    overflow: hidden;
 }
 
 .mc-quick-score {
     font-weight: 600;
     color: var(--purple-dark);
     font-size: 0.8125rem;
-    max-width: 260px;
+    max-width: 200px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    flex-shrink: 1;
 }
 
 .toggle-icon {
     font-size: 1.2rem;
     color: var(--gray-500);
     transition: transform var(--transition);
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 /* Card body */
@@ -859,43 +852,32 @@ img { max-width: 100%; height: auto; }
     flex: 1;
 }
 
-/* Player inside matchup */
-.mc-player {
+/* Team inside row */
+.mc-team {
     flex: 1 1 0;
     min-width: 0;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 6px;
     font-size: 0.9375rem;
+    overflow: hidden;
 }
 
-.mc-player-left {
-    text-align: center;
+.mc-team-left {
+    justify-content: flex-end;
 }
 
-.mc-player-right {
-    text-align: center;
-}
-
-.mc-player-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
+.mc-team-right {
+    justify-content: flex-start;
 }
 
 .mc-player-name {
-    flex-shrink: 1;
-    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-align: center;
     line-height: 1.3;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 4px;
 }
 .mc-player-name .seed-badge {
@@ -905,22 +887,12 @@ img { max-width: 100%; height: auto; }
     flex-shrink: 0;
 }
 
-.mc-win-reason {
-    display: block;
-    font-size: 0.6875rem;
-    color: var(--accent-green);
-    font-weight: 600;
-    max-width: 140px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.mc-player-score {
+.mc-score {
     font-weight: 700;
     font-size: 1.1rem;
     color: var(--purple-dark);
     min-width: 28px;
+    text-align: center;
     flex-shrink: 0;
 }
 
@@ -2302,53 +2274,29 @@ textarea.form-control {
 
     /* 赛程赛果卡片移动端适配 */
     .match-card-toggle {
-        padding: 8px 10px;
+        padding: 6px 10px;
     }
-    .mc-toggle-top {
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-bottom: 6px;
-    }
-    .mc-quick-score {
-        max-width: 100%;
-        font-size: 0.75rem;
-        white-space: normal;
-        word-break: break-all;
-    }
-    .mc-toggle-matchup {
-        gap: 8px;
-        padding: 6px 0 2px;
-        align-items: stretch;
-    }
-    .mc-player {
-        font-size: 0.8125rem;
+    .mc-row {
         gap: 4px;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
     }
-    .mc-player-score {
+    .mc-team {
+        font-size: 0.8125rem;
+        gap: 3px;
+    }
+    .mc-score {
         font-size: 0.9375rem;
         min-width: 22px;
     }
     .mc-vs-text {
         font-size: 0.9375rem;
-        align-self: center;
     }
-    .mc-player-name {
-        white-space: normal;
-        word-break: break-all;
-        text-align: center;
-        line-height: 1.3;
+    .mc-quick-score {
+        max-width: 120px;
+        font-size: 0.75rem;
     }
-    .mc-win-reason {
+    .match-round-badge {
         font-size: 0.625rem;
-        white-space: normal;
-        word-break: break-all;
-    }
-    .mc-player-col {
-        gap: 2px;
-        min-width: 0;
+        padding: 2px 6px;
     }
 
     /* 移动端：Toast 居中底部显示 */
@@ -2589,22 +2537,22 @@ textarea.form-control {
     }
 
     /* 赛程赛果卡片小屏幕适配 */
-    .mc-player {
+    .mc-team {
         font-size: 0.75rem;
         gap: 3px;
     }
     .mc-player-name {
         font-size: 0.75rem;
     }
-    .mc-player-score {
+    .mc-score {
         font-size: 0.8125rem;
         min-width: 20px;
     }
     .mc-vs-text {
         font-size: 0.8125rem;
     }
-    .mc-toggle-matchup {
-        gap: 4px;
+    .mc-row {
+        gap: 3px;
     }
     .mc-quick-score {
         font-size: 0.6875rem;
@@ -2631,32 +2579,21 @@ textarea.form-control {
 .export-wrapper .match-card-toggle {
     padding: 10px 14px;
 }
-.export-wrapper .mc-toggle-top {
-    flex-wrap: nowrap;
+.export-wrapper .mc-row {
     gap: 8px;
-    margin-bottom: 8px;
 }
 .export-wrapper .mc-quick-score {
-    max-width: 260px;
+    max-width: 200px;
     font-size: 0.8125rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.export-wrapper .mc-toggle-matchup {
-    gap: 16px;
-    padding: 8px 0 4px;
-    align-items: center;
-}
-.export-wrapper .mc-player {
-    flex: 1 1 0;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+.export-wrapper .mc-team {
     font-size: 0.9375rem;
+    gap: 6px;
 }
-.export-wrapper .mc-player-score {
+.export-wrapper .mc-score {
     font-size: 1.1rem;
     min-width: 28px;
 }
@@ -2665,9 +2602,7 @@ textarea.form-control {
 }
 .export-wrapper .mc-player-name {
     font-size: 0.9375rem;
-    white-space: normal;
-    word-break: break-word;
-    text-align: center;
+    white-space: nowrap;
     line-height: 1.4;
 }
 .export-wrapper .mc-body {

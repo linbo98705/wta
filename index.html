@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=30">
+    <link rel="stylesheet" href="static/css/style.css?v=31">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -776,6 +776,8 @@
             const p1Name = m.p1_name || '球员1';
             const p2Name = m.p2_name || '球员2';
             const isDoubles = !!(t && t.match_type === 'doubles');
+            const p3Name = m.p3_name || '球员3';
+            const p4Name = m.p4_name || '球员4';
             // guess_a_tb 格式: "name1|score1,name2|score2,..." 或 "球员名6-4 6-3,..."
             // 解析函数：数字前面为名字，数字开始后面全为比分
             function parseEntry(entry) {
@@ -857,14 +859,14 @@
                 const bSc = bScores[i] ? bScores[i].trim() : '';
                 if (!aName && !bName && !aScoreTxt && !bScoreTxt && !aSc && !bSc) continue;
                 if (isDoubles) {
-                    rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-a">' + predACell(a2Names[i], a2ScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td><td class="gt-b">' + predBCell(b2Names[i], b2ScoreTexts[i]) + '</td></tr>';
+                    rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a"><div>' + predACell(aNames[i], aScoreTexts[i]) + '</div><div>' + predACell(a2Names[i], a2ScoreTexts[i]) + '</div></td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b"><div>' + predBCell(bNames[i], bScoreTexts[i]) + '</div><div>' + predBCell(b2Names[i], b2ScoreTexts[i]) + '</div></td></tr>';
                 } else {
                     rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
                 }
             }
 
             if (isDoubles) {
-                return '<div class="match-guess"><table class="gt-table gt-table-doubles"><thead><tr><th class="gt-th-label"></th><th class="gt-th-a">' + escapeHtml(p1Name) + '</th><th class="gt-th-a">球员3</th><th class="gt-th-score">得分</th><th class="gt-th-score">得分</th><th class="gt-th-b">' + escapeHtml(p2Name) + '</th><th class="gt-th-b">球员4</th></tr></thead><tbody>' + rows + '<tr class="gt-total-row"><td class="gt-label" style="font-weight:700;">总分</td><td class="gt-a" colspan="2">' + ((aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : '') + '</td><td class="gt-score gt-total ' + (aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')) + '">' + aTotal + '</td><td class="gt-score gt-total ' + (bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')) + '">' + bTotal + '</td><td class="gt-b" colspan="2">' + ((bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : '') + '</td></tr></tbody></table></div>';
+                return '<div class="match-guess"><table class="gt-table gt-table-doubles"><thead><tr><th class="gt-th-label"></th><th class="gt-th-a">' + escapeHtml(p1Name) + ' / ' + escapeHtml(p3Name) + '</th><th class="gt-th-score">得分</th><th class="gt-th-score">得分</th><th class="gt-th-b">' + escapeHtml(p2Name) + ' / ' + escapeHtml(p4Name) + '</th></tr></thead><tbody>' + rows + '<tr class="gt-total-row"><td class="gt-label" style="font-weight:700;">总分</td><td class="gt-a">' + ((aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : '') + '</td><td class="gt-score gt-total ' + (aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')) + '">' + aTotal + '</td><td class="gt-score gt-total ' + (bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')) + '">' + bTotal + '</td><td class="gt-b">' + ((bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : '') + '</td></tr></tbody></table></div>';
             }
 
             return '<div class="match-guess"><table class="gt-table"><thead><tr><th class="gt-th-label"></th><th class="gt-th-a">' + escapeHtml(p1Name) + '</th><th class="gt-th-score">得分</th><th class="gt-th-score">得分</th><th class="gt-th-b">' + escapeHtml(p2Name) + '</th></tr></thead><tbody>' + rows + '<tr class="gt-total-row"><td class="gt-label" style="font-weight:700;">总分</td><td class="gt-a">' + ((aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : '') + '</td><td class="gt-score gt-total ' + (aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')) + '">' + aTotal + '</td><td class="gt-score gt-total ' + (bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')) + '">' + bTotal + '</td><td class="gt-b">' + ((bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : '') + '</td></tr></tbody></table></div>';

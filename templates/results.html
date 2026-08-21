@@ -94,6 +94,8 @@ const tid = {{ tid }};
     function renderGuess(m) {
         const p1Name = m.p1_name || '球员1';
         const p2Name = m.p2_name || '球员2';
+        const p3Name = m.p3_name || '球员3';
+        const p4Name = m.p4_name || '球员4';
         const aPreds = (m.guess_a_tb || '').split(',');
         const bPreds = (m.guess_b_tb || '').split(',');
         const a2Preds = (m.guess_a2_tb || '').split(',');
@@ -135,12 +137,10 @@ const tid = {{ tid }};
             if (hasDoubles) {
                 rows += `<tr>
                     <td class="gt-label">TB${i + 1}</td>
-                    <td class="gt-a">${predACell(aPreds[i])}</td>
-                    <td class="gt-a">${predACell(a2Preds[i])}</td>
+                    <td class="gt-a"><div>${predACell(aPreds[i])}</div><div>${predACell(a2Preds[i])}</div></td>
                     <td class="gt-score">${scoreACell(aScores[i])}</td>
                     <td class="gt-score">${scoreBCell(bScores[i])}</td>
-                    <td class="gt-b">${predBCell(bPreds[i])}</td>
-                    <td class="gt-b">${predBCell(b2Preds[i])}</td>
+                    <td class="gt-b"><div>${predBCell(bPreds[i])}</div><div>${predBCell(b2Preds[i])}</div></td>
                 </tr>`;
             } else {
                 rows += `<tr>
@@ -165,21 +165,19 @@ const tid = {{ tid }};
                         <thead>
                             <tr>
                                 <th class="gt-th-label"></th>
-                                <th class="gt-th-a">${escapeHtml(p1Name)}</th>
-                                <th class="gt-th-a">球员3</th>
+                                <th class="gt-th-a">${escapeHtml(p1Name)} / ${escapeHtml(p3Name)}</th>
                                 <th class="gt-th-score">得分</th>
                                 <th class="gt-th-score">得分</th>
-                                <th class="gt-th-b">${escapeHtml(p2Name)}</th>
-                                <th class="gt-th-b">球员4</th>
+                                <th class="gt-th-b">${escapeHtml(p2Name)} / ${escapeHtml(p4Name)}</th>
                             </tr>
                         </thead>
                         <tbody>${rows}
                             <tr class="gt-total-row">
                                 <td class="gt-label" style="font-weight:700;">总分</td>
-                                <td class="gt-a" colspan="2">${reasonA}</td>
+                                <td class="gt-a">${reasonA}</td>
                                 <td class="gt-score gt-total ${totalAcls}">${aTotal}</td>
                                 <td class="gt-score gt-total ${totalBcls}">${bTotal}</td>
-                                <td class="gt-b" colspan="2">${reasonB}</td>
+                                <td class="gt-b">${reasonB}</td>
                             </tr>
                         </tbody>
                     </table>

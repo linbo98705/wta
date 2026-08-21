@@ -75,8 +75,8 @@ function renderMatch(m, playerMap) {
 
     // 任何轮次的种子轮空（Bye）：一个有效球员 + 空位
     if (m.status === 'bye') {
-        const topName = m.p1_name || '';
-        const bottomName = m.p2_name || '';
+        const topName = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : '';
+        const bottomName = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : '';
         const topHtml = m.player1_id
             ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + topName + '">' + (isP1Seed ? '<span class="seed-badge">' + p1Seed + '</span>' : '') + '<span>' + topName + '</span></div></div>'
             : '<div class="bracket-player bye-label"><div class="bracket-player-name"><span>Bye</span></div></div>';
@@ -89,8 +89,8 @@ function renderMatch(m, playerMap) {
     const p1Class = m.winner_id === m.player1_id ? 'winner' : (m.winner_id && m.winner_id !== m.player1_id ? 'loser' : '');
     const p2Class = m.winner_id === m.player2_id ? 'winner' : (m.winner_id && m.winner_id !== m.player2_id ? 'loser' : '');
 
-    const p1Full = (m.p1_name || '—');
-    const p2Full = (m.p2_name || '—');
+    const p1Full = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : '—';
+    const p2Full = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : '—';
     return '<div class="bracket-player ' + p1Class + '">'
         + '<div class="bracket-player-name" title="' + p1Full + '">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '') + '<span>' + p1Full + '</span></div>'
         + '</div>'

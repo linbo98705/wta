@@ -1133,8 +1133,6 @@ img { max-width: 100%; height: auto; }
 
 /* 双打四列表格 */
 .gt-table-doubles { table-layout: fixed; }
-.gt-table-doubles .gt-a > div + div,
-.gt-table-doubles .gt-b > div + div { font-size: 0.75rem; opacity: 0.85; }
 
 .gt-total-cell {
     text-align: center;

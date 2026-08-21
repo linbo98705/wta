@@ -52,8 +52,8 @@ function renderMatch(m, playerMap) {
 
     // Bye（轮空）比赛：一个有效球员 + 空位
     if (m.status === 'bye') {
-        const topName = m.p1_name || '';
-        const bottomName = m.p2_name || '';
+        const topName = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : '';
+        const bottomName = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : '';
         const topHtml = m.player1_id
             ? '<div class="bracket-player seed-bye"><div class="bracket-player-name" title="' + topName + '">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '') + '<span>' + topName + '</span>' + playerFlag(m.player1_id) + '</div></div>'
             : '<div class="bracket-player bye-label"><div class="bracket-player-name"><span>Bye</span></div></div>';
@@ -67,8 +67,8 @@ function renderMatch(m, playerMap) {
     const p1Class = m.winner_id === m.player1_id ? 'winner' : (m.winner_id && m.winner_id !== m.player1_id ? 'loser' : '');
     const p2Class = m.winner_id === m.player2_id ? 'winner' : (m.winner_id && m.winner_id !== m.player2_id ? 'loser' : '');
 
-    const p1Full = m.p1_name || '\u2014'; // —
-    const p2Full = m.p2_name || '\u2014';
+    const p1Full = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : '\u2014';
+    const p2Full = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : '\u2014';
 
     return '<div class="bracket-player ' + p1Class + '">'
         + '<div class="bracket-player-name" title="' + p1Full + '">'

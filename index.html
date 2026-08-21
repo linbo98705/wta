@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=31">
+    <link rel="stylesheet" href="static/css/style.css?v=32">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -77,7 +77,7 @@
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=10"></script>
     <script src="js/api.js?v=18"></script>
-    <script src="js/draw-engine.js?v=13"></script>
+    <script src="js/draw-engine.js?v=14"></script>
 
     <script>
     // ══════════════════════════════════════════════════════════════
@@ -973,9 +973,11 @@
                     const initIcon = '\u25B8';
                     const isTopScore = topScoreMatchIds.has(m.id);
                     const topScoreClass = isTopScore ? ' match-card-top-score' : '';
+                    const p1Display = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : 'TBD';
+                    const p2Display = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : 'TBD';
                     const topScoreBadge = isTopScore ? '<span class="top-score-badge" title="当日最高分">&#127942; 当日最高分</span>' : '';
 
-                    html += '<div class="match-card' + collapsedClass + topScoreClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + topScoreBadge + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p1_country_code || '', m.p1_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span> ' : '') + (isCompleted ? '<strong>' + escapeHtml(m.p1_name || 'TBD') + '</strong>' : escapeHtml(m.p1_name || 'TBD')) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p2_country_code || '', m.p2_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span> ' : '') + (isCompleted ? '<strong>' + escapeHtml(m.p2_name || 'TBD') + '</strong>' : escapeHtml(m.p2_name || 'TBD')) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + (m.status === 'scheduled' ? '' : renderGuessSchedule(m)) + '</div></div>';
+                    html += '<div class="match-card' + collapsedClass + topScoreClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + topScoreBadge + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p1_country_code || '', m.p1_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span> ' : '') + (isCompleted ? '<strong>' + escapeHtml(p1Display) + '</strong>' : escapeHtml(p1Display)) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + countryFlag(m.p2_country_code || '', m.p2_country || '') + '<div class="mc-player-col"><span class="mc-player-name">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span> ' : '') + (isCompleted ? '<strong>' + escapeHtml(p2Display) + '</strong>' : escapeHtml(p2Display)) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + (m.status === 'scheduled' ? '' : renderGuessSchedule(m)) + '</div></div>';
                 });
                 html += '</div>'; // match-grid
                 html += '</div>'; // court-column
@@ -2569,8 +2571,8 @@
                 // 双打：显示搭档名
                 let p1Display = escapeHtml(m.p1_name || 'TBD');
                 let p2Display = escapeHtml(m.p2_name || 'TBD');
-                if (m.p3_name) p1Display += ' / <span style="font-size:0.8125rem; color:var(--gray-500);">' + escapeHtml(m.p3_name) + '</span>';
-                if (m.p4_name) p2Display += ' / <span style="font-size:0.8125rem; color:var(--gray-500);">' + escapeHtml(m.p4_name) + '</span>';
+                if (m.p3_name) p1Display += ' / ' + escapeHtml(m.p3_name);
+                if (m.p4_name) p2Display += ' / ' + escapeHtml(m.p4_name);
                 return '<tr class="' + rowClass + '" style="' + rowStyle + '"><td class="hide-mobile">' + m.match_order + '</td><td><span class="match-round-badge">' + escapeHtml(m.round) + '</span></td><td>' + p1Display + '</td><td>' + p2Display + '</td><td>' + scoreDisplay + '</td><td>' + (m.match_date || '-') + '</td><td class="hide-mobile">' + escapeHtml(m.court || '-') + '</td><td><span class="match-status ' + m.status + '">' + (m.status === 'scheduled' ? '待进行' : m.status === 'completed' ? '已完成' : m.status === 'live' ? '进行中' : m.status === 'bye' ? '轮空' : m.status === 'pending' ? '待定' : m.status) + '</span></td><td>' + actionBtns + '</td></tr>';
             }
 
@@ -2647,8 +2649,8 @@
             Object.keys(grouped).forEach(court => {
                 lines.push('【' + court + '】');
                 grouped[court].forEach(m => {
-                    const p1 = m.p1_name || 'TBD';
-                    const p2 = m.p2_name || 'TBD';
+                    const p1 = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : 'TBD';
+                    const p2 = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : 'TBD';
                     lines.push('@' + p1 + ' vs @' + p2);
                 });
                 lines.push('');

@@ -157,6 +157,7 @@
                             <option value="">请选择赛事</option>
                         </select>
                         <button class="btn btn-success btn-sm" onclick="generateDraw()">🎲 生成签表</button>
+                        <button class="btn btn-danger btn-sm" onclick="clearDraw()">🗑 清空签表</button>
                         <button class="btn btn-outline btn-sm" onclick="advanceByes()">⏩ 处理轮空晋级</button>
                         <button class="btn btn-primary btn-sm" onclick="openMatchModal()">+ 添加比赛</button>
                     </div>
@@ -1864,6 +1865,21 @@ async function generateDraw() {
         loadMatchList();
     } else {
         showToast('生成失败: ' + (result.error || '未知错误'), 'error');
+    }
+}
+
+async function clearDraw() {
+    const tid = document.getElementById('matchTournamentSelect').value;
+    if (!tid) { showToast('请先选择赛事', 'error'); return; }
+    if (!confirm('确定清空签表？\n\n这将删除所有比赛数据和球员快照，释放报名锁定，之后可以继续添加球员。')) return;
+    if (!confirm('再次确认：所有比赛数据将被永久删除，确定继续？')) return;
+
+    const result = await api(`/api/tournaments/${tid}/clear-draw`, { method: 'POST' });
+    if (!result.error) {
+        showToast('签表已清空，可以继续添加报名球员', 'success');
+        loadMatchList();
+    } else {
+        showToast('清空失败: ' + (result.error || '未知错误'), 'error');
     }
 }
 

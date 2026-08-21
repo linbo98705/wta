@@ -919,6 +919,16 @@ def api_delete_match(mid):
     db.commit()
     return jsonify({'success': True})
 
+# 清空签表（删除比赛和快照，释放报名锁定）
+@app.route('/api/tournaments/<int:tid>/clear-draw', methods=['POST'])
+@require_admin_auth
+def api_clear_draw(tid):
+    db = get_db()
+    db.execute('DELETE FROM matches WHERE tournament_id=?', (tid,))
+    db.execute('DELETE FROM tournament_player_snapshots WHERE tournament_id=?', (tid,))
+    db.commit()
+    return jsonify({'success': True})
+
 # 自动生成签表
 @app.route('/api/tournaments/<int:tid>/generate-draw', methods=['POST'])
 def api_generate_draw(tid):

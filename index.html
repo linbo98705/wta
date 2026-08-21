@@ -76,7 +76,7 @@
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=10"></script>
-    <script src="js/api.js?v=20"></script>
+    <script src="js/api.js?v=21"></script>
     <script src="js/draw-engine.js?v=16"></script>
 
     <script>
@@ -1446,6 +1446,7 @@
                         <select class="form-control" id="matchTournamentSelect" onchange="adminLoadMatchList()" style="width:auto;"><option value="">请选择赛事</option></select>
                         <input type="text" class="form-control" id="matchSearchInput" placeholder="搜索球员/轮次/场地..." oninput="adminFilterMatchList()" style="width:200px;">
                         <button class="btn btn-success btn-sm" onclick="adminGenerateDraw()">&#127922; 生成签表</button>
+                        <button class="btn btn-danger btn-sm" onclick="adminClearDraw()">&#128465; 清空签表</button>
                         <button class="btn btn-outline btn-sm" onclick="adminAdvanceByes()">&#9193; 处理轮空晋级</button>
                         <button class="btn btn-primary btn-sm" onclick="adminOpenMatchModal()" style="display:none;">+ 添加比赛</button>
                         <select class="form-control" id="matchExportDateSelect" style="width:auto; font-size:0.8125rem; padding:4px 8px;"><option value="">所有日期</option></select>
@@ -3128,6 +3129,20 @@
                 adminLoadMatchList();
             } else {
                 showToast('生成失败: ' + (result.error || '未知错误'), 'error');
+            }
+        };
+
+        window.adminClearDraw = async function() {
+            const tid = document.getElementById('matchTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            if (!confirm('确定清空签表？\n\n这将删除所有比赛数据和球员快照，释放报名锁定，之后可以继续添加球员。')) return;
+            if (!confirm('再次确认：所有比赛数据将被永久删除，确定继续？')) return;
+            const result = await clearDraw(parseInt(tid));
+            if (result.success) {
+                showToast('签表已清空，可以继续添加报名球员', 'success');
+                adminLoadMatchList();
+            } else {
+                showToast('清空失败: ' + (result.error || '未知错误'), 'error');
             }
         };
 

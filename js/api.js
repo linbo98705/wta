@@ -1959,3 +1959,20 @@ async function generateDraw(tid) {
     return { success: true, matchesCreated: toInsert.length };
 }
 
+/**
+ * 清空签表（删除所有比赛和球员快照，释放报名锁定）
+ * @param {number} tid - 赛事 ID
+ * @returns {Promise<Object>} { success, error }
+ */
+async function clearDraw(tid) {
+    await supabase.from('matches').delete().eq('tournament_id', tid);
+    const { error: snapErr } = await supabase
+        .from('tournament_player_snapshots')
+        .delete()
+        .eq('tournament_id', tid);
+    if (snapErr) {
+        return { success: false, error: snapErr.message };
+    }
+    return { success: true, error: null };
+}
+

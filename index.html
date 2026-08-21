@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=34">
+    <link rel="stylesheet" href="static/css/style.css?v=35">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -342,7 +342,7 @@
         if (isDoubles) {
             var theadRow = document.querySelector('.data-table thead tr');
             if (theadRow) {
-                theadRow.innerHTML = '<th style="width:40px;">序号</th><th style="width:220px;">球员1</th><th style="width:220px;">球员2</th><th style="width:80px;">排名总和</th><th style="width:50px;">种子</th><th style="width:80px;">入围类型</th>';
+                theadRow.innerHTML = '<th style="width:36px; white-space:nowrap;">#</th><th style="white-space:nowrap;">球员1</th><th style="white-space:nowrap;">球员2</th><th style="width:50px; white-space:nowrap;">总和</th><th style="width:40px; white-space:nowrap;">种子</th><th style="width:60px; white-space:nowrap;" class="hide-mobile">入围</th>';
             }
             var loadingTd = document.querySelector('#playerTableBody tr td');
             if (loadingTd) loadingTd.setAttribute('colspan', '6');
@@ -429,7 +429,7 @@
                 var calcSeed = idx < maxSeeds ? idx + 1 : 0;
                 var seedHtml = calcSeed > 0 ? '<span class="seed-badge">' + calcSeed + '</span>' : '<span class="seed-badge empty">-</span>';
                 var entryHtml = t.entryType === 'wc' ? '外卡 (WC)' : t.entryType === 'q' ? '资格赛 (Q)' : '正赛';
-                return '<tr><td>' + (idx + 1) + '</td><td>' + p1Html + '</td><td>' + p2Html + '</td><td><strong>' + t.rankSum + '</strong></td><td>' + seedHtml + '</td><td>' + entryHtml + '</td></tr>';
+                return '<tr><td>' + (idx + 1) + '</td><td>' + p1Html + '</td><td>' + p2Html + '</td><td><strong>' + t.rankSum + '</strong></td><td>' + seedHtml + '</td><td class="hide-mobile">' + entryHtml + '</td></tr>';
             }).join('');
         } else {
             // 单打：原有逻辑

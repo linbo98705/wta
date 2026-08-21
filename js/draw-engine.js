@@ -23,7 +23,7 @@ const roundLabels = {
 
 // ── 布局常量 ────────────────────────────────
 const MATCH_HEIGHT = 52;   // 每场比赛高度（px）
-const COL_WIDTH = 260;     // 列宽（px）
+const COL_WIDTH = 340;     // 列宽（px）
 const COL_GAP = 56;        // 列间距，含连线空间（px）
 const SECTION_COL_WIDTH = 28; // 区标签列宽度（px）
 const SEQ_COL_WIDTH = 40;  // 序号列宽度（px）

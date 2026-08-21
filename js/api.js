@@ -1702,19 +1702,43 @@ async function generateDraw(tid) {
     let drawEntries = players; // 用于签表定位的条目（单打=球员，双打=队伍代表）
 
     if (isDoubles) {
-        // 按种子和双打排名排序后两两配对
-        const sorted = [...players].sort((a, b) => {
-            const sa = a.t_seed || 999;
-            const sb = b.t_seed || 999;
-            if (sa !== sb) return sa - sb;
-            return (a.doubles_ranking || 999) - (b.doubles_ranking || 999);
-        });
-        for (let i = 0; i + 1 < sorted.length; i += 2) {
-            teamPartnerMap[sorted[i].id] = sorted[i + 1].id;
-            teamPartnerMap[sorted[i + 1].id] = sorted[i].id;
+        // 按报名时的 partner_id 组队（不重新配对）
+        const playerMap = {};
+        players.forEach(p => { playerMap[p.id] = p; });
+
+        const paired = new Set();
+        const teams = [];
+
+        // 1. 先处理有 partner_id 的球员
+        for (const p of players) {
+            if (paired.has(p.id)) continue;
+            if (p.partner_id && playerMap[p.partner_id] && !paired.has(p.partner_id)) {
+                const partner = playerMap[p.partner_id];
+                paired.add(p.id);
+                paired.add(partner.id);
+                teamPartnerMap[p.id] = partner.id;
+                teamPartnerMap[partner.id] = p.id;
+                // 取种子/排名较高者作为签表定位代表
+                const rep = (p.t_seed || 999) <= (partner.t_seed || 999) ? p : partner;
+                teams.push(rep);
+            }
         }
-        // 每队取第一名球员（种子/排名较高者）作为签表定位代表
-        drawEntries = sorted.filter((_, i) => i % 2 === 0);
+
+        // 2. 未配对球员（理论上不应该有）按 doubles_ranking 排序后两两配对
+        const unpaired = players.filter(p => !paired.has(p.id));
+        if (unpaired.length > 0) {
+            unpaired.sort((a, b) => (a.doubles_ranking || 999) - (b.doubles_ranking || 999));
+            for (let i = 0; i + 1 < unpaired.length; i += 2) {
+                teamPartnerMap[unpaired[i].id] = unpaired[i + 1].id;
+                teamPartnerMap[unpaired[i + 1].id] = unpaired[i].id;
+                teams.push(unpaired[i]);
+            }
+            if (unpaired.length % 2 === 1) {
+                teams.push(unpaired[unpaired.length - 1]);
+            }
+        }
+
+        drawEntries = teams;
     }
 
     // 双打辅助：为比赛对象添加伙伴字段

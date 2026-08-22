@@ -832,7 +832,8 @@ img { max-width: 100%; height: auto; }
 }
 
 .mc-toggle-matchup {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 16px;
     padding: 8px 0 4px;
@@ -2347,6 +2348,8 @@ textarea.form-control {
         padding: 6px 0 2px;
         align-items: stretch;
         overflow: visible;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
     }
     .mc-player {
         font-size: 0.8125rem;
@@ -2659,6 +2662,8 @@ textarea.form-control {
     }
     .mc-toggle-matchup {
         gap: 4px;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
     }
     .mc-quick-score {
         font-size: 0.6875rem;
@@ -2701,9 +2706,10 @@ textarea.form-control {
     gap: 16px;
     padding: 8px 0 4px;
     align-items: center;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
 }
 .export-wrapper .mc-player {
-    flex: 1 1 0;
     flex-direction: row;
     align-items: center;
     justify-content: center;

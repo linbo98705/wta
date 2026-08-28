@@ -1934,29 +1934,67 @@ img { max-width: 100%; height: auto; }
     display: block;
 }
 
-.tour-tag {
+.tour-drop-wrap {
+    position: relative;
     display: inline-block;
-    padding: 4px 12px;
-    border-radius: 16px;
+    width: 100%;
+    max-width: 340px;
+}
+
+.tour-drop-btn {
+    width: 100%;
+    padding: 6px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    background: var(--white);
     font-size: 0.8rem;
+    color: var(--gray-700);
+    text-align: left;
     cursor: pointer;
-    user-select: none;
-    background: var(--gray-100);
-    color: var(--gray-500);
-    border: 1px solid var(--gray-200);
-    transition: all 0.15s ease;
+    transition: border-color 0.15s ease;
 }
 
-.tour-tag:hover {
+.tour-drop-btn:hover {
     border-color: var(--purple-lighter);
-    color: var(--purple);
 }
 
-.tour-tag-on {
-    background: rgba(91, 45, 142, 0.1);
+.tour-drop-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    z-index: 100;
+}
+
+.tour-drop-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    transition: background 0.1s ease;
+}
+
+.tour-drop-item:hover {
+    background: var(--gray-100);
+}
+
+.tour-drop-on {
     color: var(--purple-dark);
-    border-color: var(--purple);
     font-weight: 600;
+}
+
+.tour-drop-on input[type=checkbox] {
+    accent-color: var(--purple);
 }
 
 .form-group {

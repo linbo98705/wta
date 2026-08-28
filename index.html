@@ -3480,31 +3480,58 @@
                     '<option value="' + r + '"' + (p.role === r ? ' selected' : '') + '>' +
                     (r === 'admin' ? '超级管理员' : '编辑员') + '</option>'
                 ).join('');
-                const tourTags = tList.map(t => {
+                const tourItems = tList.map(t => {
                     const tid = Number(t.id);
                     const isOn = owned.indexOf(tid) !== -1;
-                    return '<span class="tour-tag' + (isOn ? ' tour-tag-on' : '') + '" data-uid="' + pId + '" data-tid="' + tid + '" onclick="adminToggleTourTag(this)">' + escapeHtml(t.name_cn || t.name) + '</span>';
+                    return '<div class="tour-drop-item' + (isOn ? ' tour-drop-on' : '') + '" data-uid="' + pId + '" data-tid="' + tid + '" onclick="adminToggleTourItem(this)">' +
+                        '<input type="checkbox"' + (isOn ? ' checked' : '') + ' onclick="event.stopPropagation()" style="pointer-events:none;">' +
+                        '<span>' + escapeHtml(t.name_cn || t.name) + '</span></div>';
                 }).join('');
+                const cnt = owned.length;
                 return '<tr>' +
                     '<td class="hide-mobile" style="font-size:0.7rem;word-break:break-all;max-width:120px;">' + escapeHtml(pId) + '</td>' +
                     '<td><strong>' + escapeHtml(p.display_name || '未命名') + '</strong></td>' +
                     '<td><select class="form-control user-role-select" data-uid="' + pId + '" style="width:auto;">' + roleOpts + '</select></td>' +
-                    '<td><div style="max-width:560px; display:flex; flex-wrap:wrap; gap:6px;">' + (tourTags || '<span style="color:var(--gray-500);font-size:0.8rem;">暂无赛事</span>') + '</div></td>' +
+                    '<td><div class="tour-drop-wrap">' +
+                        '<button type="button" class="tour-drop-btn" data-uid="' + pId + '" onclick="adminToggleTourDrop(this)">已选 ' + cnt + ' 项' + (tList.length ? ' / 共 ' + tList.length + ' 项' : '') + ' ▾</button>' +
+                        '<div class="tour-drop-panel" data-uid="' + pId + '">' + (tourItems || '<div style="padding:12px;color:var(--gray-500);font-size:0.8rem;">暂无赛事</div>') + '</div>' +
+                    '</div></td>' +
                     '<td><button class="btn btn-primary btn-sm" onclick="adminSaveUserAssignment(\'' + pId + '\')">保存</button></td>' +
                     '</tr>';
             }).join('');
         };
 
-        window.adminToggleTourTag = function(el) {
-            el.classList.toggle('tour-tag-on');
+        window.adminToggleTourDrop = function(btn) {
+            const panel = btn.parentElement.querySelector('.tour-drop-panel');
+            const isOpen = panel.style.display === 'block';
+            document.querySelectorAll('.tour-drop-panel').forEach(p => p.style.display = 'none');
+            if (!isOpen) panel.style.display = 'block';
         };
+
+        window.adminToggleTourItem = function(el) {
+            el.classList.toggle('tour-drop-on');
+            const cb = el.querySelector('input[type=checkbox]');
+            if (cb) cb.checked = el.classList.contains('tour-drop-on');
+            const wrap = el.closest('.tour-drop-wrap');
+            const btn = wrap.querySelector('.tour-drop-btn');
+            const uid = btn.dataset.uid;
+            const onCount = wrap.querySelectorAll('.tour-drop-on').length;
+            const total = wrap.querySelectorAll('.tour-drop-item').length;
+            btn.textContent = '已选 ' + onCount + ' 项' + (total ? ' / 共 ' + total + ' 项' : '') + ' ▾';
+        };
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.tour-drop-wrap')) {
+                document.querySelectorAll('.tour-drop-panel').forEach(p => p.style.display = 'none');
+            }
+        });
 
         window.adminSaveUserAssignment = async function(uid) {
             const roleSel = document.querySelector('.user-role-select[data-uid="' + uid + '"]');
-            const tags = document.querySelectorAll('.tour-tag[data-uid="' + uid + '"]');
+            const items = document.querySelectorAll('.tour-drop-item[data-uid="' + uid + '"]');
             const role = roleSel ? roleSel.value : 'editor';
             const checkedTids = [];
-            tags.forEach(t => { if (t.classList.contains('tour-tag-on')) checkedTids.push(Number(t.dataset.tid)); });
+            items.forEach(t => { if (t.classList.contains('tour-drop-on')) checkedTids.push(Number(t.dataset.tid)); });
 
             try {
                 const { error: rErr } = await supabase.from('profiles').update({ role }).eq('id', uid);

@@ -248,15 +248,15 @@ const tid = {{ tid }};
         filtered.forEach(m => {
             const scoreText = buildScoreText(m);
 
-            // 已完成默认收起
+            // 已完成默认展开
             html += `
-                <div class="match-card collapsed">
+                <div class="match-card">
                     <div class="match-card-toggle">
                         <div class="mc-toggle-top">
                             <span class="match-round-badge">${roundLabels[m.round] || m.round}</span>
                             <span class="match-status completed">已完成</span>
                             ${scoreText ? '<span class="mc-quick-score">' + scoreText + '</span>' : ''}
-                            <span class="toggle-icon">▸</span>
+                            <span class="toggle-icon">▾</span>
                         </div>
                         <div class="mc-toggle-matchup">
                             <div class="mc-player mc-player-left ${m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser'}">

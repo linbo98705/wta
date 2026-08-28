@@ -259,9 +259,10 @@ const tid = {{ tid }};
                 }
             }
 
-            // 已完成默认收起，其他默认展开
-            const collapsedClass = isCompleted ? ' collapsed' : '';
-            const initIcon = isCompleted ? '▸' : '▾';
+            // 待进行默认收起，进行中和已完成默认展开
+            const isScheduled = m.status === 'scheduled';
+            const collapsedClass = isScheduled ? ' collapsed' : '';
+            const initIcon = isScheduled ? '▸' : '▾';
 
             html += `
                 <div class="match-card${collapsedClass}">

@@ -1934,6 +1934,31 @@ img { max-width: 100%; height: auto; }
     display: block;
 }
 
+.tour-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    user-select: none;
+    background: var(--gray-100);
+    color: var(--gray-500);
+    border: 1px solid var(--gray-200);
+    transition: all 0.15s ease;
+}
+
+.tour-tag:hover {
+    border-color: var(--purple-lighter);
+    color: var(--purple);
+}
+
+.tour-tag-on {
+    background: rgba(91, 45, 142, 0.1);
+    color: var(--purple-dark);
+    border-color: var(--purple);
+    font-weight: 600;
+}
+
 .form-group {
     margin-bottom: 16px;
 }

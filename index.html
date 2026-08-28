@@ -3480,31 +3480,31 @@
                     '<option value="' + r + '"' + (p.role === r ? ' selected' : '') + '>' +
                     (r === 'admin' ? '超级管理员' : '编辑员') + '</option>'
                 ).join('');
-                const tourOpts = tList.map(t => {
+                const tourTags = tList.map(t => {
                     const tid = Number(t.id);
-                    const selected = owned.indexOf(tid) !== -1 ? ' selected' : '';
-                    return '<option value="' + tid + '"' + selected + '>' + escapeHtml(t.name_cn || t.name) + '</option>';
+                    const isOn = owned.indexOf(tid) !== -1;
+                    return '<span class="tour-tag' + (isOn ? ' tour-tag-on' : '') + '" data-uid="' + pId + '" data-tid="' + tid + '" onclick="adminToggleTourTag(this)">' + escapeHtml(t.name_cn || t.name) + '</span>';
                 }).join('');
                 return '<tr>' +
                     '<td class="hide-mobile" style="font-size:0.7rem;word-break:break-all;max-width:120px;">' + escapeHtml(pId) + '</td>' +
                     '<td><strong>' + escapeHtml(p.display_name || '未命名') + '</strong></td>' +
                     '<td><select class="form-control user-role-select" data-uid="' + pId + '" style="width:auto;">' + roleOpts + '</select></td>' +
-                    '<td><select class="form-control user-tour-select" data-uid="' + pId + '" multiple style="width:100%; min-height:' + (tList.length > 4 ? 120 : 60) + 'px; font-size:0.8rem;">' + (tourOpts || '<option value="" disabled>暂无赛事</option>') + '</select></td>' +
+                    '<td><div style="max-width:560px; display:flex; flex-wrap:wrap; gap:6px;">' + (tourTags || '<span style="color:var(--gray-500);font-size:0.8rem;">暂无赛事</span>') + '</div></td>' +
                     '<td><button class="btn btn-primary btn-sm" onclick="adminSaveUserAssignment(\'' + pId + '\')">保存</button></td>' +
                     '</tr>';
             }).join('');
         };
 
+        window.adminToggleTourTag = function(el) {
+            el.classList.toggle('tour-tag-on');
+        };
+
         window.adminSaveUserAssignment = async function(uid) {
             const roleSel = document.querySelector('.user-role-select[data-uid="' + uid + '"]');
-            const tourSel = document.querySelector('.user-tour-select[data-uid="' + uid + '"]');
+            const tags = document.querySelectorAll('.tour-tag[data-uid="' + uid + '"]');
             const role = roleSel ? roleSel.value : 'editor';
             const checkedTids = [];
-            if (tourSel) {
-                Array.from(tourSel.selectedOptions).forEach(opt => {
-                    if (opt.value) checkedTids.push(Number(opt.value));
-                });
-            }
+            tags.forEach(t => { if (t.classList.contains('tour-tag-on')) checkedTids.push(Number(t.dataset.tid)); });
 
             try {
                 const { error: rErr } = await supabase.from('profiles').update({ role }).eq('id', uid);

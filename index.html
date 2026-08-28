@@ -3452,8 +3452,9 @@
                 return;
             }
 
-            // 全部赛事（用于分配勾选）
+            // 全部赛事（用于分配勾选），按开始日期降序排
             const tList = Array.isArray(await getTournaments()) ? await getTournaments() : [];
+            tList.sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''));
 
             // 现有分配关系：user_id -> [tournament_id]
             let assignMap = {};
@@ -3485,7 +3486,7 @@
                     const isOn = owned.indexOf(tid) !== -1;
                     return '<div class="tour-drop-item' + (isOn ? ' tour-drop-on' : '') + '" data-uid="' + pId + '" data-tid="' + tid + '" onclick="adminToggleTourItem(this)">' +
                         '<input type="checkbox"' + (isOn ? ' checked' : '') + ' onclick="event.stopPropagation()" style="pointer-events:none;">' +
-                        '<span>' + escapeHtml(t.name_cn || t.name) + '</span></div>';
+                        '<span>' + escapeHtml(t.name_cn || t.name) + ' <em style="color:var(--gray-400);font-size:0.7rem;font-style:normal;">' + escapeHtml(t.start_date || '') + '</em></span></div>';
                 }).join('');
                 const cnt = owned.length;
                 return '<tr>' +
@@ -3504,17 +3505,27 @@
         };
 
         window.adminToggleTourDrop = function(btn) {
-            const panel = btn.parentElement.querySelector('.tour-drop-panel');
+            const wrap = btn.parentElement;
+            const panel = wrap.querySelector('.tour-drop-panel');
             const isOpen = panel.style.display === 'block';
             document.querySelectorAll('.tour-drop-panel').forEach(p => p.style.display = 'none');
             if (!isOpen) {
+                const rect = btn.getBoundingClientRect();
                 panel.style.display = 'block';
+                panel.style.position = 'fixed';
+                panel.style.top = (rect.bottom + 2) + 'px';
+                panel.style.left = rect.left + 'px';
+                panel.style.width = Math.max(rect.width, 200) + 'px';
                 const search = panel.querySelector('.tour-drop-search');
                 if (search) { search.value = ''; }
                 panel.querySelectorAll('.tour-drop-item').forEach(it => it.style.display = '');
                 setTimeout(() => { if (search) search.focus(); }, 0);
             }
         };
+
+        window.addEventListener('scroll', function() {
+            document.querySelectorAll('.tour-drop-panel').forEach(p => p.style.display = 'none');
+        }, true);
 
         window.adminFilterTourItems = function(input) {
             const kw = input.value.trim().toLowerCase();

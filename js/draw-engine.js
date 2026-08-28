@@ -306,7 +306,7 @@ function buildBracket(matches, playerMap, startRound) {
 
     html += '</div>'; // bracket-body
 
-    // ── 冠亚军展示（决赛已完赛时，显示在决赛列下方）──
+    // ── 冠亚军展示（决赛已完赛时显示在签表底部）──
     const finalRoundIdx = roundOrder.indexOf('F');
     if (finalRoundIdx >= 0) {
         const finalMatch = roundData[finalRoundIdx][0];
@@ -328,34 +328,34 @@ function buildBracket(matches, playerMap, startRound) {
                 return typeof countryFlag === 'function' ? countryFlag(p.country_code || '', p.country || '') : '';
             }
 
-            const finalColX = seqOffset + finalRoundIdx * (COL_WIDTH + COL_GAP);
-
-            html += '<div style="margin-left:' + finalColX + 'px; margin-top:10px; width:' + COL_WIDTH + 'px;">';
+            html += '<div class="bracket-champion-box" style="display:flex; gap:12px; margin-top:16px; padding:16px 20px; '
+                + 'background:linear-gradient(135deg, rgba(91,45,142,0.06) 0%, rgba(123,79,160,0.04) 100%); '
+                + 'border-radius:12px; border:1px solid var(--purple-lighter);">';
             // 冠军
-            html += '<div style="display:flex; align-items:center; gap:8px; padding:8px 12px; margin-bottom:6px; '
-                + 'background:linear-gradient(135deg, #fff8e1 0%, #fff3cd 100%); border-radius:8px; '
-                + 'border:2px solid #C8A951; box-shadow:0 2px 8px rgba(200,169,81,0.15);">'
-                + '<span style="font-size:1.25rem; line-height:1;">\uD83C\uDFC6</span>'
-                + '<div><div style="font-size:0.6rem; font-weight:700; color:#9a7b1f; letter-spacing:0.05em; text-transform:uppercase;">冠军</div>'
-                + '<div style="font-size:0.8rem; font-weight:700; color:var(--purple-dark); white-space:normal;">' + escapeHtml(champName || '') + trophyFlag(champId) + '</div></div></div>';
+            html += '<div style="flex:1; display:flex; align-items:center; gap:10px; padding:12px 16px; '
+                + 'background:linear-gradient(135deg, #fff8e1 0%, #fff3cd 100%); border-radius:10px; '
+                + 'border:2px solid #C8A951; box-shadow:0 2px 12px rgba(200,169,81,0.2);">'
+                + '<span style="font-size:1.75rem; line-height:1;">\uD83C\uDFC6</span>'
+                + '<div><div style="font-size:0.6875rem; font-weight:700; color:#9a7b1f; letter-spacing:0.05em; text-transform:uppercase;">冠军</div>'
+                + '<div style="font-size:1rem; font-weight:700; color:var(--purple-dark); white-space:normal;">' + escapeHtml(champName || '') + trophyFlag(champId) + '</div></div></div>';
             // 决赛比分
             const isP1Champ = finalMatch.winner_id === finalMatch.player1_id;
             const champScore = isP1Champ ? (finalMatch.guess_a_total || 0) : (finalMatch.guess_b_total || 0);
             const runnerScore = isP1Champ ? (finalMatch.guess_b_total || 0) : (finalMatch.guess_a_total || 0);
             const finalScore = champScore + '-' + runnerScore;
             const finalReason = finalMatch.guess_reason || '';
-            html += '<div style="display:flex; align-items:center; justify-content:center; gap:6px; padding:4px 0;">'
-                + '<span style="font-size:0.625rem; font-weight:700; color:var(--gray-500);">决赛比分</span>'
-                + '<span style="font-size:1rem; font-weight:800; color:var(--purple);">' + finalScore + '</span>'
-                + (finalReason ? '<span style="font-size:0.625rem; color:var(--gray-500);">' + finalReason + '</span>' : '')
+            html += '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:70px; padding:8px 12px;">'
+                + '<div style="font-size:0.625rem; font-weight:700; color:var(--gray-500); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:2px;">决赛比分</div>'
+                + '<div style="font-size:1.5rem; font-weight:800; color:var(--purple); line-height:1.2;">' + finalScore + '</div>'
+                + (finalReason ? '<div style="font-size:0.6875rem; color:var(--gray-500); margin-top:2px;">' + finalReason + '</div>' : '')
                 + '</div>';
             // 亚军
-            html += '<div style="display:flex; align-items:center; gap:8px; padding:8px 12px; '
-                + 'background:linear-gradient(135deg, #f5f5f5 0%, #ececec 100%); border-radius:8px; '
-                + 'border:2px solid #A3A3A3; box-shadow:0 2px 6px rgba(163,163,163,0.12);">'
-                + '<span style="font-size:1.1rem; line-height:1;">\uD83E\uDD48</span>'
-                + '<div><div style="font-size:0.6rem; font-weight:700; color:#525252; letter-spacing:0.05em; text-transform:uppercase;">亚军</div>'
-                + '<div style="font-size:0.8rem; font-weight:700; color:var(--gray-700); white-space:normal;">' + escapeHtml(runnerName || '') + trophyFlag(runnerId) + '</div></div></div>';
+            html += '<div style="flex:1; display:flex; align-items:center; gap:10px; padding:12px 16px; '
+                + 'background:linear-gradient(135deg, #f5f5f5 0%, #ececec 100%); border-radius:10px; '
+                + 'border:2px solid #A3A3A3; box-shadow:0 2px 8px rgba(163,163,163,0.15);">'
+                + '<span style="font-size:1.5rem; line-height:1;">\uD83E\uDD48</span>'
+                + '<div><div style="font-size:0.6875rem; font-weight:700; color:#525252; letter-spacing:0.05em; text-transform:uppercase;">亚军</div>'
+                + '<div style="font-size:1rem; font-weight:700; color:var(--gray-700); white-space:normal;">' + escapeHtml(runnerName || '') + trophyFlag(runnerId) + '</div></div></div>';
             html += '</div>';
         }
     }

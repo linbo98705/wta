@@ -635,8 +635,13 @@ def api_batch_create_players():
         existing = db.execute('SELECT id FROM players WHERE name = ?', (name,)).fetchone()
         if existing:
             # 更新已有球员信息
+            cur = db.execute('SELECT ranking, doubles_ranking FROM players WHERE id=?', (existing[0],)).fetchone()
+            new_ranking = p.get('ranking', 999)
+            new_doubles = p.get('doubles_ranking', 999)
+            final_ranking = cur['ranking'] if new_ranking == 999 else new_ranking
+            final_doubles = cur['doubles_ranking'] if new_doubles == 999 else new_doubles
             db.execute('UPDATE players SET country=?, country_code=?, ranking=?, doubles_ranking=? WHERE id=?',
-                       (p.get('country', ''), p.get('country_code', ''), p.get('ranking', 999), p.get('doubles_ranking', 999), existing[0]))
+                       (p.get('country', ''), p.get('country_code', ''), final_ranking, final_doubles, existing[0]))
             ids.append(existing[0])
             updated += 1
         else:

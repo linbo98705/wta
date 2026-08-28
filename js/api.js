@@ -562,11 +562,11 @@ async function batchCreatePlayers(list) {
         const validNames = list.map(p => (p.name || '').trim()).filter(n => n);
         const { data: existingRows } = await supabase
             .from('players')
-            .select('id, name')
+            .select('id, name, ranking, doubles_ranking')
             .in('name', validNames);
 
         const existingMap = {};
-        (existingRows || []).forEach(r => { existingMap[r.name.toLowerCase()] = r.id; });
+        (existingRows || []).forEach(r => { existingMap[r.name.toLowerCase()] = r; });
 
         const toUpdate = [];
         const toInsert = [];
@@ -574,16 +574,19 @@ async function batchCreatePlayers(list) {
         for (const p of list) {
             const name = (p.name || '').trim();
             if (!name) continue;
-            const existingId = existingMap[name.toLowerCase()];
-            if (existingId) {
-                toUpdate.push({
-                    id: existingId,
+            const existingRow = existingMap[name.toLowerCase()];
+            if (existingRow) {
+                const updateData = {
+                    id: existingRow.id,
                     country: p.country || '',
                     country_code: p.country_code || '',
-                    ranking: p.ranking || 999,
-                    doubles_ranking: p.doubles_ranking || 999,
-                });
-                ids.push(existingId);
+                };
+                const newRanking = p.ranking || 999;
+                const newDoubles = p.doubles_ranking || 999;
+                if (newRanking !== 999) updateData.ranking = newRanking;
+                if (newDoubles !== 999) updateData.doubles_ranking = newDoubles;
+                toUpdate.push(updateData);
+                ids.push(existingRow.id);
                 updated++;
             } else {
                 toInsert.push({
@@ -598,7 +601,10 @@ async function batchCreatePlayers(list) {
 
         if (toUpdate.length > 0) {
             for (const u of toUpdate) {
-                await supabase.from('players').update({ country: u.country, country_code: u.country_code, ranking: u.ranking, doubles_ranking: u.doubles_ranking }).eq('id', u.id);
+                const patch = { country: u.country, country_code: u.country_code };
+                if (u.ranking !== undefined) patch.ranking = u.ranking;
+                if (u.doubles_ranking !== undefined) patch.doubles_ranking = u.doubles_ranking;
+                await supabase.from('players').update(patch).eq('id', u.id);
             }
         }
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """模拟WTA比赛网站 - Flask后端"""
 
 import os
@@ -6,30 +6,84 @@ import sqlite3
 import json
 import io
 import random
+import hashlib
+import secrets
 from datetime import datetime, date
-from flask import Flask, g, request, jsonify, render_template, send_from_directory, make_response
+from flask import Flask, g, request, jsonify, render_template, send_from_directory, make_response, session, redirect, url_for
 import openpyxl
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'wta-simulator-secret-key-2024'
 DATABASE = os.path.join(os.path.dirname(__file__), 'data', 'tournament.db')
 
-# ── 后台认证 ────────────────────────────────────────────
-ADMIN_USERNAME = 'admin'
-ADMIN_PASSWORD = 'wta2024'
-
 from functools import wraps
 
-def require_admin_auth(f):
+# ── 密码哈希 ────────────────────────────────────────────
+def hash_password(password):
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+# ── 权限装饰器 ──────────────────────────────────────────
+def require_login(f):
+    """要求已登录"""
     @wraps(f)
     def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth or auth.username != ADMIN_USERNAME or auth.password != ADMIN_PASSWORD:
-            resp = make_response('需要登录', 401)
-            resp.headers['WWW-Authenticate'] = 'Basic realm="Admin Area"'
-            return resp
+        if not session.get('user_id'):
+            return jsonify({'error': '请先登录'}), 401
         return f(*args, **kwargs)
     return decorated
+
+def require_admin(f):
+    """要求 admin 角色"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('user_id'):
+            return jsonify({'error': '请先登录'}), 401
+        if session.get('role') != 'admin':
+            return jsonify({'error': '无权限操作'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+def require_tournament_access(tid_param='tid'):
+    """要求有权访问指定赛事（admin 全部权限，editor 仅限分配的赛事）"""
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if not session.get('user_id'):
+                return jsonify({'error': '请先登录'}), 401
+            if session.get('role') == 'admin':
+                return f(*args, **kwargs)
+            # editor 角色：检查是否被分配到该赛事
+            tid = kwargs.get(tid_param)
+            if tid is None:
+                tid = request.view_args.get(tid_param)
+            if tid is None:
+                return jsonify({'error': '参数错误'}), 400
+            db = get_db()
+            row = db.execute('SELECT 1 FROM tournament_users WHERE user_id=? AND tournament_id=?',
+                           (session['user_id'], tid)).fetchone()
+            if not row:
+                return jsonify({'error': '无权限访问该赛事'}), 403
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
+
+def get_accessible_tournament_ids():
+    """获取当前用户可访问的赛事ID列表，admin 返回 None（表示全部）"""
+    if not session.get('user_id'):
+        return []
+    if session.get('role') == 'admin':
+        return None
+    db = get_db()
+    rows = db.execute('SELECT tournament_id FROM tournament_users WHERE user_id=?',
+                     (session['user_id'],)).fetchall()
+    return [r['tournament_id'] for r in rows]
+
+def filter_tournaments_by_access(rows):
+    """根据当前用户权限过滤赛事列表"""
+    if not session.get('user_id') or session.get('role') == 'admin':
+        return rows
+    accessible_ids = get_accessible_tournament_ids()
+    return [r for r in rows if r['id'] in accessible_ids]
 
 # ── 数据库 ──────────────────────────────────────────────
 
@@ -214,6 +268,32 @@ def init_db():
         db.execute('ALTER TABLE tournament_player_snapshots ADD COLUMN doubles_ranking INTEGER DEFAULT 999')
     except sqlite3.OperationalError:
         pass
+
+    # ── 用户表 & 赛事用户关联表 ──
+    db.executescript('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'editor',
+            display_name TEXT DEFAULT '',
+            created_at TEXT DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS tournament_users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            tournament_id INTEGER NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
+            UNIQUE(user_id, tournament_id)
+        );
+    ''')
+    # 默认 admin 账号
+    admin_exists = db.execute('SELECT id FROM users WHERE username=?', ('admin',)).fetchone()
+    if not admin_exists:
+        db.execute('INSERT INTO users (username, password_hash, role, display_name, created_at) VALUES (?, ?, ?, ?, ?)',
+                 ('admin', hash_password('wta2024'), 'admin', '超级管理员', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
     db.commit()
     db.close()
 
@@ -264,10 +344,158 @@ def guesses(tid):
     return render_template('guesses.html', tid=tid)
 
 @app.route('/admin')
-@require_admin_auth
 def admin():
-    """后台管理"""
-    return render_template('admin.html')
+    """后台管理 - 未登录跳登录页"""
+    if not session.get('user_id'):
+        return render_template('login.html')
+    return render_template('admin.html', user={
+        'id': session.get('user_id'),
+        'username': session.get('username'),
+        'role': session.get('role'),
+        'display_name': session.get('display_name')
+    })
+
+# ── 登录/登出 API ───────────────────────────────────────
+@app.route('/api/auth/login', methods=['POST'])
+def api_login():
+    data = request.get_json() or {}
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    if not username or not password:
+        return jsonify({'error': '请输入用户名和密码'}), 400
+    db = get_db()
+    user = db.execute('SELECT * FROM users WHERE username=?', (username,)).fetchone()
+    if not user:
+        return jsonify({'error': '用户名或密码错误'}), 401
+    if user['password_hash'] != hash_password(password):
+        return jsonify({'error': '用户名或密码错误'}), 401
+    session['user_id'] = user['id']
+    session['username'] = user['username']
+    session['role'] = user['role']
+    session['display_name'] = user['display_name'] or user['username']
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': user['id'],
+            'username': user['username'],
+            'role': user['role'],
+            'display_name': user['display_name'] or user['username']
+        }
+    })
+
+@app.route('/api/auth/logout', methods=['POST'])
+def api_logout():
+    session.clear()
+    return jsonify({'success': True})
+
+@app.route('/api/auth/me')
+def api_auth_me():
+    if not session.get('user_id'):
+        return jsonify({'error': '未登录'}), 401
+    return jsonify({
+        'id': session['user_id'],
+        'username': session['username'],
+        'role': session['role'],
+        'display_name': session['display_name']
+    })
+
+# ── 用户管理 API ────────────────────────────────────────
+@app.route('/api/users')
+@require_admin
+def api_users():
+    db = get_db()
+    rows = db.execute('SELECT id, username, role, display_name, created_at FROM users ORDER BY id').fetchall()
+    users = []
+    for r in rows:
+        u = dict(r)
+        # 获取分配的赛事
+        t_rows = db.execute('SELECT tournament_id FROM tournament_users WHERE user_id=?', (r['id'],)).fetchall()
+        u['tournament_ids'] = [t['tournament_id'] for t in t_rows]
+        users.append(u)
+    return jsonify(users)
+
+@app.route('/api/users', methods=['POST'])
+@require_admin
+def api_create_user():
+    data = request.get_json() or {}
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    role = data.get('role', 'editor')
+    display_name = data.get('display_name', '').strip()
+    tournament_ids = data.get('tournament_ids', []) or []
+    if not username:
+        return jsonify({'error': '用户名不能为空'}), 400
+    if not password:
+        return jsonify({'error': '密码不能为空'}), 400
+    if role not in ('admin', 'editor'):
+        return jsonify({'error': '角色无效'}), 400
+    db = get_db()
+    # 检查用户名是否已存在
+    if db.execute('SELECT id FROM users WHERE username=?', (username,)).fetchone():
+        return jsonify({'error': '用户名已存在'}), 400
+    cursor = db.execute(
+        'INSERT INTO users (username, password_hash, role, display_name, created_at) VALUES (?, ?, ?, ?, ?)',
+        (username, hash_password(password), role, display_name, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    )
+    user_id = cursor.lastrowid
+    # 分配赛事
+    for tid in tournament_ids:
+        try:
+            db.execute('INSERT INTO tournament_users (user_id, tournament_id) VALUES (?, ?)', (user_id, tid))
+        except sqlite3.IntegrityError:
+            pass
+    db.commit()
+    return jsonify({'success': True, 'id': user_id})
+
+@app.route('/api/users/<int:uid>', methods=['PUT'])
+@require_admin
+def api_update_user(uid):
+    data = request.get_json() or {}
+    db = get_db()
+    user = db.execute('SELECT * FROM users WHERE id=?', (uid,)).fetchone()
+    if not user:
+        return jsonify({'error': '用户不存在'}), 404
+    # 不能修改自己的角色
+    if uid == session['user_id'] and data.get('role') and data['role'] != user['role']:
+        return jsonify({'error': '不能修改自己的角色'}), 400
+    # 更新字段
+    updates = []
+    params = []
+    if 'display_name' in data:
+        updates.append('display_name = ?')
+        params.append(data['display_name'].strip())
+    if 'role' in data:
+        if data['role'] not in ('admin', 'editor'):
+            return jsonify({'error': '角色无效'}), 400
+        updates.append('role = ?')
+        params.append(data['role'])
+    if 'password' in data and data['password']:
+        updates.append('password_hash = ?')
+        params.append(hash_password(data['password']))
+    if updates:
+        params.append(uid)
+        db.execute(f'UPDATE users SET {", ".join(updates)} WHERE id=?', params)
+    # 更新赛事分配
+    if 'tournament_ids' in data:
+        db.execute('DELETE FROM tournament_users WHERE user_id=?', (uid,))
+        for tid in data['tournament_ids']:
+            try:
+                db.execute('INSERT INTO tournament_users (user_id, tournament_id) VALUES (?, ?)', (uid, tid))
+            except sqlite3.IntegrityError:
+                pass
+    db.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/users/<int:uid>', methods=['DELETE'])
+@require_admin
+def api_delete_user(uid):
+    if uid == session['user_id']:
+        return jsonify({'error': '不能删除自己'}), 400
+    db = get_db()
+    db.execute('DELETE FROM users WHERE id=?', (uid,))
+    db.execute('DELETE FROM tournament_users WHERE user_id=?', (uid,))
+    db.commit()
+    return jsonify({'success': True})
 
 # ── API 路由 ───────────────────────────────────────────
 
@@ -276,7 +504,11 @@ def admin():
 def api_tournaments():
     db = get_db()
     rows = db.execute('SELECT * FROM tournaments ORDER BY start_date DESC').fetchall()
-    return jsonify([dict(r) for r in rows])
+    result = [dict(r) for r in rows]
+    # 已登录且为 editor 时过滤可访问赛事
+    if session.get('user_id') and session.get('role') == 'editor':
+        result = filter_tournaments_by_access(result)
+    return jsonify(result)
 
 @app.route('/api/tournaments/<int:tid>')
 def api_tournament(tid):
@@ -287,6 +519,7 @@ def api_tournament(tid):
     return jsonify({'error': 'Not found'}), 404
 
 @app.route('/api/tournaments', methods=['POST'])
+@require_admin
 def api_create_tournament():
     data = request.json
     db = get_db()
@@ -301,6 +534,7 @@ def api_create_tournament():
     return jsonify({'id': db.execute('SELECT last_insert_rowid()').fetchone()[0]}), 201
 
 @app.route('/api/tournaments/<int:tid>', methods=['PUT'])
+@require_admin
 def api_update_tournament(tid):
     data = request.json
     db = get_db()
@@ -317,6 +551,7 @@ def api_update_tournament(tid):
     return jsonify({'success': True})
 
 @app.route('/api/tournaments/<int:tid>', methods=['DELETE'])
+@require_admin
 def api_delete_tournament(tid):
     db = get_db()
     db.execute('DELETE FROM tournament_players WHERE tournament_id=?', (tid,))
@@ -342,6 +577,7 @@ def api_player(pid):
     return jsonify({'error': 'Not found'}), 404
 
 @app.route('/api/players', methods=['POST'])
+@require_admin
 def api_create_player():
     data = request.json
     db = get_db()
@@ -354,6 +590,7 @@ def api_create_player():
     return jsonify({'id': db.execute('SELECT last_insert_rowid()').fetchone()[0]}), 201
 
 @app.route('/api/players/<int:pid>', methods=['PUT'])
+@require_admin
 def api_update_player(pid):
     data = request.json
     db = get_db()
@@ -370,6 +607,7 @@ def api_update_player(pid):
     return jsonify({'success': True})
 
 @app.route('/api/players/<int:pid>', methods=['DELETE'])
+@require_admin
 def api_delete_player(pid):
     db = get_db()
     db.execute('DELETE FROM tournament_players WHERE player_id=?', (pid,))
@@ -380,6 +618,7 @@ def api_delete_player(pid):
 
 # 批量添加球员
 @app.route('/api/players/batch', methods=['POST'])
+@require_admin
 def api_batch_create_players():
     data = request.json
     if not isinstance(data, list) or len(data) == 0:
@@ -411,6 +650,7 @@ def api_batch_create_players():
 
 # 批量删除球员
 @app.route('/api/players/batch/delete', methods=['POST'])
+@require_admin
 def api_batch_delete_players():
     data = request.json
     if not isinstance(data, list) or len(data) == 0:
@@ -425,6 +665,7 @@ def api_batch_delete_players():
 
 # 上传文件解析球员
 @app.route('/api/players/upload', methods=['POST'])
+@require_admin
 def api_upload_players():
     if 'file' not in request.files:
         return jsonify({'error': '请上传文件'}), 400
@@ -517,6 +758,8 @@ def api_tournament_players(tid):
     return jsonify([dict(r) for r in rows])
 
 @app.route('/api/tournaments/<int:tid>/players', methods=['POST'])
+@require_login
+@require_tournament_access('tid')
 def api_add_tournament_player(tid):
     data = request.json
     db = get_db()
@@ -530,6 +773,8 @@ def api_add_tournament_player(tid):
 
 # 双打报名：同时添加两名球员并互设 partner_id
 @app.route('/api/tournaments/<int:tid>/players/doubles', methods=['POST'])
+@require_login
+@require_tournament_access('tid')
 def api_add_doubles_pair(tid):
     data = request.json
     p1 = data.get('player1_id')
@@ -555,6 +800,8 @@ def api_add_doubles_pair(tid):
         return jsonify({'error': '球员已在赛事中'}), 400
 
 @app.route('/api/tournaments/<int:tid>/players/<int:pid>', methods=['DELETE'])
+@require_login
+@require_tournament_access('tid')
 def api_remove_tournament_player(tid, pid):
     db = get_db()
     # 查找搭档，如果有则同时删除搭档（双打组整体移除）
@@ -568,6 +815,8 @@ def api_remove_tournament_player(tid, pid):
 
 # 自动重算种子
 @app.route('/api/tournaments/<int:tid>/recalc-seeds', methods=['POST'])
+@require_login
+@require_tournament_access('tid')
 def api_recalc_seeds(tid):
     db = get_db()
     tournament = db.execute('SELECT * FROM tournaments WHERE id=?', (tid,)).fetchone()
@@ -661,6 +910,8 @@ def api_recalc_seeds(tid):
     return jsonify({'success': True, 'seeded': seeded_count, 'max_seeds': max_seeds})
 
 @app.route('/api/tournaments/<int:tid>/players/<int:pid>', methods=['PUT'])
+@require_login
+@require_tournament_access('tid')
 def api_update_tournament_player(tid, pid):
     data = request.json
     db = get_db()
@@ -727,9 +978,17 @@ def api_matches(tid):
     return jsonify([dict(r) for r in rows])
 
 @app.route('/api/matches', methods=['POST'])
+@require_login
 def api_create_match():
     data = request.json
     db = get_db()
+    # 检查赛事访问权限
+    tid = data.get('tournament_id')
+    if session.get('role') != 'admin':
+        row = db.execute('SELECT 1 FROM tournament_users WHERE user_id=? AND tournament_id=?',
+                        (session['user_id'], tid)).fetchone()
+        if not row:
+            return jsonify({'error': '无权限访问该赛事'}), 403
     db.execute('''INSERT INTO matches (tournament_id, round, match_order, player1_id, player2_id,
                   player3_id, player4_id, winner_id, score, court, status,
                   guess_team_a, guess_team_b, guess_a_tb, guess_b_tb, guess_a_total, guess_b_total,
@@ -843,14 +1102,20 @@ def _auto_advance_byes(db, tid, round_order, start_round_idx=None):
 
 
 @app.route('/api/matches/<int:mid>', methods=['PUT'])
+@require_login
 def api_update_match(mid):
     data = request.json
     db = get_db()
-
     # 先获取当前比赛信息
     match = db.execute('SELECT * FROM matches WHERE id=?', (mid,)).fetchone()
     if not match:
-        return jsonify({'error': 'Match not found'}), 404
+        return jsonify({'error': '比赛不存在'}), 404
+    # 检查赛事访问权限
+    if session.get('role') != 'admin':
+        row = db.execute('SELECT 1 FROM tournament_users WHERE user_id=? AND tournament_id=?',
+                        (session['user_id'], match['tournament_id'])).fetchone()
+        if not row:
+            return jsonify({'error': '无权限访问该赛事'}), 403
 
     fields = []
     values = []
@@ -913,15 +1178,26 @@ def api_update_match(mid):
     return jsonify({'success': True})
 
 @app.route('/api/matches/<int:mid>', methods=['DELETE'])
+@require_login
 def api_delete_match(mid):
     db = get_db()
+    # 检查赛事访问权限
+    match = db.execute('SELECT tournament_id FROM matches WHERE id=?', (mid,)).fetchone()
+    if not match:
+        return jsonify({'error': '比赛不存在'}), 404
+    if session.get('role') != 'admin':
+        row = db.execute('SELECT 1 FROM tournament_users WHERE user_id=? AND tournament_id=?',
+                        (session['user_id'], match['tournament_id'])).fetchone()
+        if not row:
+            return jsonify({'error': '无权限访问该赛事'}), 403
     db.execute('DELETE FROM matches WHERE id=?', (mid,))
     db.commit()
     return jsonify({'success': True})
 
 # 清空签表（删除比赛和快照，释放报名锁定）
 @app.route('/api/tournaments/<int:tid>/clear-draw', methods=['POST'])
-@require_admin_auth
+@require_login
+@require_tournament_access('tid')
 def api_clear_draw(tid):
     db = get_db()
     db.execute('DELETE FROM matches WHERE tournament_id=?', (tid,))
@@ -931,6 +1207,8 @@ def api_clear_draw(tid):
 
 # 自动生成签表
 @app.route('/api/tournaments/<int:tid>/generate-draw', methods=['POST'])
+@require_login
+@require_tournament_access('tid')
 def api_generate_draw(tid):
     db = get_db()
     tournament = db.execute('SELECT * FROM tournaments WHERE id=?', (tid,)).fetchone()
@@ -1246,6 +1524,8 @@ def api_generate_draw(tid):
 
 # 冻结球员数据（不重新生成签表，仅创建快照）
 @app.route('/api/tournaments/<int:tid>/freeze-snapshot', methods=['POST'])
+@require_login
+@require_tournament_access('tid')
 def api_freeze_snapshot(tid):
     db = get_db()
     tournament = db.execute('SELECT * FROM tournaments WHERE id=?', (tid,)).fetchone()
@@ -1275,6 +1555,7 @@ def api_freeze_snapshot(tid):
 
 # 批量冻结所有已生成签表但无快照的赛事
 @app.route('/api/freeze-all-snapshots', methods=['POST'])
+@require_admin
 def api_freeze_all_snapshots():
     db = get_db()
     # 找出有比赛记录但没有快照的赛事
@@ -1308,6 +1589,8 @@ def api_freeze_all_snapshots():
 
 # 手动触发 Bye 晋级（用于修复历史数据）
 @app.route('/api/tournaments/<int:tid>/advance-byes', methods=['POST'])
+@require_login
+@require_tournament_access('tid')
 def api_advance_byes(tid):
     db = get_db()
     tournament = db.execute('SELECT * FROM tournaments WHERE id=?', (tid,)).fetchone()
@@ -1499,7 +1782,8 @@ def api_get_daily_guesses(tid):
     return jsonify([dict(r) for r in rows])
 
 @app.route('/api/tournaments/<int:tid>/daily-guesses', methods=['POST'])
-@require_admin_auth
+@require_login
+@require_tournament_access('tid')
 def api_create_daily_guess(tid):
     """创建每日竞猜"""
     data = request.json
@@ -1519,7 +1803,7 @@ def api_create_daily_guess(tid):
     return jsonify({'success': True})
 
 @app.route('/api/daily-guesses/<int:gid>', methods=['PUT'])
-@require_admin_auth
+@require_login
 def api_update_daily_guess(gid):
     """更新每日竞猜"""
     data = request.json
@@ -1527,6 +1811,12 @@ def api_update_daily_guess(gid):
     guess = db.execute('SELECT * FROM daily_guesses WHERE id=?', (gid,)).fetchone()
     if not guess:
         return jsonify({'error': 'Not found'}), 404
+    # 检查赛事访问权限
+    if session.get('role') != 'admin':
+        row = db.execute('SELECT 1 FROM tournament_users WHERE user_id=? AND tournament_id=?',
+                        (session['user_id'], guess['tournament_id'])).fetchone()
+        if not row:
+            return jsonify({'error': '无权限访问该赛事'}), 403
     fields = []
     values = []
     if 'guess_date' in data:
@@ -1547,10 +1837,19 @@ def api_update_daily_guess(gid):
     return jsonify({'success': True})
 
 @app.route('/api/daily-guesses/<int:gid>', methods=['DELETE'])
-@require_admin_auth
+@require_login
 def api_delete_daily_guess(gid):
     """删除每日竞猜"""
     db = get_db()
+    # 检查赛事访问权限
+    guess = db.execute('SELECT tournament_id FROM daily_guesses WHERE id=?', (gid,)).fetchone()
+    if not guess:
+        return jsonify({'error': 'Not found'}), 404
+    if session.get('role') != 'admin':
+        row = db.execute('SELECT 1 FROM tournament_users WHERE user_id=? AND tournament_id=?',
+                        (session['user_id'], guess['tournament_id'])).fetchone()
+        if not row:
+            return jsonify({'error': '无权限访问该赛事'}), 403
     db.execute('DELETE FROM daily_guesses WHERE id=?', (gid,))
     db.commit()
     return jsonify({'success': True})

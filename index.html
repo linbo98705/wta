@@ -969,8 +969,10 @@
                         }
                     }
 
-                    const collapsedClass = ' collapsed';
-                    const initIcon = '\u25B8';
+                    // 待进行默认收起，进行中和已完成默认展开
+                    const isScheduled = m.status === 'scheduled';
+                    const collapsedClass = isScheduled ? ' collapsed' : '';
+                    const initIcon = isScheduled ? '\u25B8' : '\u25BE';
                     const isTopScore = topScoreMatchIds.has(m.id);
                     const topScoreClass = isTopScore ? ' match-card-top-score' : '';
                     const p1Display = escapeHtml(m.p1_name || 'TBD') + countryFlag(m.p1_country_code || '', m.p1_country || '')

@@ -1331,16 +1331,23 @@
             showToast('请先登录管理员账号', 'error');
             return;
         }
+        const profile = await getCurrentUserProfile();
+        const currentRole = profile?.role || 'editor';
 
         app.innerHTML = `
 <div class="admin-layout">
     <!-- Admin Sidebar -->
     <nav class="admin-sidebar">
+        <div class="user-info-box">
+            <div class="ui-name">${escapeHtml(profile?.display_name || '当前用户')}</div>
+            <div class="ui-role">${currentRole === 'admin' ? '超级管理员' : '编辑员'}</div>
+        </div>
         <a href="#" class="active" onclick="switchAdminPanel('tournaments', this); return false;">&#128203; 赛事管理</a>
-        <a href="#" onclick="switchAdminPanel('players', this); return false;">&#128101; 球员管理</a>
+        ${currentRole === 'admin' ? '<a href="#" onclick="switchAdminPanel(\'players\', this); return false;">&#128101; 球员管理</a>' : ''}
         <a href="#" onclick="switchAdminPanel('entry', this); return false;">&#128221; 报名管理</a>
         <a href="#" onclick="switchAdminPanel('matches', this); return false;">&#127936; 比赛管理</a>
         <a href="#" onclick="switchAdminPanel('dailyguess', this); return false;">&#127919; 每日竞猜</a>
+        ${currentRole === 'admin' ? '<a href="#" onclick="switchAdminPanel(\'users\', this); return false;">&#128100; 用户管理</a>' : ''}
         <a href="#/" style="border-top:1px solid var(--gray-200); padding-top:12px;">&#127968; 返回前端</a>
         <a href="#" onclick="adminDoLogout(); return false;" style="border-top:1px solid var(--gray-200); padding-top:12px;">&#128682; 退出登录</a>
     </nav>
@@ -1352,7 +1359,7 @@
             <div class="card">
                 <div class="card-header flex-between">
                     <h3>赛事管理</h3>
-                    <button class="btn btn-primary btn-sm" onclick="adminOpenCreateTournament()">+ 创建赛事</button>
+                    ${currentRole === 'admin' ? '<button class="btn btn-primary btn-sm" onclick="adminOpenCreateTournament()">+ 创建赛事</button>' : '<span style="font-size:0.8125rem; color:var(--gray-500);">仅显示您负责的赛事</span>'}
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
@@ -1478,10 +1485,32 @@
                     <table class="data-table">
                         <thead><tr><th class="hide-mobile">ID</th><th>日期</th><th class="hide-mobile">截止</th><th>TB1</th><th class="hide-mobile">TB1</th><th>TB2</th><th class="hide-mobile">TB2</th><th class="hide-mobile">TB3</th><th class="hide-mobile">TB3</th><th class="hide-mobile">TB4</th><th class="hide-mobile">TB4</th><th class="hide-mobile">TB5</th><th class="hide-mobile">TB5</th><th class="hide-mobile">TB6</th><th class="hide-mobile">TB6</th><th>操作</th></tr></thead>
                         <tbody id="dailyGuessTable"><tr><td colspan="16" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Panel -->
+        ${currentRole === 'admin' ? `
+        <div class="admin-panel" id="panel-users">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <h3>用户管理</h3>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <span style="font-size:0.8125rem; color:var(--gray-500);">新增登录用户请在 Supabase Dashboard → Authentication 创建</span>
+                        <button class="btn btn-outline btn-sm" onclick="adminLoadUsers()">&#128260; 刷新</button>
+                    </div>
+                </div>
+                <div class="card-body" style="overflow-x:auto;">
+                    <table class="data-table">
+                        <thead><tr><th class="hide-mobile">ID</th><th>用户</th><th>角色</th><th>可管理赛事</th><th>操作</th></tr></thead>
+                        <tbody id="userTable"><tr><td colspan="5" class="text-center" style="padding:40px;">加载中...</td></tr></tbody>
                     </table>
                 </div>
             </div>
         </div>
+        ` : ''}
     </div>
 </div>
 
@@ -1772,6 +1801,7 @@
             else if (panel === 'entry') adminLoadEntrySelect();
             else if (panel === 'matches') adminLoadMatchSelect();
             else if (panel === 'dailyguess') adminLoadGuessSelect();
+            else if (panel === 'users') adminLoadUsers();
         };
 
         window.adminDoLogout = async function() {
@@ -1783,13 +1813,17 @@
 
         // ── Tournament CRUD ──
         window.adminLoadTournaments = async function() {
-            const data = await getTournaments();
+            let data = await getTournaments();
+            const isAdmin = window.__adminRole !== 'editor';
+            if (!isAdmin) {
+                data = await filterTournamentsByRole(data || []);
+            }
             const tbody = document.getElementById('tournamentTable');
             if (!Array.isArray(data) || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;">暂无赛事，点击"+ 创建赛事"开始</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;">暂无赛事' + (isAdmin ? '，点击"+ 创建赛事"开始' : '（您尚未被分配任何赛事）') + '</td></tr>';
                 return;
             }
-            tbody.innerHTML = data.map(t => '<tr><td class="hide-mobile">' + t.id + '</td><td><strong>' + escapeHtml(t.name_cn || t.name) + '</strong></td><td class="hide-mobile">' + escapeHtml(t.location) + '</td><td><span class="match-round-badge">' + escapeHtml(t.category) + '</span></td><td class="hide-mobile"><span class="surface-tag ' + surfaceClass(t.surface) + '">' + surfaceLabel(t.surface) + '</span></td><td>' + t.start_date + ' ~ ' + t.end_date + '</td><td class="hide-mobile">' + t.draw_size + '签</td><td>' + (t.is_active ? '&#9989; 启用' : '&#10060; 停用') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditTournament(' + t.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteTournament(' + t.id + ')">删除</button></td></tr>').join('');
+            tbody.innerHTML = data.map(t => '<tr><td class="hide-mobile">' + t.id + '</td><td><strong>' + escapeHtml(t.name_cn || t.name) + '</strong></td><td class="hide-mobile">' + escapeHtml(t.location) + '</td><td><span class="match-round-badge">' + escapeHtml(t.category) + '</span></td><td class="hide-mobile"><span class="surface-tag ' + surfaceClass(t.surface) + '">' + surfaceLabel(t.surface) + '</span></td><td>' + t.start_date + ' ~ ' + t.end_date + '</td><td class="hide-mobile">' + t.draw_size + '签</td><td>' + (t.is_active ? '&#9989; 启用' : '&#10060; 停用') + '</td><td>' + (isAdmin ? '<button class="btn btn-outline btn-sm" onclick="adminEditTournament(' + t.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteTournament(' + t.id + ')">删除</button>' : '') + '</td></tr>').join('');
         }
 
         window.adminOpenCreateTournament = function() {
@@ -3396,6 +3430,96 @@
             const result = await deleteDailyGuess(gid);
             if (result.success) { showToast('竞猜已删除', 'success'); adminLoadDailyGuessList(); }
             else { showToast('删除失败', 'error'); }
+        };
+
+        // ══════════════════════════════════════════════════════════════
+        // 用户管理（仅 admin）—— 加载用户 / 改角色 / 分配可管理赛事
+        // ══════════════════════════════════════════════════════════════
+        window.adminLoadUsers = async function() {
+            const tbody = document.getElementById('userTable');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:40px;">加载中...</td></tr>';
+
+            // 读取全部用户档案（当前账号需为 admin，RLS 才允许读全量）
+            let profiles;
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('id, role, display_name, created_at');
+                if (error) throw error;
+                profiles = data;
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:40px;color:var(--red,#e11d48);">读取失败：' + escapeHtml(err.message || err) + '<br><span style="font-size:0.8125rem;color:var(--gray-500);">请先在 Supabase → SQL Editor 执行 supabase-rbac-migration.sql 建好 profiles / user_tournaments 表。</span></td></tr>';
+                return;
+            }
+
+            // 全部赛事（用于分配勾选）
+            const tList = Array.isArray(await getTournaments()) ? await getTournaments() : [];
+
+            // 现有分配关系：user_id -> [tournament_id]
+            let assignMap = {};
+            try {
+                const { data: assigns, error: aErr } = await supabase
+                    .from('user_tournaments')
+                    .select('user_id, tournament_id');
+                if (!aErr && assigns) {
+                    assigns.forEach(a => {
+                        (assignMap[a.user_id] = assignMap[a.user_id] || []).push(Number(a.tournament_id));
+                    });
+                }
+            } catch (e) { /* 表不存在时忽略 */ }
+
+            if (!Array.isArray(profiles) || profiles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:40px;">暂无用户档案。请先在 Supabase → Authentication → Users 创建登录账号。</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = profiles.map(p => {
+                const pId = String(p.id);
+                const owned = assignMap[pId] || [];
+                const roleOpts = ['admin', 'editor'].map(r =>
+                    '<option value="' + r + '"' + (p.role === r ? ' selected' : '') + '>' +
+                    (r === 'admin' ? '超级管理员' : '编辑员') + '</option>'
+                ).join('');
+                const assignBoxes = tList.map(t => {
+                    const tid = Number(t.id);
+                    const checked = owned.indexOf(tid) !== -1 ? ' checked' : '';
+                    return '<label style="display:inline-flex;align-items:center;gap:4px;margin:2px 12px 2px 0;font-size:0.8rem;white-space:nowrap;">' +
+                        '<input type="checkbox" class="user-tour-check" data-uid="' + pId + '" data-tid="' + tid + '"' + checked + '>' +
+                        '<span>' + escapeHtml(t.name_cn || t.name) + '</span></label>';
+                }).join('');
+                return '<tr>' +
+                    '<td class="hide-mobile" style="font-size:0.7rem;word-break:break-all;max-width:120px;">' + escapeHtml(pId) + '</td>' +
+                    '<td><strong>' + escapeHtml(p.display_name || '未命名') + '</strong></td>' +
+                    '<td><select class="form-control user-role-select" data-uid="' + pId + '" style="width:auto;">' + roleOpts + '</select></td>' +
+                    '<td><div style="max-width:560px;line-height:1.9;">' + (assignBoxes || '<span style="color:var(--gray-500);">暂无赛事</span>') + '</div></td>' +
+                    '<td><button class="btn btn-primary btn-sm" onclick="adminSaveUserAssignment(\'' + pId + '\')">保存</button></td>' +
+                    '</tr>';
+            }).join('');
+        };
+
+        window.adminSaveUserAssignment = async function(uid) {
+            const roleSel = document.querySelector('.user-role-select[data-uid="' + uid + '"]');
+            const checks = document.querySelectorAll('.user-tour-check[data-uid="' + uid + '"]');
+            const role = roleSel ? roleSel.value : 'editor';
+            const checkedTids = [];
+            checks.forEach(c => { if (c.checked) checkedTids.push(Number(c.dataset.tid)); });
+
+            try {
+                const { error: rErr } = await supabase.from('profiles').update({ role }).eq('id', uid);
+                if (rErr) throw rErr;
+                const { error: dErr } = await supabase.from('user_tournaments').delete().eq('user_id', uid);
+                if (dErr) throw dErr;
+                if (checkedTids.length) {
+                    const rows = checkedTids.map(tid => ({ user_id: uid, tournament_id: tid }));
+                    const { error: iErr } = await supabase.from('user_tournaments').insert(rows);
+                    if (iErr) throw iErr;
+                }
+                if (typeof showToast === 'function') showToast('保存成功', 'success');
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('保存失败：' + (err.message || err), 'error');
+                console.error('保存用户分配失败:', err);
+            }
         };
 
         // ── Init: load tournaments panel ──

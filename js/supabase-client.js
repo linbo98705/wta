@@ -139,6 +139,71 @@ async function requireAdmin(action, options = {}) {
     return action();
 }
 
+/**
+ * 获取当前登录用户的角色档案（role / display_name）
+ * @returns {Promise<Object|null>} { role, display_name, ... }；未登录或档案不存在返回 null
+ */
+async function getCurrentUserProfile() {
+    const user = await getCurrentUser();
+    if (!user) return null;
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('id, role, display_name')
+        .eq('id', user.id)
+        .maybeSingle();
+    if (error || !data) {
+        console.error('获取角色档案失败:', error ? error.message : '档案不存在');
+        return null;
+    }
+    return data;
+}
+
+/**
+ * 获取当前用户角色
+ * @returns {Promise<string|null>} 'admin' | 'editor' | null（未登录/无档案）
+ */
+async function getCurrentRole() {
+    const profile = await getCurrentUserProfile();
+    return profile ? profile.role : null;
+}
+
+/**
+ * 获取当前用户可访问的赛事 ID
+ * - admin：返回 null（表示可访问全部赛事）
+ * - editor：返回被分配的 tournament_id 数组
+ * @returns {Promise<number[]|null>}
+ */
+async function getUserAllowedTournaments() {
+    const user = await getCurrentUser();
+    if (!user) return [];
+    const profile = await getCurrentUserProfile();
+    if (!profile) return [];
+    if (profile.role === 'admin') return null;
+    const { data, error } = await supabase
+        .from('user_tournaments')
+        .select('tournament_id')
+        .eq('user_id', user.id);
+    if (error) {
+        console.error('获取可访问赛事失败:', error.message);
+        return [];
+    }
+    return (data || []).map(r => r.tournament_id);
+}
+
+/**
+ * 根据角色过滤赛事列表
+ * @param {Array} tournaments - 全量赛事数组
+ * @returns {Promise<Array>} void 过滤后的赛事数组
+ */
+async function filterTournamentsByRole(tournaments) {
+    if (!Array.isArray(tournaments)) return tournaments;
+    const profile = await getCurrentUserProfile();
+    if (!profile || profile.role === 'admin') return tournaments;
+    const allowed = await getUserAllowedTournaments();
+    if (!allowed) return tournaments;
+    return tournaments.filter(t => allowed.includes(Number(t.id)));
+}
+
 // ── 初始化：恢复会话 ───────────────────────
 // Supabase v2 客户端创建时自动恢复本地存储的会话
 // 无需手动调用 initialize

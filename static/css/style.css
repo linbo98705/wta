@@ -498,6 +498,23 @@ img { max-width: 100%; height: auto; }
     font-weight: 700;
 }
 
+/* Tournament Card Themes */
+.tournament-card.theme-hard .tournament-card-header {
+    background: linear-gradient(135deg, #173F66, #2E6FAB);
+}
+.tournament-card.theme-us-open .tournament-card-header {
+    background: linear-gradient(135deg, #001A5E, #00288C);
+}
+.tournament-card.theme-clay .tournament-card-header {
+    background: linear-gradient(135deg, #7A3315, #C4602C);
+}
+.tournament-card.theme-grass .tournament-card-header {
+    background: linear-gradient(135deg, #1E5520, #357A35);
+}
+.tournament-card.theme-purple-orange .tournament-card-header {
+    background: linear-gradient(135deg, #2D0A5E, #E8590C);
+}
+
 .tournament-card-body {
     padding: 16px 20px;
 }

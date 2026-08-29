@@ -190,7 +190,7 @@
         document.body.dataset.theme = (tournament && tournament.theme) ? tournament.theme : 'purple';
     }
 
-    function renderTournamentLogo(tournament) {
+    async function renderTournamentLogo(tournament) {
         applyTournamentTheme(tournament);
         if (!tournament || !tournament.logo_url) return;
         const headerContent = document.querySelector('#app .tournament-header-content');
@@ -209,8 +209,16 @@
 
         const logoDiv = document.createElement('div');
         logoDiv.className = 'tournament-logo';
-        logoDiv.innerHTML = `<img src="${escapeHtml(tournament.logo_url)}" alt="${escapeHtml(tournament.name_cn || tournament.name || '')}" style="height:80px; width:auto;">`;
-        // logo 放在左边，信息放在右边
+        const logoAlt = escapeHtml(tournament.name_cn || tournament.name || '');
+        // SVG 跨域时 html2canvas 无法渲染，先 fetch 转成 data URL 内联
+        try {
+            const resp = await fetch(tournament.logo_url);
+            const svgText = await resp.text();
+            const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
+            logoDiv.innerHTML = `<img src="${dataUrl}" alt="${logoAlt}" style="height:80px; width:auto;">`;
+        } catch {
+            logoDiv.innerHTML = `<img src="${escapeHtml(tournament.logo_url)}" alt="${logoAlt}" style="height:80px; width:auto;">`;
+        }
         headerContent.insertBefore(logoDiv, headerContent.firstChild);
     }
 

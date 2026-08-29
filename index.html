@@ -210,12 +210,12 @@
         const logoDiv = document.createElement('div');
         logoDiv.className = 'tournament-logo';
         const logoAlt = escapeHtml(tournament.name_cn || tournament.name || '');
-        // SVG 跨域时 html2canvas 无法渲染，先 fetch 转成 data URL 内联
+        // fetch 转 Blob URL 内联，避免跨域导致 html2canvas 导出时 logo 不显示
         try {
             const resp = await fetch(tournament.logo_url);
-            const svgText = await resp.text();
-            const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
-            logoDiv.innerHTML = `<img src="${dataUrl}" alt="${logoAlt}" style="height:80px; width:auto;">`;
+            const blob = await resp.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            logoDiv.innerHTML = `<img src="${blobUrl}" alt="${logoAlt}" style="height:80px; width:auto;">`;
         } catch {
             logoDiv.innerHTML = `<img src="${escapeHtml(tournament.logo_url)}" alt="${logoAlt}" style="height:80px; width:auto;">`;
         }

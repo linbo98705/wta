@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=38">
+    <link rel="stylesheet" href="static/css/style.css?v=39">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -1334,6 +1334,7 @@
         const profile = await getCurrentUserProfile();
         const currentRole = profile?.role || 'editor';
 
+        document.body.classList.add('admin-page');
         app.innerHTML = `
 <div class="admin-layout">
     <!-- Admin Sidebar -->
@@ -3593,6 +3594,7 @@
 
         // Reset to default theme; tournament pages will apply their own theme via renderTournamentLogo
         document.body.dataset.theme = 'purple';
+        document.body.classList.remove('admin-page');
 
         if (!hash || hash === '/') {
             renderHome();

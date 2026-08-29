@@ -80,8 +80,14 @@ body {
     overflow-x: hidden;
 }
 
-body:has(.admin-layout) {
+body:has(.admin-layout),
+body.admin-page {
     background: var(--gray-100);
+    min-height: 100vh;
+}
+body:has(.admin-layout) .main-content,
+body.admin-page .main-content {
+    min-height: calc(100vh - 56px);
 }
 
 .container {

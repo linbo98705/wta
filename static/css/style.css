@@ -31,6 +31,27 @@ body[data-theme="us-open"] {
     --purple-lighter: #E0E6F5;
     --purple-bg: #F0F3FB;
     --purple-rgb: 0, 40, 140;
+    font-family: 'Archivo', interstate, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* 美网 VI：标题大写加粗、按钮大写胶囊形 */
+body[data-theme="us-open"] .tournament-header h1,
+body[data-theme="us-open"] .section-title,
+body[data-theme="us-open"] .card-header h2,
+body[data-theme="us-open"] .card-header h3 {
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+}
+
+body[data-theme="us-open"] .btn {
+    text-transform: uppercase;
+    font-family: 'Archivo', interstate, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    letter-spacing: 0.02em;
+}
+
+body[data-theme="us-open"] .btn-primary,
+body[data-theme="us-open"] .btn-hero {
+    border-radius: 90px;
 }
 body[data-theme="clay"] {
     --purple-dark: #7A3315;

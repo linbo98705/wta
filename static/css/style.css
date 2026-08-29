@@ -1932,6 +1932,12 @@ img { max-width: 100%; height: auto; }
     border-left-color: white;
 }
 
+.admin-sidebar a.nav-sep {
+    border-top: 1px solid rgba(255,255,255,0.15);
+    padding-top: 12px;
+    margin-top: 4px;
+}
+
 .user-info-box {
     padding: 16px 24px 20px;
     border-bottom: 1px solid rgba(255,255,255,0.15);
@@ -2190,6 +2196,40 @@ textarea.form-control {
         border-left: none;
         border-bottom: 3px solid transparent;
         padding: 12px 16px;
+    }
+
+    .admin-sidebar {
+        border-bottom: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .admin-sidebar a.active {
+        border-bottom-color: var(--accent-gold);
+        color: #fff;
+        background: rgba(255,255,255,0.15);
+    }
+
+    .admin-sidebar a.nav-sep {
+        border-top: none !important;
+        border-left: 1px solid rgba(255,255,255,0.15);
+        margin-top: 0;
+    }
+
+    .admin-sidebar a.nav-sep:first-of-type {
+        margin-left: auto;
+    }
+
+    .admin-content {
+        padding: 16px 12px;
+    }
+
+    .admin-panel .card-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .admin-panel .card-header > div {
+        flex-wrap: wrap;
+        gap: 6px;
     }
 
     .tournament-header h1 {
@@ -2543,6 +2583,15 @@ textarea.form-control {
 
     .card-body {
         padding: 12px 10px;
+    }
+
+    .admin-content {
+        padding: 12px 8px;
+    }
+
+    .admin-sidebar a {
+        padding: 10px 12px;
+        font-size: 0.8125rem;
     }
 
     /* 弹窗全屏 */

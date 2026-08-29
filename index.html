@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=39">
+    <link rel="stylesheet" href="static/css/style.css?v=40">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -1349,8 +1349,8 @@
         <a href="#" onclick="switchAdminPanel('matches', this); return false;">&#127936; 比赛管理</a>
         <a href="#" onclick="switchAdminPanel('dailyguess', this); return false;">&#127919; 每日竞猜</a>
         ${currentRole === 'admin' ? '<a href="#" onclick="switchAdminPanel(\'users\', this); return false;">&#128100; 用户管理</a>' : ''}
-        <a href="#/" style="border-top:1px solid var(--gray-200); padding-top:12px;">&#127968; 返回前端</a>
-        <a href="#" onclick="adminDoLogout(); return false;" style="border-top:1px solid var(--gray-200); padding-top:12px;">&#128682; 退出登录</a>
+        <a href="#/" class="nav-sep">&#127968; 返回前端</a>
+        <a href="#" onclick="adminDoLogout(); return false;" class="nav-sep">&#128682; 退出登录</a>
     </nav>
 
     <!-- Admin Content -->

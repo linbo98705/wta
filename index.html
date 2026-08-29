@@ -209,7 +209,7 @@
 
         const logoDiv = document.createElement('div');
         logoDiv.className = 'tournament-logo';
-        logoDiv.innerHTML = `<img src="${escapeHtml(tournament.logo_url)}" alt="${escapeHtml(tournament.name_cn || tournament.name || '')}">`;
+        logoDiv.innerHTML = `<img src="${escapeHtml(tournament.logo_url)}" alt="${escapeHtml(tournament.name_cn || tournament.name || '')}" style="height:80px; width:auto;">`;
         // logo 放在左边，信息放在右边
         headerContent.insertBefore(logoDiv, headerContent.firstChild);
     }

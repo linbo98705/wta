@@ -3068,6 +3068,7 @@
                 const allMatches = await getMatches(parseInt(tid));
                 const m = Array.isArray(allMatches) ? allMatches.find(x => x.id === mid) : null;
                 if (m) {
+                    console.log('编辑比赛数据:', { id: m.id, player1_id: m.player1_id, player2_id: m.player2_id, p1_name: m.p1_name, p2_name: m.p2_name, p3_name: m.p3_name, p4_name: m.p4_name });
                     document.getElementById('mId').value = m.id;
                     document.getElementById('mRound').value = m.round;
                     document.getElementById('mOrder').value = m.match_order;

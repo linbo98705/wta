@@ -76,7 +76,7 @@
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=10"></script>
-    <script src="js/api.js?v=21"></script>
+    <script src="js/api.js?v=22"></script>
     <script src="js/draw-engine.js?v=16"></script>
 
     <script>
@@ -1432,6 +1432,8 @@
                         <select class="form-control" id="entryCountryFilter" onchange="adminFilterEntryList()" style="width:auto;">
                             <option value="">所有国家/地区</option>
                         </select>
+                        <button class="btn btn-outline btn-sm" onclick="document.getElementById('entryFileInput').click()">&#128229; 导入名单</button>
+                        <input type="file" id="entryFileInput" accept=".csv,.xlsx,.xls" style="display:none;" onchange="adminImportEntryFile(this)">
                         <button class="btn btn-primary btn-sm" onclick="adminOpenEntryModal()">+ 添加球员</button>
                         <button class="btn btn-primary btn-sm" onclick="adminOpenDoublesEntryModal()" style="background:var(--accent-green);">+ 双打报名</button>
                         <button class="btn btn-outline btn-sm" onclick="adminRecalcSeeds()">&#128260; 重算种子</button>
@@ -2305,6 +2307,140 @@
             } else {
                 // 单打：保持原有逻辑
                 tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td class="hide-mobile">' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正赛') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
+            }
+        };
+
+        window.adminImportEntryFile = async function(input) {
+            const file = input.files[0];
+            input.value = '';
+            if (!file) return;
+            const tid = document.getElementById('entryTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            const tournamentId = parseInt(tid);
+            const isDoubles = entryTournamentType === 'doubles';
+
+            // 加载所有球员用于名称匹配
+            const allPlayers = await getPlayers();
+            if (!Array.isArray(allPlayers) || allPlayers.length === 0) {
+                showToast('无法加载球员数据', 'error'); return;
+            }
+            const nameMap = {};
+            allPlayers.forEach(function(p) {
+                nameMap[(p.name || '').trim().toLowerCase()] = p;
+            });
+
+            // 已报名球员集合（避免重复）
+            const existingIds = new Set(allEntryPlayersCache.map(function(p) { return p.id; }));
+
+            function processRows(rows) {
+                var matched = [], notFound = [], duplicates = [];
+                for (var i = 0; i < rows.length; i++) {
+                    var row = rows[i];
+                    if (!row || row.length === 0) continue;
+                    if (isDoubles) {
+                        // 双打：每行两个球员姓名组成一队
+                        var n1 = String(row[0] || '').trim();
+                        var n2 = String(row[1] || '').trim();
+                        if (!n1 && !n2) continue;
+                        // 跳过表头
+                        if (i === 0 && /球员|player|name/i.test(n1)) continue;
+                        var p1 = n1 ? nameMap[n1.toLowerCase()] : null;
+                        var p2 = n2 ? nameMap[n2.toLowerCase()] : null;
+                        if (!p1 || !p2) { notFound.push(n1 + ' / ' + n2); continue; }
+                        if (existingIds.has(p1.id) || existingIds.has(p2.id)) { duplicates.push(n1 + ' / ' + n2); continue; }
+                        matched.push({ p1: p1, p2: p2 });
+                        existingIds.add(p1.id);
+                        existingIds.add(p2.id);
+                    } else {
+                        // 单打：每行一个球员姓名，可选入围类型
+                        var name = String(row[0] || '').trim();
+                        if (!name) continue;
+                        if (i === 0 && /球员|player|name/i.test(name)) continue;
+                        var player = nameMap[name.toLowerCase()];
+                        if (!player) { notFound.push(name); continue; }
+                        if (existingIds.has(player.id)) { duplicates.push(name); continue; }
+                        var entryType = String(row[1] || '').trim().toLowerCase();
+                        if (entryType !== 'wc' && entryType !== 'q') entryType = 'main';
+                        matched.push({ player: player, entry_type: entryType });
+                        existingIds.add(player.id);
+                    }
+                }
+                return { matched: matched, notFound: notFound, duplicates: duplicates };
+            }
+
+            async function doImport(result) {
+                if (result.matched.length === 0) {
+                    var msg = '未找到可导入的球员';
+                    if (result.notFound.length > 0) msg += '。未匹配: ' + result.notFound.join('、');
+                    showToast(msg, 'error'); return;
+                }
+                var success = 0, failed = 0;
+                if (isDoubles) {
+                    for (var i = 0; i < result.matched.length; i++) {
+                        var team = result.matched[i];
+                        var r1 = await addTournamentPlayer(tournamentId, { player_id: team.p1.id, seed: 0, entry_type: 'main' });
+                        if (!r1.success) { failed++; continue; }
+                        var r2 = await addTournamentPlayer(tournamentId, { player_id: team.p2.id, seed: 0, entry_type: 'main', partner_id: team.p1.id });
+                        if (!r2.success) { await removeTournamentPlayer(tournamentId, team.p1.id); failed++; continue; }
+                        // 更新 p1 的 partner_id 指向 p2
+                        await updateTournamentPlayer(tournamentId, team.p1.id, { partner_id: team.p2.id });
+                        success++;
+                    }
+                } else {
+                    for (var j = 0; j < result.matched.length; j++) {
+                        var item = result.matched[j];
+                        var r = await addTournamentPlayer(tournamentId, { player_id: item.player.id, seed: 0, entry_type: item.entry_type });
+                        if (r.success) success++; else failed++;
+                    }
+                }
+                // 重算种子
+                await recalcSeeds(tournamentId);
+                // 刷新列表
+                await adminLoadEntryList();
+                var summary = '成功导入 ' + success + (isDoubles ? ' 组双打' : ' 名球员');
+                if (failed > 0) summary += '，失败 ' + failed;
+                if (result.notFound.length > 0) summary += '。未匹配: ' + result.notFound.join('、');
+                if (result.duplicates.length > 0) summary += '。已存在跳过: ' + result.duplicates.join('、');
+                showToast(summary, failed > 0 ? 'error' : 'success');
+            }
+
+            var ext = file.name.split('.').pop().toLowerCase();
+            try {
+                if (ext === 'xlsx' || ext === 'xls') {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var data = new Uint8Array(e.target.result);
+                        var workbook = XLSX.read(data, { type: 'array' });
+                        var sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                        var result = processRows(rows);
+                        doImport(result);
+                    };
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    var csvReader = new FileReader();
+                    csvReader.onload = function(e) {
+                        var text = e.target.result;
+                        if (text.indexOf('\uFFFD') !== -1) {
+                            var reader2 = new FileReader();
+                            reader2.onload = function(e2) {
+                                var lines = e2.target.result.split('\n').filter(function(l) { return l.trim(); });
+                                var rows = lines.map(function(l) { return l.split(',').map(function(s) { return s.trim(); }); });
+                                var result = processRows(rows);
+                                doImport(result);
+                            };
+                            reader2.readAsText(file, 'GBK');
+                            return;
+                        }
+                        var lines = text.split('\n').filter(function(l) { return l.trim(); });
+                        var rows = lines.map(function(l) { return l.split(',').map(function(s) { return s.trim(); }); });
+                        var result = processRows(rows);
+                        doImport(result);
+                    };
+                    csvReader.readAsText(file);
+                }
+            } catch (err) {
+                showToast('文件解析失败: ' + err.message, 'error');
             }
         };
 

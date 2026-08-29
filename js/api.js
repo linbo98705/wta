@@ -827,6 +827,7 @@ async function updateTournamentPlayer(tid, pid, data) {
     const updates = {};
     if (data.seed !== undefined) updates.seed = data.seed;
     if (data.entry_type !== undefined) updates.entry_type = data.entry_type;
+    if (data.partner_id !== undefined) updates.partner_id = data.partner_id;
 
     const { error } = await supabase
         .from('tournament_players')

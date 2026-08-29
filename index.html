@@ -1434,9 +1434,8 @@
                         </select>
                         <button class="btn btn-outline btn-sm" onclick="document.getElementById('entryFileInput').click()">&#128229; 导入名单</button>
                         <input type="file" id="entryFileInput" accept=".csv,.xlsx,.xls" style="display:none;" onchange="adminImportEntryFile(this)">
-                        <button class="btn btn-primary btn-sm" onclick="adminOpenEntryModal()">+ 添加球员</button>
-                        <button class="btn btn-primary btn-sm" onclick="adminOpenDoublesEntryModal()" style="background:var(--accent-green);">+ 双打报名</button>
-                        <button class="btn btn-outline btn-sm" onclick="adminRecalcSeeds()">&#128260; 重算种子</button>
+                        <button class="btn btn-primary btn-sm" id="btnAddSinglesEntry" onclick="adminOpenEntryModal()">+ 添加球员</button>
+                        <button class="btn btn-primary btn-sm" id="btnAddDoublesEntry" onclick="adminOpenDoublesEntryModal()" style="background:var(--accent-green);">+ 双打报名</button>
                         <button class="btn btn-outline btn-sm" onclick="adminFreezeSnapshot()">&#128274; 冻结球员数据</button>
                     </div>
                 </div>
@@ -2213,6 +2212,11 @@
             const drawSize = tournament ? (tournament.draw_size || 0) : 0;
             entryTournamentType = tournament ? (tournament.match_type || 'singles') : 'singles';
             const isDoubles = entryTournamentType === 'doubles';
+            // 根据赛事类型显示/隐藏添加按钮
+            var btnSingles = document.getElementById('btnAddSinglesEntry');
+            var btnDoubles = document.getElementById('btnAddDoublesEntry');
+            if (btnSingles) btnSingles.style.display = isDoubles ? 'none' : '';
+            if (btnDoubles) btnDoubles.style.display = isDoubles ? '' : 'none';
             const players = await getTournamentPlayers(parseInt(tid));
             allEntryPlayersCache = Array.isArray(players) ? players : [];
             const count = allEntryPlayersCache.length;

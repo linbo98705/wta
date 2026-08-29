@@ -100,6 +100,9 @@ function categoryClass(category) {
 // ── 国家名称映射到国家代码 ──────────────────────────────
 const COUNTRY_CODE_MAP = {
     '中国': 'CN', '中华人民共和国': 'CN', 'China': 'CN', 'CHN': 'CN',
+    '中国香港': 'HK', '香港': 'HK', 'Hong Kong': 'HK', 'HKG': 'HK',
+    '中国澳门': 'MO', '澳门': 'MO', 'Macau': 'MO', 'MAC': 'MO',
+    '中华台北': 'TW', '中国台北': 'TW', 'Chinese Taipei': 'TW', 'TPE': 'TW',
     '美国': 'US', 'USA': 'US', 'United States': 'US', 'America': 'US',
     '俄罗斯': 'RU', 'Russia': 'RU', 'RUS': 'RU',
     '白俄罗斯': 'BY', 'Belarus': 'BY', 'BLR': 'BY',

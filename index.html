@@ -2950,9 +2950,9 @@
             Object.keys(grouped).forEach(court => {
                 lines.push('【' + court + '】');
                 grouped[court].forEach(m => {
-                    const p1 = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : 'TBD';
-                    const p2 = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : 'TBD';
-                    lines.push('@' + p1 + ' vs @' + p2);
+                    const p1 = m.p1_name ? (m.p3_name ? '@' + m.p1_name + ' / @' + m.p3_name : '@' + m.p1_name) : '@TBD';
+                    const p2 = m.p2_name ? (m.p4_name ? '@' + m.p2_name + ' / @' + m.p4_name : '@' + m.p2_name) : '@TBD';
+                    lines.push(p1 + ' vs ' + p2);
                 });
                 lines.push('');
             });

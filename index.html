@@ -76,7 +76,7 @@
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=10"></script>
-    <script src="js/api.js?v=22"></script>
+    <script src="js/api.js?v=23"></script>
     <script src="js/draw-engine.js?v=16"></script>
 
     <script>
@@ -1972,8 +1972,13 @@
         window.adminBatchSavePlayers = async function() {
             const valid = playerEditRows.filter(p => p.name.trim());
             if (valid.length === 0) { showToast('请至少输入一个球员姓名', 'error'); return; }
+            var btn = document.querySelector('#panel-players .btn-primary[onclick*="adminBatchSavePlayers"]');
+            var originalText = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.innerHTML = '&#9203; 保存中 0/' + valid.length; }
             try {
-                const result = await batchCreatePlayers(valid);
+                const result = await batchCreatePlayers(valid, function(current, total, phase) {
+                    if (btn) btn.innerHTML = '&#9203; ' + phase + ' ' + current + '/' + total;
+                });
                 if (result.count > 0) {
                     const msg = result.updated > 0 ? '新增 ' + (result.created || 0) + ' 名，更新 ' + result.updated + ' 名球员' : '成功添加 ' + result.count + ' 名球员';
                     showToast(msg, 'success');
@@ -1986,6 +1991,8 @@
             } catch (err) {
                 console.error('批量保存异常:', err);
                 showToast('保存失败: ' + (err.message || '网络异常，请稍后重试'), 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
             }
         };
 
@@ -2378,10 +2385,14 @@
                     if (result.notFound.length > 0) msg += '。未匹配: ' + result.notFound.join('、');
                     showToast(msg, 'error'); return;
                 }
+                var importBtn = document.querySelector('#panel-entry .btn-outline[onclick*="entryFileInput"]');
+                var total = result.matched.length;
                 var success = 0, failed = 0;
+                if (importBtn) { importBtn.disabled = true; importBtn.innerHTML = '&#9203; 导入中 0/' + total; }
                 if (isDoubles) {
                     for (var i = 0; i < result.matched.length; i++) {
                         var team = result.matched[i];
+                        if (importBtn) importBtn.innerHTML = '&#9203; 导入中 ' + (i + 1) + '/' + total;
                         var r1 = await addTournamentPlayer(tournamentId, { player_id: team.p1.id, seed: 0, entry_type: 'main' });
                         if (!r1.success) { failed++; continue; }
                         var r2 = await addTournamentPlayer(tournamentId, { player_id: team.p2.id, seed: 0, entry_type: 'main', partner_id: team.p1.id });
@@ -2393,12 +2404,15 @@
                 } else {
                     for (var j = 0; j < result.matched.length; j++) {
                         var item = result.matched[j];
+                        if (importBtn) importBtn.innerHTML = '&#9203; 导入中 ' + (j + 1) + '/' + total;
                         var r = await addTournamentPlayer(tournamentId, { player_id: item.player.id, seed: 0, entry_type: item.entry_type });
                         if (r.success) success++; else failed++;
                     }
                 }
+                if (importBtn) { importBtn.innerHTML = '&#9203; 重算种子...'; }
                 // 重算种子
                 await recalcSeeds(tournamentId);
+                if (importBtn) { importBtn.disabled = false; importBtn.innerHTML = '&#128229; 导入名单'; }
                 // 刷新列表
                 await adminLoadEntryList();
                 var summary = '成功导入 ' + success + (isDoubles ? ' 组双打' : ' 名球员');

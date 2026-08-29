@@ -549,7 +549,7 @@ async function deletePlayer(id) {
  * @param {Array} list - 球员数据列表 [{ name, country, ranking, country_code }]
  * @returns {Promise<Object>} { ids, count, created, updated, error }
  */
-async function batchCreatePlayers(list) {
+async function batchCreatePlayers(list, onProgress) {
     if (!Array.isArray(list) || list.length === 0) {
         return { ids: [], count: 0, created: 0, updated: 0, error: '需要球员数组' };
     }
@@ -557,6 +557,7 @@ async function batchCreatePlayers(list) {
     const ids = [];
     let created = 0;
     let updated = 0;
+    const total = list.length;
 
     try {
         const validNames = list.map(p => (p.name || '').trim()).filter(n => n);
@@ -600,15 +601,18 @@ async function batchCreatePlayers(list) {
         }
 
         if (toUpdate.length > 0) {
-            for (const u of toUpdate) {
+            for (let i = 0; i < toUpdate.length; i++) {
+                const u = toUpdate[i];
                 const patch = { country: u.country, country_code: u.country_code };
                 if (u.ranking !== undefined) patch.ranking = u.ranking;
                 if (u.doubles_ranking !== undefined) patch.doubles_ranking = u.doubles_ranking;
                 await supabase.from('players').update(patch).eq('id', u.id);
+                if (onProgress) onProgress(i + 1, total, '更新中');
             }
         }
 
         if (toInsert.length > 0) {
+            if (onProgress) onProgress(toUpdate.length, total, '插入中');
             const { data: inserted } = await supabase
                 .from('players')
                 .insert(toInsert)
@@ -616,6 +620,7 @@ async function batchCreatePlayers(list) {
             (inserted || []).forEach(r => { ids.push(r.id); created++; });
         }
 
+        if (onProgress) onProgress(total, total, '完成');
         return { ids, count: ids.length, created, updated };
     } catch (err) {
         console.error('批量创建球员异常:', err);

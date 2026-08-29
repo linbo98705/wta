@@ -2179,12 +2179,18 @@ textarea.form-control {
 
     .admin-layout {
         grid-template-columns: 1fr;
+        position: relative;
     }
 
     .admin-sidebar {
         display: flex;
         overflow-x: auto;
         padding: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
     }
 
     .user-info-box {
@@ -2220,7 +2226,7 @@ textarea.form-control {
     }
 
     .admin-content {
-        padding: 16px 12px;
+        padding: 48px 12px 16px;
     }
 
     .admin-panel .card-header {
@@ -2587,7 +2593,7 @@ textarea.form-control {
     }
 
     .admin-content {
-        padding: 12px 8px;
+        padding: 44px 8px 12px;
     }
 
     .admin-sidebar a {

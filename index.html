@@ -3080,13 +3080,19 @@
                     document.getElementById('mCourt').value = m.court || '';
                     const p1Name = m.p1_name || 'TBD';
                     const p2Name = m.p2_name || 'TBD';
-                    document.getElementById('matchupP1').textContent = p1Name;
-                    document.getElementById('matchupP2').textContent = p2Name;
-                    document.getElementById('geHeadA').textContent = p1Name;
-                    document.getElementById('geHeadB').textContent = p2Name;
-                    // 球员3、球员4（双打扩展）
                     const p3Name = m.p3_name || '';
                     const p4Name = m.p4_name || '';
+                    
+                    // 双打模式：球员1/2 显示为 "球员名 / 搭档名"
+                    const p1Display = p3Name ? (p1Name + ' / ' + p3Name) : p1Name;
+                    const p2Display = p4Name ? (p2Name + ' / ' + p4Name) : p2Name;
+                    
+                    document.getElementById('matchupP1').textContent = p1Display;
+                    document.getElementById('matchupP2').textContent = p2Display;
+                    document.getElementById('geHeadA').textContent = p1Display;
+                    document.getElementById('geHeadB').textContent = p2Display;
+                    
+                    // 球员3、球员4（双打扩展）
                     if (p3Name) {
                         document.getElementById('matchupP3').textContent = p3Name;
                         document.getElementById('geHeadA2').textContent = p3Name;

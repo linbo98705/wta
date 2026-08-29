@@ -25,12 +25,12 @@ body[data-theme="hard"] {
     --purple-rgb: 46, 111, 171;
 }
 body[data-theme="us-open"] {
-    --purple-dark: #0A2342;
-    --purple: #003087;
-    --purple-light: #2E5FA3;
-    --purple-lighter: #E0EAF5;
-    --purple-bg: #F0F5FB;
-    --purple-rgb: 0, 48, 135;
+    --purple-dark: #001A5E;
+    --purple: #00288C;
+    --purple-light: #3A56A8;
+    --purple-lighter: #E0E6F5;
+    --purple-bg: #F0F3FB;
+    --purple-rgb: 0, 40, 140;
 }
 body[data-theme="clay"] {
     --purple-dark: #7A3315;

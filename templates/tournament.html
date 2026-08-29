@@ -82,6 +82,7 @@ const tid = {{ tid }};
         <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
         <span>📅 ${formatDateRange(t.start_date, t.end_date)}</span>
         <span>👥 ${t.draw_size}签</span>
+        <span><span class="match-type-tag ${t.match_type === 'doubles' ? 'doubles' : 'singles'}">${t.match_type === 'doubles' ? '双打' : '单打'}</span></span>
     `;
 
     // Quick links

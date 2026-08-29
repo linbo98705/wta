@@ -38,6 +38,7 @@
                                 <th>场地</th>
                                 <th>日期</th>
                                 <th>签位</th>
+                                <th>类型</th>
                                 <th>状态</th>
                                 <th>操作</th>
                             </tr>
@@ -871,7 +872,7 @@ async function loadTournaments() {
     const data = await api('/api/tournaments');
     const tbody = document.getElementById('tournamentTable');
     if (data.error || !Array.isArray(data) || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;">暂无赛事，点击"+ 创建赛事"开始</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center" style="padding:40px;">暂无赛事，点击"+ 创建赛事"开始</td></tr>';
         return;
     }
     tbody.innerHTML = data.map(t => `
@@ -883,6 +884,7 @@ async function loadTournaments() {
             <td><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></td>
             <td>${t.start_date} ~ ${t.end_date}</td>
             <td>${t.draw_size}签</td>
+            <td>${t.match_type === 'doubles' ? '双打' : '单打'}</td>
             <td>${t.is_active ? '✅ 启用' : '❌ 停用'}</td>
             <td>
                 ${CURRENT_USER.role === 'admin' ? `<button class="btn btn-outline btn-sm" onclick="editTournament(${t.id})">编辑</button>` : ''}
@@ -1209,7 +1211,7 @@ async function loadEntrySelect() {
     const data = await api('/api/tournaments');
     const select = document.getElementById('entryTournamentSelect');
     select.innerHTML = '<option value="">请选择赛事</option>' +
-        (Array.isArray(data) ? data.map(t => `<option value="${t.id}">${t.name_cn || t.name} (${t.category})</option>`).join('') : '');
+        (Array.isArray(data) ? data.map(t => `<option value="${t.id}">${t.name_cn || t.name} (${t.category} · ${t.match_type === 'doubles' ? '双打' : '单打'})</option>`).join('') : '');
 }
 
 async function loadEntryList() {
@@ -1545,7 +1547,7 @@ async function loadMatchSelect() {
     const data = await api('/api/tournaments');
     const select = document.getElementById('matchTournamentSelect');
     select.innerHTML = '<option value="">请选择赛事</option>' +
-        (Array.isArray(data) ? data.map(t => `<option value="${t.id}">${t.name_cn || t.name}</option>`).join('') : '');
+        (Array.isArray(data) ? data.map(t => `<option value="${t.id}">${t.name_cn || t.name}（${t.match_type === 'doubles' ? '双打' : '单打'}）</option>`).join('') : '');
 }
 
 async function loadMatchList() {
@@ -1978,7 +1980,7 @@ async function loadGuessSelect() {
     const data = await api('/api/tournaments');
     const select = document.getElementById('guessTournamentSelect');
     select.innerHTML = '<option value="">请选择赛事</option>' +
-        (Array.isArray(data) ? data.map(t => `<option value="${t.id}">${t.name_cn || t.name}</option>`).join('') : '');
+        (Array.isArray(data) ? data.map(t => `<option value="${t.id}">${t.name_cn || t.name}（${t.match_type === 'doubles' ? '双打' : '单打'}）</option>`).join('') : '');
 }
 
 async function loadDailyGuessList() {

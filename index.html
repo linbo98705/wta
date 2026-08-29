@@ -176,6 +176,7 @@
                     <div class="tournament-card-info">
                         <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
                         <span>&#128101; ${t.draw_size}签</span>
+                        <span class="match-type-tag ${t.match_type === 'doubles' ? 'doubles' : 'singles'}">${t.match_type === 'doubles' ? '双打' : '单打'}</span>
                     </div>
                     <div class="tournament-card-actions">
                         <span class="btn btn-outline btn-sm">查看详情 &rarr;</span>
@@ -264,6 +265,7 @@
             <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
             <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
             <span>&#128101; ${t.draw_size}签</span>
+            <span><span style="background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:600;">${t.match_type === 'doubles' ? '双打' : '单打'}</span></span>
         `;
 
         document.getElementById('quickLinks').innerHTML = [
@@ -344,6 +346,7 @@
                 <span>&#128205; ${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
                 <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+                <span><span style="background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:600;">${t.match_type === 'doubles' ? '双打' : '单打'}</span></span>
             `;
         }
 
@@ -736,6 +739,7 @@
                 <span>&#128205; ${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
                 <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+                <span><span style="background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:600;">${t.match_type === 'doubles' ? '双打' : '单打'}</span></span>
             `;
         }
 
@@ -1186,6 +1190,7 @@
                 <span>&#128205; ${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
                 <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+                <span><span style="background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:600;">${t.match_type === 'doubles' ? '双打' : '单打'}</span></span>
             `;
         }
 
@@ -1344,6 +1349,7 @@
         }
         const profile = await getCurrentUserProfile();
         const currentRole = profile?.role || 'editor';
+        window.__adminRole = currentRole;
 
         document.body.classList.add('admin-page');
         app.innerHTML = `
@@ -1375,7 +1381,7 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th class="hide-mobile">ID</th><th>赛事名称</th><th class="hide-mobile">地点</th><th>级别</th><th class="hide-mobile">场地</th><th>日期</th><th class="hide-mobile">签位</th><th>状态</th><th>操作</th></tr></thead>
+                        <thead><tr><th class="hide-mobile">ID</th><th>赛事名称</th><th class="hide-mobile">地点</th><th>级别</th><th class="hide-mobile">场地</th><th>日期</th><th class="hide-mobile">签位</th><th class="hide-mobile">类型</th><th>状态</th><th>操作</th></tr></thead>
                         <tbody id="tournamentTable"></tbody>
                     </table>
                 </div>
@@ -1840,10 +1846,10 @@
             }
             const tbody = document.getElementById('tournamentTable');
             if (!Array.isArray(data) || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;">暂无赛事' + (isAdmin ? '，点击"+ 创建赛事"开始' : '（您尚未被分配任何赛事）') + '</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center" style="padding:40px;">暂无赛事' + (isAdmin ? '，点击"+ 创建赛事"开始' : '（您尚未被分配任何赛事）') + '</td></tr>';
                 return;
             }
-            tbody.innerHTML = data.map(t => '<tr><td class="hide-mobile">' + t.id + '</td><td><strong>' + escapeHtml(t.name_cn || t.name) + '</strong></td><td class="hide-mobile">' + escapeHtml(t.location) + '</td><td><span class="match-round-badge">' + escapeHtml(t.category) + '</span></td><td class="hide-mobile"><span class="surface-tag ' + surfaceClass(t.surface) + '">' + surfaceLabel(t.surface) + '</span></td><td>' + t.start_date + ' ~ ' + t.end_date + '</td><td class="hide-mobile">' + t.draw_size + '签</td><td>' + (t.is_active ? '&#9989; 启用' : '&#10060; 停用') + '</td><td>' + (isAdmin ? '<button class="btn btn-outline btn-sm" onclick="adminEditTournament(' + t.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteTournament(' + t.id + ')">删除</button>' : '') + '</td></tr>').join('');
+            tbody.innerHTML = data.map(t => '<tr><td class="hide-mobile">' + t.id + '</td><td><strong>' + escapeHtml(t.name_cn || t.name) + '</strong></td><td class="hide-mobile">' + escapeHtml(t.location) + '</td><td><span class="match-round-badge">' + escapeHtml(t.category) + '</span></td><td class="hide-mobile"><span class="surface-tag ' + surfaceClass(t.surface) + '">' + surfaceLabel(t.surface) + '</span></td><td>' + t.start_date + ' ~ ' + t.end_date + '</td><td class="hide-mobile">' + t.draw_size + '签</td><td class="hide-mobile">' + (t.match_type === 'doubles' ? '双打' : '单打') + '</td><td>' + (t.is_active ? '&#9989; 启用' : '&#10060; 停用') + '</td><td>' + (isAdmin ? '<button class="btn btn-outline btn-sm" onclick="adminEditTournament(' + t.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteTournament(' + t.id + ')">删除</button>' : '') + '</td></tr>').join('');
         }
 
         window.adminOpenCreateTournament = function() {
@@ -2223,9 +2229,12 @@
 
         // ── Entry Management ──
         window.adminLoadEntrySelect = async function() {
-            const data = await getTournaments();
+            let data = await getTournaments();
+            if (window.__adminRole === 'editor') {
+                data = await filterTournamentsByRole(data || []);
+            }
             const select = document.getElementById('entryTournamentSelect');
-            select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + ' (' + escapeHtml(t.category) + ')</option>').join('') : '');
+            select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + ' (' + escapeHtml(t.category) + ' · ' + (t.match_type === 'doubles' ? '双打' : '单打') + ')</option>').join('') : '');
             const activeId = findActiveTournamentId(data);
             if (activeId && !select.value) {
                 select.value = activeId;
@@ -2706,9 +2715,12 @@
 
         // ── Match Management ──
         window.adminLoadMatchSelect = async function() {
-            const data = await getTournaments();
+            let data = await getTournaments();
+            if (window.__adminRole === 'editor') {
+                data = await filterTournamentsByRole(data || []);
+            }
             const select = document.getElementById('matchTournamentSelect');
-            select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + '</option>').join('') : '');
+            select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + '（' + (t.match_type === 'doubles' ? '双打' : '单打') + '）</option>').join('') : '');
             const activeId = findActiveTournamentId(data);
             if (activeId && !select.value) {
                 select.value = activeId;
@@ -3373,9 +3385,12 @@
 
         // ── Daily Guess Management ──
         window.adminLoadGuessSelect = async function() {
-            const data = await getTournaments();
+            let data = await getTournaments();
+            if (window.__adminRole === 'editor') {
+                data = await filterTournamentsByRole(data || []);
+            }
             const select = document.getElementById('guessTournamentSelect');
-            select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + '</option>').join('') : '');
+            select.innerHTML = '<option value="">请选择赛事</option>' + (Array.isArray(data) ? data.map(t => '<option value="' + t.id + '">' + escapeHtml(t.name_cn || t.name) + '（' + (t.match_type === 'doubles' ? '双打' : '单打') + '）</option>').join('') : '');
             const activeId = findActiveTournamentId(data);
             if (activeId && !select.value) {
                 select.value = activeId;

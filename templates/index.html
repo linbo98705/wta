@@ -64,6 +64,7 @@
                 <div class="tournament-card-info">
                     <span>📅 ${formatDateRange(t.start_date, t.end_date)}</span>
                     <span>👥 ${t.draw_size}签</span>
+                    <span class="match-type-tag ${t.match_type === 'doubles' ? 'doubles' : 'singles'}">${t.match_type === 'doubles' ? '双打' : '单打'}</span>
                 </div>
                 <div class="tournament-card-actions">
                     <span class="btn btn-outline btn-sm">查看详情 →</span>

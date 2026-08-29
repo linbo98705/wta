@@ -1432,7 +1432,7 @@
                         <select class="form-control" id="entryCountryFilter" onchange="adminFilterEntryList()" style="width:auto;">
                             <option value="">所有国家/地区</option>
                         </select>
-                        <button class="btn btn-outline btn-sm" onclick="document.getElementById('entryFileInput').click()">&#128229; 导入名单</button>
+                        <button class="btn btn-outline btn-sm" id="btnImportEntry" onclick="document.getElementById('entryFileInput').click()">&#128229; 导入名单</button>
                         <input type="file" id="entryFileInput" accept=".csv,.xlsx,.xls" style="display:none;" onchange="adminImportEntryFile(this)">
                         <button class="btn btn-primary btn-sm" id="btnAddSinglesEntry" onclick="adminOpenEntryModal()">+ 添加球员</button>
                         <button class="btn btn-primary btn-sm" id="btnAddDoublesEntry" onclick="adminOpenDoublesEntryModal()" style="background:var(--accent-green);">+ 双打报名</button>
@@ -2385,9 +2385,10 @@
                     if (result.notFound.length > 0) msg += '。未匹配: ' + result.notFound.join('、');
                     showToast(msg, 'error'); return;
                 }
-                var importBtn = document.querySelector('#panel-entry .btn-outline[onclick*="entryFileInput"]');
+                var importBtn = document.getElementById('btnImportEntry');
                 var total = result.matched.length;
                 var success = 0, failed = 0;
+                showToast('开始导入 ' + total + (isDoubles ? ' 组双打' : ' 名球员') + '...', 'success');
                 if (importBtn) { importBtn.disabled = true; importBtn.innerHTML = '&#9203; 导入中 0/' + total; }
                 if (isDoubles) {
                     for (var i = 0; i < result.matched.length; i++) {
@@ -2397,7 +2398,6 @@
                         if (!r1.success) { failed++; continue; }
                         var r2 = await addTournamentPlayer(tournamentId, { player_id: team.p2.id, seed: 0, entry_type: 'main', partner_id: team.p1.id });
                         if (!r2.success) { await removeTournamentPlayer(tournamentId, team.p1.id); failed++; continue; }
-                        // 更新 p1 的 partner_id 指向 p2
                         await updateTournamentPlayer(tournamentId, team.p1.id, { partner_id: team.p2.id });
                         success++;
                     }
@@ -2410,10 +2410,8 @@
                     }
                 }
                 if (importBtn) { importBtn.innerHTML = '&#9203; 重算种子...'; }
-                // 重算种子
                 await recalcSeeds(tournamentId);
                 if (importBtn) { importBtn.disabled = false; importBtn.innerHTML = '&#128229; 导入名单'; }
-                // 刷新列表
                 await adminLoadEntryList();
                 var summary = '成功导入 ' + success + (isDoubles ? ' 组双打' : ' 名球员');
                 if (failed > 0) summary += '，失败 ' + failed;

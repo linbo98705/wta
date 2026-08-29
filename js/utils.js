@@ -33,6 +33,24 @@ function closeModal(id) {
     if (el) el.classList.remove('show');
 }
 
+// ── Progress Modal ──────────────────────────
+function showProgress(text) {
+    const modal = document.getElementById('progressModal');
+    const textEl = document.getElementById('progressModalText');
+    if (textEl) textEl.textContent = text || '处理中...';
+    if (modal) modal.classList.add('show');
+}
+
+function updateProgress(text) {
+    const textEl = document.getElementById('progressModalText');
+    if (textEl) textEl.textContent = text;
+}
+
+function hideProgress() {
+    const modal = document.getElementById('progressModal');
+    if (modal) modal.classList.remove('show');
+}
+
 // 点击遮罩层关闭模态框
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay')) {

@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=43">
+    <link rel="stylesheet" href="static/css/style.css?v=44">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -75,7 +75,7 @@
     <script src="static/js/html2canvas.min.js"></script>
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
-    <script src="js/utils.js?v=10"></script>
+    <script src="js/utils.js?v=11"></script>
     <script src="js/api.js?v=23"></script>
     <script src="js/draw-engine.js?v=16"></script>
 
@@ -1515,6 +1515,14 @@
     </div>
 </div>
 
+<!-- Progress Modal -->
+<div class="modal-overlay" id="progressModal">
+    <div class="modal" style="max-width:320px; text-align:center;">
+        <div class="progress-spinner"></div>
+        <div id="progressModalText" style="margin-top:12px; font-size:0.9375rem; color:var(--gray-600);">处理中...</div>
+    </div>
+</div>
+
 <!-- Player Edit Modal -->
 <div class="modal-overlay" id="playerEditModal">
     <div class="modal">
@@ -1973,12 +1981,13 @@
             const valid = playerEditRows.filter(p => p.name.trim());
             if (valid.length === 0) { showToast('请至少输入一个球员姓名', 'error'); return; }
             var btn = document.querySelector('#panel-players .btn-primary[onclick*="adminBatchSavePlayers"]');
-            var originalText = btn ? btn.innerHTML : '';
-            if (btn) { btn.disabled = true; btn.innerHTML = '&#9203; 保存中 0/' + valid.length; }
+            if (btn) btn.disabled = true;
+            showProgress('保存中 0/' + valid.length);
             try {
                 const result = await batchCreatePlayers(valid, function(current, total, phase) {
-                    if (btn) btn.innerHTML = '&#9203; ' + phase + ' ' + current + '/' + total;
+                    updateProgress(phase + ' ' + current + '/' + total);
                 });
+                hideProgress();
                 if (result.count > 0) {
                     const msg = result.updated > 0 ? '新增 ' + (result.created || 0) + ' 名，更新 ' + result.updated + ' 名球员' : '成功添加 ' + result.count + ' 名球员';
                     showToast(msg, 'success');
@@ -1989,10 +1998,11 @@
                     showToast('保存失败: ' + (result.error || '未知错误'), 'error');
                 }
             } catch (err) {
+                hideProgress();
                 console.error('批量保存异常:', err);
                 showToast('保存失败: ' + (err.message || '网络异常，请稍后重试'), 'error');
             } finally {
-                if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+                if (btn) btn.disabled = false;
             }
         };
 
@@ -2388,12 +2398,12 @@
                 var importBtn = document.getElementById('btnImportEntry');
                 var total = result.matched.length;
                 var success = 0, failed = 0;
-                showToast('开始导入 ' + total + (isDoubles ? ' 组双打' : ' 名球员') + '...', 'success');
-                if (importBtn) { importBtn.disabled = true; importBtn.innerHTML = '&#9203; 导入中 0/' + total; }
+                showProgress('开始导入 ' + total + (isDoubles ? ' 组双打' : ' 名球员') + '...');
+                if (importBtn) { importBtn.disabled = true; }
                 if (isDoubles) {
                     for (var i = 0; i < result.matched.length; i++) {
                         var team = result.matched[i];
-                        if (importBtn) importBtn.innerHTML = '&#9203; 导入中 ' + (i + 1) + '/' + total;
+                        updateProgress('导入中 ' + (i + 1) + '/' + total);
                         var r1 = await addTournamentPlayer(tournamentId, { player_id: team.p1.id, seed: 0, entry_type: 'main' });
                         if (!r1.success) { failed++; continue; }
                         var r2 = await addTournamentPlayer(tournamentId, { player_id: team.p2.id, seed: 0, entry_type: 'main', partner_id: team.p1.id });
@@ -2404,14 +2414,15 @@
                 } else {
                     for (var j = 0; j < result.matched.length; j++) {
                         var item = result.matched[j];
-                        if (importBtn) importBtn.innerHTML = '&#9203; 导入中 ' + (j + 1) + '/' + total;
+                        updateProgress('导入中 ' + (j + 1) + '/' + total);
                         var r = await addTournamentPlayer(tournamentId, { player_id: item.player.id, seed: 0, entry_type: item.entry_type });
                         if (r.success) success++; else failed++;
                     }
                 }
-                if (importBtn) { importBtn.innerHTML = '&#9203; 重算种子...'; }
+                updateProgress('重算种子...');
                 await recalcSeeds(tournamentId);
-                if (importBtn) { importBtn.disabled = false; importBtn.innerHTML = '&#128229; 导入名单'; }
+                hideProgress();
+                if (importBtn) { importBtn.disabled = false; }
                 await adminLoadEntryList();
                 var summary = '成功导入 ' + success + (isDoubles ? ' 组双打' : ' 名球员');
                 if (failed > 0) summary += '，失败 ' + failed;

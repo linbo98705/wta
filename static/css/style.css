@@ -2179,18 +2179,17 @@ textarea.form-control {
 
     .admin-layout {
         grid-template-columns: 1fr;
-        position: relative;
     }
 
     .admin-sidebar {
         display: flex;
         overflow-x: auto;
         padding: 0;
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        z-index: 10;
+        z-index: 100;
     }
 
     .user-info-box {

@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="static/css/style.css?v=42">
+    <link rel="stylesheet" href="static/css/style.css?v=43">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -2237,13 +2237,13 @@
         window.adminFilterEntryList = function() {
             const countryFilter = document.getElementById('entryCountryFilter') ? document.getElementById('entryCountryFilter').value : '';
             var filtered = allEntryPlayersCache;
-            if (countryFilter) {
+            if (countryFilter && entryTournamentType !== 'doubles') {
                 filtered = filtered.filter(function(p) { return (p.country || '') === countryFilter; });
             }
-            adminRenderEntryList(filtered);
+            adminRenderEntryList(filtered, countryFilter);
         };
 
-        window.adminRenderEntryList = function(players) {
+        window.adminRenderEntryList = function(players, countryFilter) {
             const tbody = document.getElementById('entryTable');
             const isDoubles = entryTournamentType === 'doubles';
             var colCount = isDoubles ? 7 : 6;
@@ -2282,6 +2282,16 @@
                 }
                 // 按排名总和升序排序（总和越小排名越高）
                 teams.sort(function(a, b) { return a.rankSum - b.rankSum; });
+                // 双打国家筛选：队伍中任一球员国家匹配即保留
+                if (countryFilter) {
+                    teams = teams.filter(function(t) {
+                        return (t.p1.country || '') === countryFilter || (t.p2 && (t.p2.country || '') === countryFilter);
+                    });
+                }
+                if (teams.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="' + colCount + '" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
+                    return;
+                }
                 tbody.innerHTML = teams.map(function(t) {
                     var seedHtml = t.seed > 0 ? '<span class="seed-badge">' + t.seed + '</span>' : '-';
                     var p1Html = '<div class="player-row"><div class="player-avatar">' + (t.p1.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(t.p1.name) + '</strong></div>';

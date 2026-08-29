@@ -1340,6 +1340,31 @@
     let entryTournamentType = 'singles';
     let allMatchesCache = [];
 
+    // Pagination state
+    const PAGE_SIZE = 20;
+    let playerPage = 1;
+    let playerFilteredData = [];
+    let matchPage = 1;
+    let matchFilteredData = [];
+
+    function renderPagination(containerId, currentPage, totalItems, pageSize, onPageChange) {
+        const container = document.getElementById(containerId);
+        if (!container || totalItems <= pageSize) {
+            if (container) container.innerHTML = '';
+            return;
+        }
+        const totalPages = Math.ceil(totalItems / pageSize);
+        let html = '<button class="btn btn-outline btn-sm" ' + (currentPage === 1 ? 'disabled' : '') + ' onclick="' + onPageChange + '(' + (currentPage - 1) + ')">&laquo; 上一页</button>';
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        for (let i = startPage; i <= endPage; i++) {
+            html += '<button class="btn btn-sm ' + (i === currentPage ? 'btn-primary' : 'btn-outline') + '" onclick="' + onPageChange + '(' + i + ')">' + i + '</button>';
+        }
+        html += '<button class="btn btn-outline btn-sm" ' + (currentPage === totalPages ? 'disabled' : '') + ' onclick="' + onPageChange + '(' + (currentPage + 1) + ')">下一页 &raquo;</button>';
+        html += '<span style="font-size:0.8125rem; color:var(--gray-500); margin-left:8px;">第 ' + currentPage + '/' + totalPages + ' 页，共 ' + totalItems + ' 条</span>';
+        container.innerHTML = html;
+    }
+
     async function renderAdmin() {
         const loggedIn = await isAdminLoggedIn();
         if (!loggedIn) {
@@ -1432,6 +1457,7 @@
                         <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAll" onchange="adminToggleAllCheckboxes(this)"></th><th class="hide-mobile">ID</th><th>姓名</th><th>国家/地区</th><th>单打排名</th><th>双打排名</th><th>操作</th></tr></thead>
                         <tbody id="playerTable"></tbody>
                     </table>
+                    <div id="playerPagination" style="display:flex; justify-content:center; align-items:center; gap:8px; padding:12px 0;"></div>
                 </div>
             </div>
         </div>
@@ -1486,6 +1512,7 @@
                         <thead><tr><th class="hide-mobile">#</th><th>轮次</th><th>球员1</th><th>球员2</th><th>比分</th><th>日期</th><th class="hide-mobile">场地</th><th>状态</th><th>操作</th></tr></thead>
                         <tbody id="matchTable"><tr><td colspan="9" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
                     </table>
+                    <div id="matchPagination" style="display:flex; justify-content:center; align-items:center; gap:8px; padding:12px 0;"></div>
                 </div>
             </div>
         </div>
@@ -2027,6 +2054,8 @@
             const data = await getPlayers();
             const tbody = document.getElementById('playerTable');
             allPlayersCache = Array.isArray(data) ? data : [];
+            playerFilteredData = allPlayersCache;
+            playerPage = 1;
             document.getElementById('playerCount').textContent = allPlayersCache.length ? '共 ' + allPlayersCache.length + ' 名球员' : '';
             var countrySel = document.getElementById('playerCountryFilter');
             if (countrySel) {
@@ -2040,7 +2069,7 @@
                 adminUpdateBatchDelBtn();
                 return;
             }
-            adminFilterPlayerList();
+            adminRenderPlayerListPaginated(playerFilteredData, playerPage);
         }
 
         window.adminRenderPlayerList = function(players) {
@@ -2066,8 +2095,23 @@
                     return (p.name || '').toLowerCase().includes(keyword) || (p.country || '').toLowerCase().includes(keyword) || String(p.ranking || '').includes(keyword) || String(p.doubles_ranking || '').includes(keyword) || String(p.id || '').includes(keyword);
                 });
             }
+            playerFilteredData = filtered;
+            playerPage = 1;
             document.getElementById('playerCount').textContent = '找到 ' + filtered.length + ' / ' + allPlayersCache.length + ' 名球员';
-            adminRenderPlayerList(filtered);
+            adminRenderPlayerListPaginated(filtered, playerPage);
+        };
+
+        function adminRenderPlayerListPaginated(players, page) {
+            const start = (page - 1) * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            const pageData = players.slice(start, end);
+            adminRenderPlayerList(pageData);
+            renderPagination('playerPagination', page, players.length, PAGE_SIZE, 'adminGoToPlayerPage');
+        }
+
+        window.adminGoToPlayerPage = function(page) {
+            playerPage = page;
+            adminRenderPlayerListPaginated(playerFilteredData, playerPage);
         };
 
         window.adminToggleAllCheckboxes = function(el) {
@@ -2733,12 +2777,17 @@
             if (!tid) return;
             const matches = await getMatches(parseInt(tid));
             allMatchesCache = Array.isArray(matches) ? matches : [];
+            matchFilteredData = allMatchesCache;
+            matchPage = 1;
             const tbody = document.getElementById('matchTable');
             if (allMatchesCache.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:40px;">暂无比赛，请先生成签表或手动添加</td></tr>';
                 // 清空日期选择器
                 const dateSelect = document.getElementById('matchExportDateSelect');
                 if (dateSelect) dateSelect.innerHTML = '<option value="">所有日期</option>';
+                // 清空分页
+                const paginationDiv = document.getElementById('matchPagination');
+                if (paginationDiv) paginationDiv.innerHTML = '';
                 return;
             }
 
@@ -2758,13 +2807,15 @@
             const searchInput = document.getElementById('matchSearchInput');
             if (searchInput) searchInput.value = '';
 
-            adminRenderMatchList(allMatchesCache);
+            adminRenderMatchListPaginated(matchFilteredData, matchPage);
         };
 
         window.adminFilterMatchList = function() {
             const keyword = (document.getElementById('matchSearchInput') ? document.getElementById('matchSearchInput').value : '').trim().toLowerCase();
             if (!keyword) {
-                adminRenderMatchList(allMatchesCache);
+                matchFilteredData = allMatchesCache;
+                matchPage = 1;
+                adminRenderMatchListPaginated(matchFilteredData, matchPage);
                 return;
             }
             const filtered = allMatchesCache.filter(m => {
@@ -2776,7 +2827,9 @@
                     (m.court || '').toLowerCase().includes(keyword) ||
                     (m.match_date || '').includes(keyword);
             });
-            adminRenderMatchList(filtered);
+            matchFilteredData = filtered;
+            matchPage = 1;
+            adminRenderMatchListPaginated(filtered, matchPage);
         };
 
         window.adminRenderMatchList = function(matches) {
@@ -2825,6 +2878,19 @@
             }
 
             tbody.innerHTML = html;
+        };
+
+        function adminRenderMatchListPaginated(matches, page) {
+            const start = (page - 1) * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            const pageData = matches.slice(start, end);
+            adminRenderMatchList(pageData);
+            renderPagination('matchPagination', page, matches.length, PAGE_SIZE, 'adminGoToMatchPage');
+        }
+
+        window.adminGoToMatchPage = function(page) {
+            matchPage = page;
+            adminRenderMatchListPaginated(matchFilteredData, matchPage);
         };
 
         window.adminToggleCollapsedMatches = function(el) {

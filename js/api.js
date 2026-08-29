@@ -1689,9 +1689,10 @@ async function freezeSnapshot(tid) {
  * 支持 32/64/96/128 签位，遵循 Grand Slam Rule Book 种子放置规则。
  *
  * @param {number} tid - 赛事 ID
+ * @param {Function} [onProgress] - 进度回调 (phase) => void
  * @returns {Promise<Object>} { success, matchesCreated, error }
  */
-async function generateDraw(tid) {
+async function generateDraw(tid, onProgress) {
     // 获取赛事信息
     const tournament = await getTournament(tid);
     if (!tournament) {
@@ -1701,6 +1702,7 @@ async function generateDraw(tid) {
     const drawSize = tournament.draw_size;
     const isDoubles = tournament.match_type === 'doubles';
 
+    if (onProgress) onProgress('读取参赛球员...');
     // 获取参赛球员（按种子排序，种子在前）— 始终读取实时数据
     const players = await getLiveTournamentPlayers(tid);
 
@@ -1762,9 +1764,11 @@ async function generateDraw(tid) {
         return obj;
     }
 
+    if (onProgress) onProgress('冻结球员快照...');
     // 生成签表时创建球员信息快照，冻结当前球员数据
     await freezeSnapshot(tid);
 
+    if (onProgress) onProgress('清除旧签表...');
     // 删除旧比赛
     await supabase.from('matches').delete().eq('tournament_id', tid);
 
@@ -1789,6 +1793,7 @@ async function generateDraw(tid) {
         const seededPlayers = drawEntries
             .filter(p => (p.t_seed || 0) > 0)
             .sort((a, b) => a.t_seed - b.t_seed);
+        if (onProgress) onProgress('放置种子选手...');
         for (const p of seededPlayers) {
             const seedNum = p.t_seed;
             if (seedPositions[seedNum] !== undefined) {
@@ -1801,6 +1806,7 @@ async function generateDraw(tid) {
         const nonSeeded = shuffleArray(drawEntries.filter(p => (p.t_seed || 0) === 0));
 
         // 成对填入非种子到不含种子的配对中
+        if (onProgress) onProgress('填充非种子选手...');
         let nsIdx = 0;
         for (let i = 0; i < 128; i += 2) {
             let hasSeed = false;
@@ -1829,6 +1835,7 @@ async function generateDraw(tid) {
         const firstRound = rounds[0];
 
         // 创建 R128 比赛（64 场）
+        if (onProgress) onProgress('生成第一轮比赛...');
         for (let i = 0; i < 64; i++) {
             const p1 = filled[i * 2];
             const p2 = filled[i * 2 + 1];
@@ -1883,6 +1890,7 @@ async function generateDraw(tid) {
         }
 
         // 创建后续轮次，R64 自动填入晋级种子
+        if (onProgress) onProgress('生成后续轮次...');
         for (let rIdx = 1; rIdx < rounds.length; rIdx++) {
             const roundName = rounds[rIdx];
             const numMatches = 128 / Math.pow(2, rIdx + 1);
@@ -1910,11 +1918,13 @@ async function generateDraw(tid) {
         }
     } else {
         // ═══ 非96签（32/64/128签）原有逻辑 ═══
+        if (onProgress) onProgress('计算种子位置...');
         const filled = fillDrawPositions(drawEntries, totalSlots, drawSize);
 
         const firstRound = rounds[0];
         const firstRoundMatches = totalSlots / 2;
 
+        if (onProgress) onProgress('生成第一轮比赛...');
         for (let i = 0; i < firstRoundMatches; i++) {
             const p1 = filled[i * 2];
             const p2 = filled[i * 2 + 1];
@@ -1931,6 +1941,7 @@ async function generateDraw(tid) {
         }
 
         // 创建后续轮次占位
+        if (onProgress) onProgress('生成后续轮次...');
         for (let rIdx = 1; rIdx < rounds.length; rIdx++) {
             const roundName = rounds[rIdx];
             const numMatches = totalSlots / Math.pow(2, rIdx + 1);
@@ -1950,6 +1961,7 @@ async function generateDraw(tid) {
     if (toInsert.length > 0) {
         // Supabase 批量插入上限约 500 条，如果超出则分批
         const BATCH_SIZE = 200;
+        if (onProgress) onProgress('保存签表数据...');
         for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
             const batch = toInsert.slice(i, i + BATCH_SIZE);
             const { error } = await supabase
@@ -1965,9 +1977,11 @@ async function generateDraw(tid) {
 
     // 签表生成后，自动处理 Bye 晋级（96 签已在生成时处理，跳过）
     if (drawSize !== 96) {
+        if (onProgress) onProgress('处理轮空晋级...');
         await autoAdvanceByes(tid, rounds);
     }
 
+    if (onProgress) onProgress('完成！');
     return { success: true, matchesCreated: toInsert.length };
 }
 

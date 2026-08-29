@@ -3349,12 +3349,23 @@
             if (!tid) { showToast('请先选择赛事', 'error'); return; }
             if (!confirm('确定生成签表？这将清除当前所有比赛数据！')) return;
             if (!confirm('再次确认：将清除所有现有比赛数据，确定继续？')) return;
-            const result = await generateDraw(parseInt(tid));
-            if (result.success) {
-                showToast('签表已生成！共创建 ' + result.matchesCreated + ' 场比赛，轮空种子已自动晋级', 'success');
-                adminLoadMatchList();
-            } else {
-                showToast('生成失败: ' + (result.error || '未知错误'), 'error');
+
+            showProgress('正在生成签表...');
+            try {
+                const result = await generateDraw(parseInt(tid), function(phase) {
+                    updateProgress(phase);
+                });
+                hideProgress();
+                if (result.success) {
+                    showToast('签表已生成！共创建 ' + result.matchesCreated + ' 场比赛，轮空种子已自动晋级', 'success');
+                    adminLoadMatchList();
+                } else {
+                    showToast('生成失败: ' + (result.error || '未知错误'), 'error');
+                }
+            } catch (err) {
+                hideProgress();
+                console.error('生成签表异常:', err);
+                showToast('生成失败: ' + (err.message || '网络异常，请稍后重试'), 'error');
             }
         };
 

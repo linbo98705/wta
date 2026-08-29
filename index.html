@@ -1549,8 +1549,8 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th class="hide-mobile">ID</th><th>用户</th><th>角色</th><th>可管理赛事</th><th>操作</th></tr></thead>
-                        <tbody id="userTable"><tr><td colspan="5" class="text-center" style="padding:40px;">加载中...</td></tr></tbody>
+                        <thead><tr><th>用户</th><th>角色</th><th>可管理赛事</th><th>操作</th></tr></thead>
+                        <tbody id="userTable"><tr><td colspan="4" class="text-center" style="padding:40px;">加载中...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -3717,7 +3717,7 @@
         window.adminLoadUsers = async function() {
             const tbody = document.getElementById('userTable');
             if (!tbody) return;
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:40px;">加载中...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="padding:40px;">加载中...</td></tr>';
 
             // 读取全部用户档案（当前账号需为 admin，RLS 才允许读全量）
             let profiles;
@@ -3728,7 +3728,7 @@
                 if (error) throw error;
                 profiles = data;
             } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:40px;color:var(--red,#e11d48);">读取失败：' + escapeHtml(err.message || err) + '<br><span style="font-size:0.8125rem;color:var(--gray-500);">请先在 Supabase → SQL Editor 执行 supabase-rbac-migration.sql 建好 profiles / user_tournaments 表。</span></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="padding:40px;color:var(--red,#e11d48);">读取失败：' + escapeHtml(err.message || err) + '<br><span style="font-size:0.8125rem;color:var(--gray-500);">请先在 Supabase → SQL Editor 执行 supabase-rbac-migration.sql 建好 profiles / user_tournaments 表。</span></td></tr>';
                 return;
             }
 
@@ -3750,7 +3750,7 @@
             } catch (e) { /* 表不存在时忽略 */ }
 
             if (!Array.isArray(profiles) || profiles.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:40px;">暂无用户档案。请先在 Supabase → Authentication → Users 创建登录账号。</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="padding:40px;">暂无用户档案。请先在 Supabase → Authentication → Users 创建登录账号。</td></tr>';
                 return;
             }
 
@@ -3770,7 +3770,6 @@
                 }).join('');
                 const cnt = owned.length;
                 return '<tr>' +
-                    '<td class="hide-mobile" style="font-size:0.7rem;word-break:break-all;max-width:120px;">' + escapeHtml(pId) + '</td>' +
                     '<td><strong>' + escapeHtml(p.display_name || '未命名') + '</strong></td>' +
                     '<td><select class="form-control user-role-select" data-uid="' + pId + '" style="width:auto;">' + roleOpts + '</select></td>' +
                     '<td><div class="tour-drop-wrap">' +

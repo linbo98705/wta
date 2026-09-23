@@ -3769,18 +3769,36 @@
                         '<span>' + escapeHtml(t.name_cn || t.name) + ' <em style="color:var(--gray-400);font-size:0.7rem;font-style:normal;">' + escapeHtml(t.start_date || '') + '</em></span></div>';
                 }).join('');
                 const cnt = owned.length;
-                return '<tr>' +
-                    '<td><strong>' + escapeHtml(p.display_name || '未命名') + '</strong></td>' +
-                    '<td><select class="form-control user-role-select" data-uid="' + pId + '" style="width:auto;">' + roleOpts + '</select></td>' +
-                    '<td><div class="tour-drop-wrap">' +
+                const isAdmin = p.role === 'admin';
+                const tourCell = isAdmin
+                    ? '<span style="color:var(--gray-500);font-size:0.85rem;">全部赛事（默认全权限）</span>'
+                    : '<div class="tour-drop-wrap">' +
                         '<button type="button" class="tour-drop-btn" data-uid="' + pId + '" onclick="adminToggleTourDrop(this)">已选 ' + cnt + ' 项' + (tList.length ? ' / 共 ' + tList.length + ' 项' : '') + ' ▾</button>' +
                         '<div class="tour-drop-panel" data-uid="' + pId + '">' +
                             '<input type="text" class="tour-drop-search" placeholder="搜索赛事…" oninput="adminFilterTourItems(this)" style="width:100%;box-sizing:border-box;padding:6px 10px;border:none;border-bottom:1px solid var(--gray-200);font-size:0.8rem;outline:none;">' +
                             (tourItems || '<div style="padding:12px;color:var(--gray-500);font-size:0.8rem;">暂无赛事</div>') + '</div>' +
-                    '</div></td>' +
+                    '</div>';
+                return '<tr>' +
+                    '<td><strong>' + escapeHtml(p.display_name || '未命名') + '</strong></td>' +
+                    '<td><select class="form-control user-role-select" data-uid="' + pId + '" style="width:auto;" onchange="adminOnRoleChange(this)">' + roleOpts + '</select></td>' +
+                    '<td id="tour-cell-' + pId + '">' + tourCell + '</td>' +
                     '<td><button class="btn btn-primary btn-sm" onclick="adminSaveUserAssignment(\'' + pId + '\')">保存</button></td>' +
                     '</tr>';
             }).join('');
+        };
+
+        window.adminOnRoleChange = function(sel) {
+            const uid = sel.dataset.uid;
+            const cell = document.getElementById('tour-cell-' + uid);
+            if (!cell) return;
+            if (sel.value === 'admin') {
+                cell.innerHTML = '<span style="color:var(--gray-500);font-size:0.85rem;">全部赛事（默认全权限）</span>';
+            } else {
+                const wrap = cell.querySelector('.tour-drop-wrap');
+                if (!wrap) {
+                    cell.innerHTML = '<div class="tour-drop-wrap"><button type="button" class="tour-drop-btn" data-uid="' + uid + '" onclick="adminToggleTourDrop(this)">已选 0 项 ▾</button><div class="tour-drop-panel" data-uid="' + uid + '"><div style="padding:12px;color:var(--gray-500);font-size:0.8rem;">请刷新页面加载赛事列表</div></div></div>';
+                }
+            }
         };
 
         window.adminToggleTourDrop = function(btn) {
@@ -3843,14 +3861,16 @@
             try {
                 const { error: rErr } = await supabase.from('profiles').update({ role }).eq('id', uid);
                 if (rErr) throw rErr;
+                // admin 角色默认全权限，清空赛事分配
                 const { error: dErr } = await supabase.from('user_tournaments').delete().eq('user_id', uid);
                 if (dErr) throw dErr;
-                if (checkedTids.length) {
+                if (role !== 'admin' && checkedTids.length) {
                     const rows = checkedTids.map(tid => ({ user_id: uid, tournament_id: tid }));
                     const { error: iErr } = await supabase.from('user_tournaments').insert(rows);
                     if (iErr) throw iErr;
                 }
                 if (typeof showToast === 'function') showToast('保存成功', 'success');
+                adminLoadUsers();
             } catch (err) {
                 if (typeof showToast === 'function') showToast('保存失败：' + (err.message || err), 'error');
                 console.error('保存用户分配失败:', err);

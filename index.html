@@ -3778,9 +3778,12 @@
                             '<input type="text" class="tour-drop-search" placeholder="搜索赛事…" oninput="adminFilterTourItems(this)" style="width:100%;box-sizing:border-box;padding:6px 10px;border:none;border-bottom:1px solid var(--gray-200);font-size:0.8rem;outline:none;">' +
                             (tourItems || '<div style="padding:12px;color:var(--gray-500);font-size:0.8rem;">暂无赛事</div>') + '</div>' +
                     '</div>';
+                const roleSelect = isAdmin
+                    ? '<span class="badge badge-purple">超级管理员</span>'
+                    : '<select class="form-control user-role-select" data-uid="' + pId + '" style="width:auto;" onchange="adminOnRoleChange(this)">' + roleOpts + '</select>';
                 return '<tr>' +
                     '<td><strong>' + escapeHtml(p.display_name || '未命名') + '</strong></td>' +
-                    '<td><select class="form-control user-role-select" data-uid="' + pId + '" style="width:auto;" onchange="adminOnRoleChange(this)">' + roleOpts + '</select></td>' +
+                    '<td>' + roleSelect + '</td>' +
                     '<td id="tour-cell-' + pId + '">' + tourCell + '</td>' +
                     '<td><button class="btn btn-primary btn-sm" onclick="adminSaveUserAssignment(\'' + pId + '\')">保存</button></td>' +
                     '</tr>';
@@ -3854,7 +3857,7 @@
         window.adminSaveUserAssignment = async function(uid) {
             const roleSel = document.querySelector('.user-role-select[data-uid="' + uid + '"]');
             const items = document.querySelectorAll('.tour-drop-item[data-uid="' + uid + '"]');
-            const role = roleSel ? roleSel.value : 'editor';
+            const role = roleSel ? roleSel.value : 'admin';
             const checkedTids = [];
             items.forEach(t => { if (t.classList.contains('tour-drop-on')) checkedTids.push(Number(t.dataset.tid)); });
 

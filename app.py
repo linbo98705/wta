@@ -438,12 +438,13 @@ def api_create_user():
         (username, hash_password(password), role, display_name, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     )
     user_id = cursor.lastrowid
-    # 分配赛事
-    for tid in tournament_ids:
-        try:
-            db.execute('INSERT INTO tournament_users (user_id, tournament_id) VALUES (?, ?)', (user_id, tid))
-        except sqlite3.IntegrityError:
-            pass
+    # admin 角色默认拥有全部赛事权限，无需分配
+    if role == 'editor':
+        for tid in tournament_ids:
+            try:
+                db.execute('INSERT INTO tournament_users (user_id, tournament_id) VALUES (?, ?)', (user_id, tid))
+            except sqlite3.IntegrityError:
+                pass
     db.commit()
     return jsonify({'success': True, 'id': user_id})
 
@@ -475,14 +476,17 @@ def api_update_user(uid):
     if updates:
         params.append(uid)
         db.execute(f'UPDATE users SET {", ".join(updates)} WHERE id=?', params)
-    # 更新赛事分配
+    # 更新赛事分配（admin 角色默认全权限，无需分配）
     if 'tournament_ids' in data:
-        db.execute('DELETE FROM tournament_users WHERE user_id=?', (uid,))
-        for tid in data['tournament_ids']:
-            try:
-                db.execute('INSERT INTO tournament_users (user_id, tournament_id) VALUES (?, ?)', (uid, tid))
-            except sqlite3.IntegrityError:
-                pass
+        if data.get('role', user['role']) == 'admin':
+            db.execute('DELETE FROM tournament_users WHERE user_id=?', (uid,))
+        else:
+            db.execute('DELETE FROM tournament_users WHERE user_id=?', (uid,))
+            for tid in data['tournament_ids']:
+                try:
+                    db.execute('INSERT INTO tournament_users (user_id, tournament_id) VALUES (?, ?)', (uid, tid))
+                except sqlite3.IntegrityError:
+                    pass
     db.commit()
     return jsonify({'success': True})
 

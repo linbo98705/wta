@@ -254,7 +254,7 @@
                 </div>
                 <div class="form-row">
                     <label>角色 *</label>
-                    <select class="form-control" id="uRole">
+                    <select class="form-control" id="uRole" onchange="toggleTournamentRow()">
                         <option value="editor">编辑员</option>
                         <option value="admin">超级管理员</option>
                     </select>
@@ -271,6 +271,12 @@
                             <input type="checkbox" id="uTournamentAll" onchange="toggleAllTournaments(this)"> 全选
                         </label>
                         <div id="uTournamentList"></div>
+                    </div>
+                </div>
+                <div class="form-row" id="uAdminHintRow" style="display:none;">
+                    <label>可管理赛事</label>
+                    <div style="padding:10px; border:1px solid #eee; border-radius:6px; color:#888; font-size:0.85rem;">
+                        超级管理员默认拥有全部赛事的管理权限，无需单独分配。
                     </div>
                 </div>
             </div>
@@ -2132,10 +2138,10 @@ async function loadUsers() {
     allUsers = await resp.json();
     const tbody = document.getElementById('userTable');
     tbody.innerHTML = allUsers.map(u => {
-        const tnames = u.tournament_ids.map(tid => {
+        const tnames = u.role === 'admin' ? '全部' : (u.tournament_ids.map(tid => {
             const t = allTournamentsForUsers.find(x => x.id === tid);
             return t ? t.name_cn : `#${tid}`;
-        }).join('、') || '-';
+        }).join('、') || '-');
         return `
             <tr>
                 <td>${u.id}</td>
@@ -2158,6 +2164,13 @@ async function loadTournamentsForUsers() {
     allTournamentsForUsers = resp.ok ? await resp.json() : [];
 }
 
+function toggleTournamentRow() {
+    const role = document.getElementById('uRole').value;
+    const isAdmin = role === 'admin';
+    document.getElementById('uTournamentsRow').style.display = isAdmin ? 'none' : '';
+    document.getElementById('uAdminHintRow').style.display = isAdmin ? '' : 'none';
+}
+
 function openUserModal() {
     document.getElementById('userModalTitle').textContent = '新增用户';
     document.getElementById('uId').value = '';
@@ -2169,6 +2182,7 @@ function openUserModal() {
     document.getElementById('uPasswordLabel').textContent = '密码 *';
     document.getElementById('uPassword').required = true;
     renderTournamentCheckboxes([]);
+    toggleTournamentRow();
     openModal('userModal');
 }
 
@@ -2185,6 +2199,7 @@ function editUser(uid) {
     document.getElementById('uPasswordLabel').textContent = '密码（留空不修改）';
     document.getElementById('uPassword').required = false;
     renderTournamentCheckboxes(u.tournament_ids || []);
+    toggleTournamentRow();
     openModal('userModal');
 }
 
@@ -2211,12 +2226,13 @@ function toggleAllTournaments(cb) {
 async function saveUser(e) {
     e.preventDefault();
     const uid = document.getElementById('uId').value;
+    const data_role = document.getElementById('uRole').value;
     const data = {
         username: document.getElementById('uUsername').value.trim(),
         display_name: document.getElementById('uDisplayName').value.trim(),
-        role: document.getElementById('uRole').value,
+        role: data_role,
         password: document.getElementById('uPassword').value,
-        tournament_ids: Array.from(document.querySelectorAll('.u-tournament-cb:checked')).map(cb => parseInt(cb.value))
+        tournament_ids: data_role === 'admin' ? [] : Array.from(document.querySelectorAll('.u-tournament-cb:checked')).map(cb => parseInt(cb.value))
     };
     if (!uid) {
         if (!data.password) {

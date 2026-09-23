@@ -59,6 +59,148 @@
     .ai-icon-sm { width:14px; height:14px; vertical-align:middle; display:inline-flex; flex-shrink:0; margin-right:4px; }
     .ai-icon svg, .ai-icon-sm svg { width:100%; height:100%; }
     .admin-sidebar .ai-icon { color:inherit; }
+
+    /* ── Admin Button & Badge Refresh ── */
+    .admin-page .btn {
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.15s ease;
+    }
+    .admin-page .btn-sm {
+        padding: 6px 14px;
+        font-size: 0.8125rem;
+        border-radius: 6px;
+    }
+    .admin-page .btn-primary {
+        box-shadow: 0 1px 3px rgba(91, 45, 142, 0.2);
+    }
+    .admin-page .btn-primary:hover {
+        box-shadow: 0 2px 8px rgba(91, 45, 142, 0.3);
+        transform: translateY(-1px);
+    }
+    .admin-page .btn-outline {
+        border-width: 1px;
+        background: var(--white);
+    }
+    .admin-page .btn-outline:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .admin-page .btn-danger {
+        box-shadow: 0 1px 3px rgba(220, 53, 69, 0.2);
+    }
+    .admin-page .btn-danger:hover {
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        transform: translateY(-1px);
+    }
+    .admin-page .btn-success {
+        box-shadow: 0 1px 3px rgba(0, 168, 107, 0.2);
+    }
+    .admin-page .btn-success:hover {
+        box-shadow: 0 2px 8px rgba(0, 168, 107, 0.3);
+        transform: translateY(-1px);
+    }
+    .admin-page .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Admin Badges */
+    .badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    .badge-purple {
+        background: var(--purple-lighter);
+        color: var(--purple-dark);
+    }
+    .badge-blue {
+        background: #E0EFFF;
+        color: #1A56DB;
+    }
+    .badge-green {
+        background: #D4F4E4;
+        color: #006B3C;
+    }
+    .badge-red {
+        background: #FDE0E0;
+        color: #9B1C1C;
+    }
+
+    /* Admin Table */
+    .admin-page .data-table {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .admin-page .data-table th {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        text-transform: none;
+        padding: 10px 12px;
+        border-bottom: 2px solid var(--purple-light);
+    }
+    .admin-page .data-table td {
+        padding: 8px 12px;
+        font-size: 0.8125rem;
+    }
+    .admin-page .data-table tr:hover td {
+        background: var(--purple-bg);
+    }
+
+    /* Admin Card */
+    .admin-page .card {
+        border: 1px solid var(--gray-200);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .admin-page .card-header {
+        padding: 14px 20px;
+        background: var(--white);
+        border-bottom: 1px solid var(--gray-200);
+    }
+    .admin-page .card-header h3 {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    .admin-page .card-body {
+        padding: 16px 20px;
+    }
+
+    /* Admin Form Controls */
+    .admin-page .form-control {
+        border-radius: 6px;
+        font-size: 0.8125rem;
+        padding: 7px 12px;
+        border-color: var(--gray-300);
+    }
+    .admin-page .form-control:focus {
+        border-color: var(--purple);
+        box-shadow: 0 0 0 3px rgba(91, 45, 142, 0.08);
+    }
+    .admin-page select.form-control {
+        cursor: pointer;
+    }
+
+    /* Admin Sidebar */
+    .admin-page .admin-sidebar a {
+        font-size: 0.8125rem;
+        padding: 10px 18px;
+        transition: all 0.15s ease;
+    }
+    .admin-page .admin-sidebar a:hover {
+        background: rgba(255,255,255,0.06);
+    }
+    .admin-page .admin-sidebar a.active {
+        background: rgba(255,255,255,0.12);
+        font-weight: 600;
+    }
     </style>
 </head>
 <body>
@@ -1909,7 +2051,7 @@
                 tbody.innerHTML = '<tr><td colspan="10" class="text-center" style="padding:40px;">暂无赛事' + (isAdmin ? '，点击"+ 创建赛事"开始' : '（您尚未被分配任何赛事）') + '</td></tr>';
                 return;
             }
-            tbody.innerHTML = data.map(t => '<tr><td class="hide-mobile">' + t.id + '</td><td><strong>' + escapeHtml(t.name_cn || t.name) + '</strong></td><td class="hide-mobile">' + escapeHtml(t.location) + '</td><td><span class="match-round-badge">' + escapeHtml(t.category) + '</span></td><td class="hide-mobile"><span class="surface-tag ' + surfaceClass(t.surface) + '">' + surfaceLabel(t.surface) + '</span></td><td>' + t.start_date + ' ~ ' + t.end_date + '</td><td class="hide-mobile">' + t.draw_size + '签</td><td class="hide-mobile">' + (t.match_type === 'doubles' ? '双打' : '单打') + '</td><td>' + (t.is_active ? '&#10003; 启用' : '&#10007; 停用') + '</td><td>' + (isAdmin ? '<button class="btn btn-outline btn-sm" onclick="adminEditTournament(' + t.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteTournament(' + t.id + ')">删除</button>' : '') + '</td></tr>').join('');
+            tbody.innerHTML = data.map(t => '<tr><td class="hide-mobile">' + t.id + '</td><td><strong>' + escapeHtml(t.name_cn || t.name) + '</strong></td><td class="hide-mobile">' + escapeHtml(t.location) + '</td><td><span class="match-round-badge">' + escapeHtml(t.category) + '</span></td><td class="hide-mobile"><span class="surface-tag ' + surfaceClass(t.surface) + '">' + surfaceLabel(t.surface) + '</span></td><td>' + t.start_date + ' ~ ' + t.end_date + '</td><td class="hide-mobile">' + t.draw_size + '签</td><td class="hide-mobile">' + (t.match_type === 'doubles' ? '双打' : '单打') + '</td><td>' + (t.is_active ? '<span class="badge badge-green">启用</span>' : '<span class="badge badge-red">停用</span>') + '</td><td>' + (isAdmin ? '<button class="btn btn-outline btn-sm" onclick="adminEditTournament(' + t.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeleteTournament(' + t.id + ')">删除</button>' : '') + '</td></tr>').join('');
         }
 
         window.adminOpenCreateTournament = function() {

@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css?v=49">
+    <link rel="stylesheet" href="static/css/style.css?v=50">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -59,6 +59,15 @@
     .ai-icon-sm { width:14px; height:14px; vertical-align:middle; display:inline-flex; flex-shrink:0; margin-right:4px; }
     .ai-icon svg, .ai-icon-sm svg { width:100%; height:100%; }
     .admin-sidebar .ai-icon { color:inherit; }
+
+    /* ── Frontend SVG Icons ── */
+    .fi { width:15px; height:15px; vertical-align:middle; display:inline-flex; flex-shrink:0; margin-right:4px; }
+    .fi-lg { width:28px; height:28px; vertical-align:middle; display:inline-flex; flex-shrink:0; }
+    .fi svg, .fi-lg svg { width:100%; height:100%; }
+    .tournament-card-info .fi { color:var(--gray-500); }
+    .tournament-header-meta .fi { color:rgba(255,255,255,0.7); }
+    .quick-link-icon { width:32px; height:32px; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; border-radius:50%; background:var(--purple-bg); color:var(--purple); }
+    .quick-link-icon svg { width:20px; height:20px; }
 
     /* ── Admin Button & Badge Refresh ── */
     .admin-page .btn {
@@ -211,7 +220,7 @@
             </a>
             <ul class="nav-links" id="navLinks">
             </ul>
-            <button class="mobile-menu-btn" onclick="toggleMenu()">&#9776;</button>
+            <button class="mobile-menu-btn" onclick="toggleMenu()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
         </div>
     </nav>
 
@@ -227,7 +236,7 @@
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=12"></script>
-    <script src="js/api.js?v=23"></script>
+    <script src="js/api.js?v=24"></script>
     <script src="js/draw-engine.js?v=16"></script>
 
     <script>
@@ -236,6 +245,18 @@
     // ══════════════════════════════════════════════════════════════
 
     const app = document.getElementById('app');
+
+    // ── Frontend SVG Icons (Lucide style) ──
+    const FI = {
+        pin: '<span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>',
+        calendar: '<span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg></span>',
+        users: '<span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>',
+        trophy: '<span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></span>',
+        target: '<span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>',
+        camera: '<span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg></span>',
+        home: '<span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>',
+        clock: '<span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>',
+    };
 
     // ── Round Labels ──
     const _roundLabels = {
@@ -316,14 +337,14 @@
                 </div>
                 <div class="tournament-card-body">
                     <div class="tournament-card-info">
-                        <span>&#128205; ${escapeHtml(t.location)}</span>
+                        <span>${FI.pin}${escapeHtml(t.location)}</span>
                         <span>
                             <span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span>
                         </span>
                     </div>
                     <div class="tournament-card-info">
-                        <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
-                        <span>&#128101; ${t.draw_size}签</span>
+                        <span>${FI.calendar}${formatDateRange(t.start_date, t.end_date)}</span>
+                        <span>${FI.users}${t.draw_size}签</span>
                         <span class="match-type-tag ${t.match_type === 'doubles' ? 'doubles' : 'singles'}">${t.match_type === 'doubles' ? '双打' : '单打'}</span>
                     </div>
                     <div class="tournament-card-actions">
@@ -409,21 +430,21 @@
         document.getElementById('tCat').textContent = t.category;
         document.getElementById('tName').textContent = t.name_cn || t.name;
         document.getElementById('tMeta').innerHTML = `
-            <span>&#128205; ${escapeHtml(t.location)}</span>
+            <span>${FI.pin}${escapeHtml(t.location)}</span>
             <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
-            <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
-            <span>&#128101; ${t.draw_size}签</span>
+            <span>${FI.calendar}${formatDateRange(t.start_date, t.end_date)}</span>
+            <span>${FI.users}${t.draw_size}签</span>
             <span><span style="background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:600;">${t.match_type === 'doubles' ? '双打' : '单打'}</span></span>
         `;
 
         document.getElementById('quickLinks').innerHTML = [
-            { icon: '&#128101;', label: '参赛名单', href: '#/tournament/' + tid + '/players', desc: '查看所有参赛球员' },
-            { icon: '&#127942;', label: '比赛签表', href: '#/tournament/' + tid + '/draw', desc: '查看对阵签表' },
-            { icon: '&#128197;', label: '赛程赛果', href: '#/tournament/' + tid + '/schedule', desc: '查看赛程和赛果' },
-            { icon: '&#127919;', label: '每日竞猜', href: '#/tournament/' + tid + '/guesses', desc: '查看每日竞猜内容' },
+            { icon: '<div class="quick-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></div>', label: '参赛名单', href: '#/tournament/' + tid + '/players', desc: '查看所有参赛球员' },
+            { icon: '<div class="quick-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></div>', label: '比赛签表', href: '#/tournament/' + tid + '/draw', desc: '查看对阵签表' },
+            { icon: '<div class="quick-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg></div>', label: '赛程赛果', href: '#/tournament/' + tid + '/schedule', desc: '查看赛程和赛果' },
+            { icon: '<div class="quick-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>', label: '每日竞猜', href: '#/tournament/' + tid + '/guesses', desc: '查看每日竞猜内容' },
         ].map(item => `
-            <a href="${item.href}" class="card" style="padding:20px; text-align:center; display:block;">
-                <div style="font-size:2rem; margin-bottom:8px;">${item.icon}</div>
+            <a href="${item.href}" class="card" style="padding:20px; text-align:center; display:block; transition:all 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
+                ${item.icon}
                 <h3 style="font-size:1rem; font-weight:700; margin-bottom:4px; color:var(--purple-dark);">${item.label}</h3>
                 <p style="font-size:0.8125rem; color:var(--gray-500);">${item.desc}</p>
             </a>
@@ -456,7 +477,7 @@
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <button class="btn btn-sm btn-outline" onclick="exportPlayersToPDF()" title="导出长图">
-                        <span>&#128247;</span> 导出长图
+                        <span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg></span> 导出长图
                     </button>
                     <select class="form-control" id="frontPlayerCountryFilter" onchange="frontFilterPlayerList()" style="width:auto;">
                         <option value="">所有国家/地区</option>
@@ -491,9 +512,9 @@
             document.getElementById('tName').textContent = t.name_cn || t.name;
             document.getElementById('tTourName').textContent = '参赛名单';
             document.getElementById('tMeta').innerHTML = `
-                <span>&#128205; ${escapeHtml(t.location)}</span>
+                <span>${FI.pin}${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
-                <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+                <span>${FI.calendar}${formatDateRange(t.start_date, t.end_date)}</span>
                 <span><span style="background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:600;">${t.match_type === 'doubles' ? '双打' : '单打'}</span></span>
             `;
         }
@@ -719,7 +740,7 @@
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <button class="btn btn-sm btn-outline" onclick="exportDrawToImage()" title="导出长图">
-                        <span>&#128247;</span> 导出长图
+                        <span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg></span> 导出长图
                     </button>
                     <span id="drawLegend" style="font-size:0.75rem; color:var(--gray-500);"></span>
                 </div>
@@ -884,9 +905,9 @@
             document.getElementById('tName').textContent = t.name_cn || t.name;
             document.getElementById('tTourName').textContent = '赛程赛果';
             document.getElementById('tMeta').innerHTML = `
-                <span>&#128205; ${escapeHtml(t.location)}</span>
+                <span>${FI.pin}${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
-                <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+                <span>${FI.calendar}${formatDateRange(t.start_date, t.end_date)}</span>
                 <span><span style="background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:600;">${t.match_type === 'doubles' ? '双打' : '单打'}</span></span>
             `;
         }
@@ -905,7 +926,7 @@
         window._realMatches = realMatches;
         window._tournamentCourtOrder = (t && t.court_order) ? t.court_order.split(',').map(s => s.trim()).filter(s => s) : [];
 
-        document.getElementById('matchCount').innerHTML = '<button class="btn btn-sm btn-outline" onclick="exportScheduleImage()" style="padding:4px 10px;font-size:0.75rem;">&#128247; 导出赛果</button> &nbsp; 共 ' + realMatches.length + ' 场比赛';
+        document.getElementById('matchCount').innerHTML = '<button class="btn btn-sm btn-outline" onclick="exportScheduleImage()" style="padding:4px 10px;font-size:0.75rem;"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg></span> 导出赛果</button> &nbsp; 共 ' + realMatches.length + ' 场比赛';
 
         // 填充日期筛选下拉（从比赛的 match_date 提取），默认选最近未完成的一天
         const dates = [...new Set(realMatches.map(m => {
@@ -1101,7 +1122,7 @@
 
                 html += '<div class="court-column" style="background:' + color.bg + '; border-top:3px solid ' + color.border + ';">';
                 html += '<div class="court-column-header" style="color:' + color.header + ';">';
-                html += '<span class="court-icon">&#127968;</span> ' + escapeHtml(courtName);
+                html += '<span class="court-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span> ' + escapeHtml(courtName);
                 html += '<span class="court-match-count">' + matches.length + '场</span>';
                 html += '</div>';
 
@@ -1142,9 +1163,9 @@
                         + (m.p3_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + escapeHtml(m.p3_name) + countryFlag(m.p3_country_code || '', m.p3_country || '') : '');
                     const p2Display = escapeHtml(m.p2_name || 'TBD') + countryFlag(m.p2_country_code || '', m.p2_country || '')
                         + (m.p4_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + escapeHtml(m.p4_name) + countryFlag(m.p4_country_code || '', m.p4_country || '') : '');
-                    const topScoreBadge = isTopScore ? '<span class="top-score-badge" title="当日最高分">&#127942; 当日最高分</span>' : '';
+                    const topScoreBadge = isTopScore ? '<span class="top-score-badge" title="当日最高分"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>当日最高分</span>' : '';
 
-                    html += '<div class="match-card' + collapsedClass + topScoreClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + topScoreBadge + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p1Display + '</strong>' : p1Display) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p2Display + '</strong>' : p2Display) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' &#127942;' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + (m.status === 'scheduled' ? '' : renderGuessSchedule(m)) + '</div></div>';
+                    html += '<div class="match-card' + collapsedClass + topScoreClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + topScoreBadge + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p1Display + '</strong>' : p1Display) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-flex;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p2Display + '</strong>' : p2Display) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-flex;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + (m.status === 'scheduled' ? '' : renderGuessSchedule(m)) + '</div></div>';
                 });
                 html += '</div>'; // match-grid
                 html += '</div>'; // court-column
@@ -1335,9 +1356,9 @@
             document.getElementById('tName').textContent = t.name_cn || t.name;
             document.getElementById('tTourName').textContent = '每日竞猜';
             document.getElementById('tMeta').innerHTML = `
-                <span>&#128205; ${escapeHtml(t.location)}</span>
+                <span>${FI.pin}${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>
-                <span>&#128197; ${formatDateRange(t.start_date, t.end_date)}</span>
+                <span>${FI.calendar}${formatDateRange(t.start_date, t.end_date)}</span>
                 <span><span style="background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:12px;font-size:0.75rem;font-weight:600;">${t.match_type === 'doubles' ? '双打' : '单打'}</span></span>
             `;
         }
@@ -1384,7 +1405,8 @@
                 statusHtml = '<span class="match-status scheduled">待进行</span>';
             }
 
-            html += '<div class="card dg-card"><div class="card-header flex-between"><div><h3>&#128197; ' + escapeHtml(date) + '</h3>' + (hasDeadline ? '<span class="dg-deadline">截止: ' + escapeHtml(deadline.replace('T', ' ')) + '</span>' : '') + '</div>' + statusHtml + '</div><div class="card-body" style="padding:0;"><table class="dg-table"><thead><tr><th></th><th>对阵</th><th>结果</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+            html += '<div class="card dg-card"><div class="card-header flex-between"><div><h3><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg></span> ' +
+                escapeHtml(date) + '</h3>' + (hasDeadline ? '<span class="dg-deadline">截止: ' + escapeHtml(deadline.replace('T', ' ')) + '</span>' : '') + '</div>' + statusHtml + '</div><div class="card-body" style="padding:0;"><table class="dg-table"><thead><tr><th></th><th>对阵</th><th>结果</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
         });
 
         document.getElementById('guessList').innerHTML = html;

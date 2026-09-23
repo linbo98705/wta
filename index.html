@@ -1455,6 +1455,7 @@
                         <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" style="display:none;" onchange="adminImportFile(this)">
                         <button class="btn btn-outline btn-sm" onclick="adminAddPlayerRow()">+ 添加行</button>
                         <button class="btn btn-primary btn-sm" onclick="adminBatchSavePlayers()"><span class="ai-icon-sm">${icoSave}</span>批量保存</button>
+                        <button class="btn btn-outline btn-sm" style="border-color:var(--purple); color:var(--purple);" onclick="adminSyncRankings()"><span class="ai-icon-sm">${icoRefresh}</span>同步排名</button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -2079,6 +2080,136 @@
                 showToast('保存失败: ' + (err.message || '网络异常，请稍后重试'), 'error');
             } finally {
                 if (btn) btn.disabled = false;
+            }
+        };
+
+        // 同步排名：从 rankings 表读取最新排名，更新到 players 表
+        window.adminSyncRankings = async function() {
+            if (!confirm('将从 rankings 表同步最新单打/双打排名到球员库，是否继续？')) return;
+            showProgress('正在获取最新排名数据...');
+            try {
+                // 1. 获取最新单打期数
+                const { data: latestSingles } = await supabase
+                    .from('rankings')
+                    .select('period_no, period')
+                    .eq('category', '单打')
+                    .order('period_no', { descending: true })
+                    .limit(1)
+                    .maybeSingle();
+                // 2. 获取最新双打期数
+                const { data: latestDoubles } = await supabase
+                    .from('rankings')
+                    .select('period_no, period')
+                    .eq('category', '双打')
+                    .order('period_no', { descending: true })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (!latestSingles && !latestDoubles) {
+                    hideProgress();
+                    showToast('rankings 表中未找到排名数据', 'error');
+                    return;
+                }
+
+                const sPeriod = latestSingles?.period || '';
+                const dPeriod = latestDoubles?.period || '';
+                const sNo = latestSingles?.period_no;
+                const dNo = latestDoubles?.period_no;
+
+                // 3. 获取排名数据
+                let singlesMap = {};
+                if (sNo) {
+                    const { data: sData, error: sErr } = await supabase
+                        .from('rankings')
+                        .select('rank, username')
+                        .eq('category', '单打')
+                        .eq('period_no', sNo)
+                        .order('rank');
+                    if (sErr) throw sErr;
+                    (sData || []).forEach(r => { singlesMap[r.username.toLowerCase()] = r.rank; });
+                }
+
+                let doublesMap = {};
+                if (dNo) {
+                    const { data: dData, error: dErr } = await supabase
+                        .from('rankings')
+                        .select('rank, username')
+                        .eq('category', '双打')
+                        .eq('period_no', dNo)
+                        .order('rank');
+                    if (dErr) throw dErr;
+                    (dData || []).forEach(r => { doublesMap[r.username.toLowerCase()] = r.rank; });
+                }
+
+                // 4. 获取全部球员
+                const { data: players, error: pErr } = await supabase
+                    .from('players')
+                    .select('id, name, ranking, doubles_ranking');
+                if (pErr) throw pErr;
+
+                if (!players || players.length === 0) {
+                    hideProgress();
+                    showToast('球员库为空，无法同步', 'error');
+                    return;
+                }
+
+                // 5. 匹配并更新
+                let updated = 0;
+                let unmatched = 0;
+                const total = players.length;
+                const toUpdate = [];
+
+                for (let i = 0; i < players.length; i++) {
+                    const p = players[i];
+                    const key = (p.name || '').toLowerCase().trim();
+                    const sRank = singlesMap[key];
+                    const dRank = doublesMap[key];
+                    const patch = {};
+
+                    if (sRank !== undefined && sRank !== p.ranking) {
+                        patch.ranking = sRank;
+                    }
+                    if (dRank !== undefined && dRank !== (p.doubles_ranking || 999)) {
+                        patch.doubles_ranking = dRank;
+                    }
+
+                    if (Object.keys(patch).length > 0) {
+                        toUpdate.push({ id: p.id, patch });
+                        updated++;
+                    }
+                    if (sRank === undefined && dRank === undefined) unmatched++;
+
+                    if (i % 20 === 0) {
+                        updateProgress('匹配中 ' + (i + 1) + '/' + total + '（待更新 ' + updated + '）');
+                    }
+                }
+
+                if (toUpdate.length === 0) {
+                    hideProgress();
+                    showToast('所有球员排名已是最新，无需更新', 'success');
+                    return;
+                }
+
+                // 6. 批量更新
+                for (let i = 0; i < toUpdate.length; i++) {
+                    const u = toUpdate[i];
+                    await supabase.from('players').update(u.patch).eq('id', u.id);
+                    if (i % 10 === 0) {
+                        updateProgress('更新中 ' + (i + 1) + '/' + toUpdate.length);
+                    }
+                }
+
+                hideProgress();
+                const msg = '同步完成：更新 ' + updated + ' 名球员'
+                    + (sPeriod ? '\n单打：' + sPeriod : '')
+                    + (dPeriod ? '\n双打：' + dPeriod : '')
+                    + (unmatched > 0 ? '\n未匹配：' + unmatched + ' 名' : '');
+                showToast(msg, 'success');
+                adminLoadPlayers();
+            } catch (err) {
+                hideProgress();
+                console.error('同步排名失败:', err);
+                showToast('同步失败：' + (err.message || err), 'error');
             }
         };
 

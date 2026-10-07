@@ -3349,6 +3349,13 @@ textarea.form-control {
 
     .admin-panel .card-header {
         padding: 14px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .admin-panel .card-header h3 {
+        font-size: 1rem;
     }
 
     .admin-panel .card-body {
@@ -3515,6 +3522,107 @@ textarea.form-control {
     /* 移动端：select下拉箭头优化 */
     select.form-control {
         padding-right: 32px;
+    }
+
+    /* 移动端：赛事管理表格 - 隐藏更多列 */
+    #panel-tournaments .data-table th:nth-child(4),
+    #panel-tournaments .data-table td:nth-child(4) { display: none; }
+
+    /* 移动端：球员管理表格 - 隐藏更多列 */
+    #panel-players .data-table th:nth-child(4),
+    #panel-players .data-table td:nth-child(4) { display: none; }
+
+    /* 移动端：报名管理表格 - 隐藏国家列 */
+    #panel-entry .data-table th:nth-child(3),
+    #panel-entry .data-table td:nth-child(3) { display: none; }
+
+    /* 移动端：比赛管理表格 - 隐藏日期和场地列 */
+    #panel-matches .data-table th:nth-child(6),
+    #panel-matches .data-table td:nth-child(6),
+    #panel-matches .data-table th:nth-child(7),
+    #panel-matches .data-table td:nth-child(7) { display: none; }
+
+    /* 移动端：操作按钮仅图标 */
+    .admin-panel .data-table td:last-child .btn {
+        padding: 6px 8px;
+        min-width: 28px;
+        height: 28px;
+    }
+
+    .admin-panel .data-table td:last-child .btn span {
+        display: inline-flex;
+    }
+
+    /* 移动端：分页优化 */
+    .admin-panel .card-body > div:last-child {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    /* 移动端：筛选工具栏换行 */
+    .admin-panel .card-header > div[style*="display:flex"] {
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .admin-panel .card-header .form-control {
+        flex: 1;
+        min-width: 100px;
+    }
+
+    /* 移动端：竞猜表格紧凑 */
+    .guess-admin-table td {
+        padding: 8px 6px !important;
+    }
+
+    .guess-admin-table .guess-match-name {
+        font-size: 0.6875rem;
+        line-height: 1.3;
+    }
+
+    .guess-admin-table .guess-result {
+        font-size: 0.625rem;
+        padding: 2px 5px;
+        margin-top: 3px;
+    }
+
+    /* 移动端：侧边栏用户信息紧凑 */
+    .user-info-box {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .ui-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8125rem;
+    }
+
+    .ui-name {
+        font-size: 0.8125rem;
+    }
+
+    .ui-role {
+        font-size: 0.6875rem;
+    }
+
+    /* 移动端：筛选栏按钮组 */
+    .admin-panel .card-header > div:first-child {
+        width: 100%;
+    }
+
+    /* 移动端：徽章/标签缩小 */
+    .badge, .surface-tag, .match-type-tag {
+        font-size: 0.625rem;
+        padding: 2px 7px;
+    }
+
+    /* 移动端：表格首列复选框缩小 */
+    .admin-panel .data-table input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
     }
 }
 

@@ -746,7 +746,7 @@ img { max-width: 100%; height: auto; }
 
 .data-table td {
     padding: 14px 16px;
-    border-bottom: 1px solid var(--gray-100);
+    border-bottom: 1px solid var(--gray-200);
     vertical-align: middle;
     color: var(--gray-700);
 }
@@ -2408,28 +2408,43 @@ img { max-width: 100%; height: auto; }
 
 /* 竞猜管理表格 */
 .guess-admin-table td {
-    min-width: 140px;
+    min-width: 160px;
     vertical-align: top;
 }
 
 .guess-match-cell {
-    line-height: 1.5;
+    line-height: 1.4;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .guess-match-name {
     font-size: 0.8125rem;
     color: var(--gray-800);
-    font-weight: 500;
+    font-weight: 600;
     word-break: break-all;
+    padding-bottom: 0;
 }
 
 .guess-result {
     font-size: 0.75rem;
-    color: var(--accent-green);
-    margin-top: 2px;
-    font-weight: 600;
-    padding-top: 2px;
-    border-top: 1px solid var(--gray-100);
+    color: #065F46;
+    font-weight: 700;
+    background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    align-self: flex-start;
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.1);
+}
+
+.guess-result::before {
+    content: '✓';
+    font-size: 0.6875rem;
+    font-weight: 900;
 }
 
 .admin-panel {

@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════
    WTA模拟赛事 - 主样式表
    参考WTA官网紫色主题风格
    ═══════════════════════════════════════════ */
@@ -2065,14 +2065,34 @@ img { max-width: 100%; height: auto; }
     padding: 12px 0;
 }
 
+.sidebar-section {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-section:last-child {
+    border-bottom: none;
+}
+
+.sidebar-section-title {
+    padding: 4px 20px 6px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
 .admin-sidebar a {
     display: block;
-    padding: 10px 20px;
+    padding: 9px 20px;
     color: rgba(255,255,255,0.7);
     font-size: 0.8125rem;
     font-weight: 500;
     transition: all var(--transition);
     border-left: 3px solid transparent;
+    border-radius: 0 6px 6px 0;
+    margin: 1px 0;
 }
 
 .admin-sidebar a:hover,
@@ -2080,12 +2100,6 @@ img { max-width: 100%; height: auto; }
     color: white;
     background: rgba(255,255,255,0.1);
     border-left-color: white;
-}
-
-.admin-sidebar a.nav-sep {
-    border-top: 1px solid rgba(255,255,255,0.15);
-    padding-top: 12px;
-    margin-top: 4px;
 }
 
 .user-info-box {
@@ -3138,4 +3152,99 @@ textarea.form-control {
 }
 .export-wrapper .gt-total {
     line-height: 1;
+}
+
+
+/* ── Admin Stats Grid ── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.stat-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.stat-icon svg { width: 22px; height: 22px; }
+.stat-icon-purple { background: #F3E8FF; color: #7C3AED; }
+.stat-icon-green { background: #D4F4E4; color: #006B3C; }
+.stat-icon-blue { background: #E8F0FE; color: #1A56DB; }
+.stat-icon-orange { background: #FFE9D6; color: #C2410C; }
+.stat-info { flex: 1; min-width: 0; }
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    line-height: 1.2;
+}
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 2px;
+}
+
+/* ── Row Actions (icon button group) ── */
+.row-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+.btn-icon-danger:hover {
+    background: #FEF2F2;
+    border-color: #EF4444;
+    color: #DC2626;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.15);
+}
+
+/* ── Batch Selection Floating Bar ── */
+.batch-selection-bar {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--gray-800);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+.batch-selection-bar.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+.batch-info {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+.batch-count {
+    font-weight: 700;
+    color: #FFD700;
 }

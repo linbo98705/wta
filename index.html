@@ -2262,7 +2262,7 @@
             // 待完成比赛：所有赛事中未完成的比赛数量
             if (pendingEl) {
                 pendingEl.textContent = '-';
-                Promise.all((data || []).map(t => getMatches(t.id).then(m => Array.isArray(m) ? m.filter(x => !x.winner_id && !x.winner_name).length : 0))).then(counts => {
+                Promise.all((data || []).map(t => getMatches(t.id).then(m => Array.isArray(m) ? m.filter(x => !x.winner_id).length : 0))).then(counts => {
                     const total = counts.reduce((a, b) => a + b, 0);
                     if (pendingEl) pendingEl.textContent = total;
                 });

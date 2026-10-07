@@ -485,13 +485,34 @@ img { max-width: 100%; height: auto; }
     box-shadow: var(--shadow);
     border: 1px solid var(--gray-200);
     overflow: hidden;
-    transition: all var(--transition);
+    transition: all 0.2s ease;
     cursor: pointer;
+    position: relative;
 }
 
+.tournament-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--purple);
+    z-index: 1;
+    transition: height 0.2s ease;
+}
+
+.tournament-card.surface-hard::before { background: linear-gradient(90deg, #173F66, #2E6FAB); }
+.tournament-card.surface-clay::before { background: linear-gradient(90deg, #7A3315, #C4602C); }
+.tournament-card.surface-grass::before { background: linear-gradient(90deg, #1E5520, #357A35); }
+
 .tournament-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.tournament-card:hover::before {
+    height: 6px;
 }
 
 .tournament-card-header {
@@ -601,6 +622,33 @@ img { max-width: 100%; height: auto; }
 }
 .btn-success:hover { background: #008c5a; color: white; box-shadow: 0 2px 8px rgba(0, 168, 107, 0.3); transform: translateY(-1px); }
 
+/* Icon-only button */
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+    background: var(--white);
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+.btn-icon svg {
+    width: 16px;
+    height: 16px;
+}
+.btn-icon:hover {
+    background: var(--purple-bg);
+    border-color: var(--purple);
+    color: var(--purple);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(91, 45, 142, 0.15);
+}
+
 /* ── Tables ────────────────────────────── */
 .data-table {
     width: 100%;
@@ -631,19 +679,25 @@ img { max-width: 100%; height: auto; }
     color: var(--purple-dark);
     font-weight: 700;
     text-align: left;
-    padding: 8px 10px;
+    padding: 10px 12px;
     border-bottom: 2px solid var(--purple);
     font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
 }
 
 .data-table td {
-    padding: 6px 10px;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--gray-200);
+    vertical-align: middle;
 }
 
-.data-table tr:hover td {
+.data-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.data-table tbody tr:hover td {
     background: var(--purple-bg);
 }
 
@@ -686,14 +740,29 @@ img { max-width: 100%; height: auto; }
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: var(--accent-gold);
-    color: white;
+    background: linear-gradient(135deg, #D4A017, #FFD700);
+    color: #5C4400;
     font-size: 0.6875rem;
     font-weight: 700;
+    box-shadow: 0 1px 3px rgba(212, 160, 23, 0.3);
+    flex-shrink: 0;
 }
 
 .seed-badge.empty {
-    background: var(--gray-300);
+    background: var(--gray-200);
+    color: var(--gray-400);
+    box-shadow: none;
+}
+
+/* Top 8 seeds get special ring */
+.seed-badge.seed-top {
+    width: 26px;
+    height: 26px;
+    font-size: 0.75rem;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #5C3A00;
+    box-shadow: 0 2px 6px rgba(255, 165, 0, 0.35);
+    border: 2px solid #FFE066;
 }
 
 /* ── Draw Bracket ──────────────────────── */
@@ -2437,6 +2506,16 @@ textarea.form-control {
     /* 移动端：隐藏次要列 */
     .hide-mobile {
         display: none !important;
+    }
+
+    /* 移动端：表格行高紧凑 */
+    .data-table th {
+        padding: 8px 10px;
+        font-size: 0.6875rem;
+    }
+    .data-table td {
+        padding: 8px 10px;
+        font-size: 0.8125rem;
     }
 
     /* 移动端：按钮和表单尺寸优化 */

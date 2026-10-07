@@ -2435,6 +2435,7 @@ img { max-width: 100%; height: auto; }
 
 .admin-panel .card-body {
     padding: 24px;
+    overflow-x: auto;
 }
 
 /* 管理后台表格 */
@@ -3825,18 +3826,36 @@ textarea.form-control {
     }
 
     /* 移动端：赛事管理表格 - 隐藏更多列 */
-    #panel-tournaments .data-table th:nth-child(4),
-    #panel-tournaments .data-table td:nth-child(4) { display: none; }
+    #panel-tournaments .data-table th:nth-child(1),
+    #panel-tournaments .data-table td:nth-child(1),
+    #panel-tournaments .data-table th:nth-child(3),
+    #panel-tournaments .data-table td:nth-child(3),
+    #panel-tournaments .data-table th:nth-child(5),
+    #panel-tournaments .data-table td:nth-child(5),
+    #panel-tournaments .data-table th:nth-child(7),
+    #panel-tournaments .data-table td:nth-child(7),
+    #panel-tournaments .data-table th:nth-child(8),
+    #panel-tournaments .data-table td:nth-child(8) { display: none; }
 
     /* 移动端：球员管理表格 - 隐藏更多列 */
+    #panel-players .data-table th:nth-child(1),
+    #panel-players .data-table td:nth-child(1),
+    #panel-players .data-table th:nth-child(2),
+    #panel-players .data-table td:nth-child(2),
     #panel-players .data-table th:nth-child(4),
     #panel-players .data-table td:nth-child(4) { display: none; }
 
-    /* 移动端：报名管理表格 - 隐藏国家列 */
+    /* 移动端：报名管理表格 - 隐藏更多列 */
     #panel-entry .data-table th:nth-child(3),
-    #panel-entry .data-table td:nth-child(3) { display: none; }
+    #panel-entry .data-table td:nth-child(3),
+    #panel-entry .data-table th:nth-child(5),
+    #panel-entry .data-table td:nth-child(5) { display: none; }
 
-    /* 移动端：比赛管理表格 - 隐藏日期和场地列 */
+    /* 移动端：比赛管理表格 - 隐藏更多列 */
+    #panel-matches .data-table th:nth-child(1),
+    #panel-matches .data-table td:nth-child(1),
+    #panel-matches .data-table th:nth-child(5),
+    #panel-matches .data-table td:nth-child(5),
     #panel-matches .data-table th:nth-child(6),
     #panel-matches .data-table td:nth-child(6),
     #panel-matches .data-table th:nth-child(7),

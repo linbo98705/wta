@@ -2406,6 +2406,32 @@ img { max-width: 100%; height: auto; }
     border-bottom: none;
 }
 
+/* 竞猜管理表格 */
+.guess-admin-table td {
+    min-width: 140px;
+    vertical-align: top;
+}
+
+.guess-match-cell {
+    line-height: 1.5;
+}
+
+.guess-match-name {
+    font-size: 0.8125rem;
+    color: var(--gray-800);
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.guess-result {
+    font-size: 0.75rem;
+    color: var(--accent-green);
+    margin-top: 2px;
+    font-weight: 600;
+    padding-top: 2px;
+    border-top: 1px solid var(--gray-100);
+}
+
 .admin-panel {
     display: none;
 }

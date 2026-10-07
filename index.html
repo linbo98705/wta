@@ -1896,9 +1896,9 @@
                     </div>
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
-                    <table class="data-table">
-                        <thead><tr><th class="hide-mobile">ID</th><th>日期</th><th class="hide-mobile">截止</th><th>TB1</th><th class="hide-mobile">TB1</th><th>TB2</th><th class="hide-mobile">TB2</th><th class="hide-mobile">TB3</th><th class="hide-mobile">TB3</th><th class="hide-mobile">TB4</th><th class="hide-mobile">TB4</th><th class="hide-mobile">TB5</th><th class="hide-mobile">TB5</th><th class="hide-mobile">TB6</th><th class="hide-mobile">TB6</th><th>操作</th></tr></thead>
-                        <tbody id="dailyGuessTable"><tr><td colspan="16" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
+                    <table class="data-table guess-admin-table">
+                        <thead><tr><th class="hide-mobile">ID</th><th>日期</th><th class="hide-mobile">截止时间</th><th>TB1</th><th>TB2</th><th class="hide-mobile">TB3</th><th class="hide-mobile">TB4</th><th class="hide-mobile">TB5</th><th class="hide-mobile">TB6</th><th>操作</th></tr></thead>
+                        <tbody id="dailyGuessTable"><tr><td colspan="10" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -4397,10 +4397,29 @@
         window.adminLoadDailyGuessList = async function() {
             const tid = document.getElementById('guessTournamentSelect').value;
             const tbody = document.getElementById('dailyGuessTable');
-            if (!tid) { tbody.innerHTML = '<tr><td colspan="16" class="text-center" style="padding:40px;">请先选择赛事</td></tr>'; return; }
+            if (!tid) { tbody.innerHTML = '<tr><td colspan="10" class="text-center" style="padding:40px;">请先选择赛事</td></tr>'; return; }
             const data = await getDailyGuesses(parseInt(tid));
-            if (!Array.isArray(data) || data.length === 0) { tbody.innerHTML = '<tr><td colspan="16" class="text-center" style="padding:40px;">暂无竞猜数据</td></tr>'; return; }
-            tbody.innerHTML = data.map(g => '<tr style="cursor:pointer;" onclick="adminEditGuess(' + g.id + ')"><td class="hide-mobile">' + g.id + '</td><td>' + (g.guess_date || '') + '</td><td class="hide-mobile">' + (g.deadline ? escapeHtml(g.deadline.replace('T', ' ')) : '-') + '</td><td>' + escapeHtml(g.tb1_match || '') + '</td><td class="hide-mobile">' + escapeHtml(g.tb1_result || '') + '</td><td>' + escapeHtml(g.tb2_match || '') + '</td><td class="hide-mobile">' + escapeHtml(g.tb2_result || '') + '</td><td class="hide-mobile">' + escapeHtml(g.tb3_match || '') + '</td><td class="hide-mobile">' + escapeHtml(g.tb3_result || '') + '</td><td class="hide-mobile">' + escapeHtml(g.tb4_match || '') + '</td><td class="hide-mobile">' + escapeHtml(g.tb4_result || '') + '</td><td class="hide-mobile">' + escapeHtml(g.tb5_match || '') + '</td><td class="hide-mobile">' + escapeHtml(g.tb5_result || '') + '</td><td class="hide-mobile">' + escapeHtml(g.tb6_match || '') + '</td><td class="hide-mobile">' + escapeHtml(g.tb6_result || '') + '</td><td><button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); adminDeleteGuess(' + g.id + ')">删除</button></td></tr>').join('');
+            if (!Array.isArray(data) || data.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="text-center" style="padding:40px;">暂无竞猜数据</td></tr>'; return; }
+
+            function guessCell(match, result) {
+                if (!match && !result) return '<span style="color:var(--gray-300);">-</span>';
+                var m = escapeHtml(match || '');
+                var r = result ? '<div class="guess-result">' + escapeHtml(result) + '</div>' : '';
+                return '<div class="guess-match-cell"><div class="guess-match-name">' + m + '</div>' + r + '</div>';
+            }
+
+            tbody.innerHTML = data.map(g => '<tr style="cursor:pointer;" onclick="adminEditGuess(' + g.id + ')">' +
+                '<td class="hide-mobile">' + g.id + '</td>' +
+                '<td style="font-weight:600; white-space:nowrap;">' + (g.guess_date || '') + '</td>' +
+                '<td class="hide-mobile" style="white-space:nowrap;">' + (g.deadline ? escapeHtml(g.deadline.replace('T', ' ')) : '-') + '</td>' +
+                '<td>' + guessCell(g.tb1_match, g.tb1_result) + '</td>' +
+                '<td>' + guessCell(g.tb2_match, g.tb2_result) + '</td>' +
+                '<td class="hide-mobile">' + guessCell(g.tb3_match, g.tb3_result) + '</td>' +
+                '<td class="hide-mobile">' + guessCell(g.tb4_match, g.tb4_result) + '</td>' +
+                '<td class="hide-mobile">' + guessCell(g.tb5_match, g.tb5_result) + '</td>' +
+                '<td class="hide-mobile">' + guessCell(g.tb6_match, g.tb6_result) + '</td>' +
+                '<td><button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); adminDeleteGuess(' + g.id + ')">删除</button></td>' +
+                '</tr>').join('');
         };
 
         window.adminParseGuessMatches = function() {

@@ -43,12 +43,11 @@
         box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 1000; margin-top: 4px;
     }
     .player-search-item {
-        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+        padding: 10px 14px;
         cursor: pointer; border-bottom: 1px solid var(--gray-100); transition: background 0.15s;
     }
     .player-search-item:last-child { border-bottom: none; }
     .player-search-item:hover { background: var(--purple-bg); }
-    .player-search-item .player-avatar { width: 32px; height: 32px; font-size: 0.875rem; flex-shrink: 0; }
     .player-search-item-info { display: flex; flex-direction: column; gap: 2px; }
     .player-search-item-info strong { font-size: 0.875rem; color: var(--black); }
     .player-search-item-info span { font-size: 0.75rem; color: var(--gray-500); }
@@ -718,7 +717,6 @@
                     <td>${idx + 1}</td>
                     <td>
                         <div class="player-row">
-                            <div class="player-avatar">${(p.name[0] || '').toUpperCase()}</div>
                             <strong>${escapeHtml(p.name)}</strong>
                         </div>
                     </td>
@@ -2668,7 +2666,7 @@
                 adminUpdateBatchDelBtn();
                 return;
             }
-            tbody.innerHTML = players.map(p => '<tr><td><input type="checkbox" class="player-check" value="' + p.id + '" onchange="adminUpdateBatchDelBtn()"></td><td class="hide-mobile">' + p.id + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td>' + (p.doubles_ranking && p.doubles_ranking < 999 ? '#' + p.doubles_ranking : '-') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditPlayer(' + p.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeletePlayer(' + p.id + ')">删除</button></td></tr>').join('');
+            tbody.innerHTML = players.map(p => '<tr><td><input type="checkbox" class="player-check" value="' + p.id + '" onchange="adminUpdateBatchDelBtn()"></td><td class="hide-mobile">' + p.id + '</td><td><div class="player-row"><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td>' + (p.doubles_ranking && p.doubles_ranking < 999 ? '#' + p.doubles_ranking : '-') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditPlayer(' + p.id + ')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminDeletePlayer(' + p.id + ')">删除</button></td></tr>').join('');
             adminUpdateBatchDelBtn();
         }
 
@@ -3169,7 +3167,7 @@
         window.adminRenderEntryPlayerDropdown = function(players) {
             const dropdown = document.getElementById('entryPlayerDropdown');
             if (!players || players.length === 0) { dropdown.innerHTML = '<div class="player-search-empty">未找到匹配球员</div>'; return; }
-            dropdown.innerHTML = players.map(p => '<div class="player-search-item" data-pid="' + p.id + '" data-pname="' + escapeHtml(p.name) + '" onmousedown="adminSelectEntryPlayer(this.dataset.pid, this.dataset.pname)"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><div class="player-search-item-info"><strong>' + escapeHtml(p.name) + '</strong><span>' + escapeHtml(p.country || '') + ' ' + (p.ranking < 999 ? '#' + p.ranking : '') + '</span></div></div>').join('');
+            dropdown.innerHTML = players.map(p => '<div class="player-search-item" data-pid="' + p.id + '" data-pname="' + escapeHtml(p.name) + '" onmousedown="adminSelectEntryPlayer(this.dataset.pid, this.dataset.pname)"><div class="player-search-item-info"><strong>' + escapeHtml(p.name) + '</strong><span>' + escapeHtml(p.country || '') + ' ' + (p.ranking < 999 ? '#' + p.ranking : '') + '</span></div></div>').join('');
         }
 
         window.adminFilterEntryPlayers = function() {
@@ -3236,7 +3234,7 @@
             var otherId = document.getElementById('dPlayer' + otherSlot + 'Id').value;
             var filtered = otherId ? players.filter(function(p) { return p.id != otherId; }) : players;
             dropdown.innerHTML = filtered.map(function(p) {
-                return '<div class="player-search-item" data-pid="' + p.id + '" data-pname="' + escapeHtml(p.name) + '" onmousedown="adminSelectDoublesPlayer(' + slot + ', this.dataset.pid, this.dataset.pname)"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><div class="player-search-item-info"><strong>' + escapeHtml(p.name) + '</strong><span>' + escapeHtml(p.country || '') + ' ' + (p.ranking < 999 ? '#' + p.ranking : '') + '</span></div></div>';
+                return '<div class="player-search-item" data-pid="' + p.id + '" data-pname="' + escapeHtml(p.name) + '" onmousedown="adminSelectDoublesPlayer(' + slot + ', this.dataset.pid, this.dataset.pname)"><div class="player-search-item-info"><strong>' + escapeHtml(p.name) + '</strong><span>' + escapeHtml(p.country || '') + ' ' + (p.ranking < 999 ? '#' + p.ranking : '') + '</span></div></div>';
             }).join('');
         };
 

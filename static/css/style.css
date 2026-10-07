@@ -1023,6 +1023,12 @@ img { max-width: 100%; height: auto; }
     white-space: nowrap;
 }
 
+.bracket-trophy {
+    font-size: 0.875rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
 .bracket-player .seed-badge {
     min-width: 20px;
     height: 18px;

@@ -33,13 +33,13 @@ const SEQ_COL_GAP = 8;     // 序号列与签表的间距（px）
 const compactStartRound = 'R16';
 
 /**
- * 渲染单场比赛的 HTML 内容
- *
+ * 构建单场比赛的 HTML
  * @param {Object} m - 比赛对象（需含 player1_id, player2_id, winner_id, status, p1_name, p2_name）
  * @param {Object} playerMap - 球员映射 { id: { t_seed, ... } }
+ * @param {string} round - 轮次（如 'F' 表示决赛）
  * @returns {string} 两行 bracket-player 的 HTML
  */
-function renderMatch(m, playerMap) {
+function renderMatch(m, playerMap, round) {
     const p1Seed = (playerMap && playerMap[m.player1_id]) ? (playerMap[m.player1_id].t_seed || 0) : 0;
     const p2Seed = (playerMap && playerMap[m.player2_id]) ? (playerMap[m.player2_id].t_seed || 0) : 0;
 
@@ -68,6 +68,9 @@ function renderMatch(m, playerMap) {
     // 正常比赛：胜/败方样式
     const p1Class = m.winner_id === m.player1_id ? 'winner' : (m.winner_id && m.winner_id !== m.player1_id ? 'loser' : '');
     const p2Class = m.winner_id === m.player2_id ? 'winner' : (m.winner_id && m.winner_id !== m.player2_id ? 'loser' : '');
+    const isFinal = round === 'F';
+    const p1Trophy = (isFinal && p1Class === 'winner') ? '<span class="bracket-trophy" title="冠军">🏆</span>' : '';
+    const p2Trophy = (isFinal && p2Class === 'winner') ? '<span class="bracket-trophy" title="冠军">🏆</span>' : '';
 
     const p1Full = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : '\u2014';
     const p2Full = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : '\u2014';
@@ -76,11 +79,13 @@ function renderMatch(m, playerMap) {
 
     return '<div class="bracket-player ' + p1Class + '">'
         + '<div class="bracket-player-name" title="' + p1Full + '">'
+        + p1Trophy
         + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '')
         + p1Display
         + '</div></div>'
         + '<div class="bracket-player ' + p2Class + '">'
         + '<div class="bracket-player-name" title="' + p2Full + '">'
+        + p2Trophy
         + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span>' : '')
         + p2Display
         + '</div></div>';
@@ -299,7 +304,7 @@ function buildBracket(matches, playerMap, startRound) {
             html += '<div class="bracket-match-wrapper" style="position:absolute; left:' + colX
                 + 'px; top:' + mTop + 'px; width:' + COL_WIDTH + 'px; height:' + MATCH_HEIGHT
                 + 'px; z-index:3;">';
-            html += '<div class="bracket-match" style="height:100%;">' + renderMatch(m, playerMap) + '</div>';
+            html += '<div class="bracket-match" style="height:100%;">' + renderMatch(m, playerMap, roundOrder[ci]) + '</div>';
             html += '</div>';
         }
     }

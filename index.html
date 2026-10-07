@@ -1871,6 +1871,7 @@
                         <button class="btn btn-primary btn-sm" onclick="adminOpenMatchModal()" style="display:none;">+ 添加比赛</button>
                         <select class="form-control" id="matchExportDateSelect" style="width:auto; font-size:0.8125rem; padding:4px 8px;"><option value="">所有日期</option></select>
                         <button class="btn btn-outline btn-sm" onclick="adminExportMatchupsText()"><span class="ai-icon-sm">${icoFileText}</span>导出对阵</button>
+                        <button class="btn btn-warning btn-sm" onclick="adminFixMissingPlayers()"><span class="ai-icon-sm">${icoRefresh}</span>修复缺失球员</button>
                     </div>
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
@@ -3462,6 +3463,8 @@
 
             const activeMatches = matches.filter(m => m.status !== 'completed' && m.status !== 'bye');
             const collapsedMatches = matches.filter(m => m.status === 'completed' || m.status === 'bye');
+            // 赛事是否已结束：没有进行中或待进行的比赛
+            const isTournamentOver = activeMatches.length === 0 && collapsedMatches.length > 0;
 
             function renderMatchRow(m, isCollapsed) {
                 const score = m.score || '';
@@ -3491,11 +3494,20 @@
                 html += renderMatchRow(m, false);
             });
 
+            // 赛事已结束时，已完成比赛全部展开显示，不折叠
             if (collapsedMatches.length > 0) {
-                html += '<tr class="collapsed-section-toggle" onclick="adminToggleCollapsedMatches(this)" style="cursor:pointer; background:var(--gray-50);"><td colspan="9" style="text-align:center; padding:10px; font-weight:600; color:var(--gray-500);"><span class="toggle-icon" style="display:inline-block; transition:transform 0.2s;">&#9654;</span> 已折叠 ' + collapsedMatches.length + ' 场（已完成/轮空）<span style="font-size:0.75rem; color:var(--gray-400); margin-left:8px;">点击展开</span></td></tr>';
-                collapsedMatches.forEach(m => {
-                    html += renderMatchRow(m, true);
-                });
+                if (isTournamentOver) {
+                    // 赛事结束：全部展开
+                    collapsedMatches.forEach(m => {
+                        html += renderMatchRow(m, false);
+                    });
+                } else {
+                    // 赛事进行中：折叠已完成的比赛
+                    html += '<tr class="collapsed-section-toggle" onclick="adminToggleCollapsedMatches(this)" style="cursor:pointer; background:var(--gray-50);"><td colspan="9" style="text-align:center; padding:10px; font-weight:600; color:var(--gray-500);"><span class="toggle-icon" style="display:inline-block; transition:transform 0.2s;">&#9654;</span> 已折叠 ' + collapsedMatches.length + ' 场（已完成/轮空）<span style="font-size:0.75rem; color:var(--gray-400); margin-left:8px;">点击展开</span></td></tr>';
+                    collapsedMatches.forEach(m => {
+                        html += renderMatchRow(m, true);
+                    });
+                }
             }
 
             tbody.innerHTML = html;
@@ -4148,6 +4160,146 @@
             const { error } = await supabase.from('matches').delete().eq('id', mid);
             if (!error) { showToast('比赛已删除', 'success'); adminLoadMatchList(); }
             else { showToast('删除失败: ' + error.message, 'error'); }
+        };
+
+        window.adminFixMissingPlayers = async function() {
+            const tid = document.getElementById('matchTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            if (!confirm('修复缺失球员？\n\n此操作将自动检测并修复签表中缺失球员的比赛，根据晋级关系从前后轮次推断缺失的球员。\n\n建议先备份数据！')) return;
+
+            showProgress('正在检测缺失球员的比赛...');
+            try {
+                const allMatches = await getMatches(parseInt(tid));
+                if (!Array.isArray(allMatches) || allMatches.length === 0) {
+                    hideProgress();
+                    showToast('该赛事暂无比赛数据', 'error');
+                    return;
+                }
+
+                // 按轮次分组
+                const roundOrder = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+                const matchesByRound = {};
+                for (const r of roundOrder) {
+                    matchesByRound[r] = allMatches
+                        .filter(m => m.round === r && m.status !== 'bye')
+                        .sort((a, b) => a.match_order - b.match_order);
+                }
+
+                const fixes = [];
+
+                // 遍历每一轮，找出缺失球员的比赛
+                for (let rIdx = 0; rIdx < roundOrder.length; rIdx++) {
+                    const round = roundOrder[rIdx];
+                    const matches = matchesByRound[round];
+                    if (!matches || matches.length === 0) continue;
+
+                    for (let i = 0; i < matches.length; i++) {
+                        const m = matches[i];
+                        // 检查是否有缺失的球员
+                        if (!m.player1_id || !m.player2_id) {
+                            // 尝试从前一轮推断
+                            let missingPlayer1 = null;
+                            let missingPlayer2 = null;
+
+                            if (rIdx > 0) {
+                                const prevRound = roundOrder[rIdx - 1];
+                                const prevMatches = matchesByRound[prevRound];
+                                if (prevMatches && prevMatches.length > 0) {
+                                    // 当前比赛的第i场，对应的前一轮是第 2i 和 2i+1 场
+                                    const prevMatch1 = prevMatches[i * 2];
+                                    const prevMatch2 = prevMatches[i * 2 + 1];
+                                    if (prevMatch1 && prevMatch1.winner_id && !m.player1_id) {
+                                        missingPlayer1 = prevMatch1.winner_id;
+                                    }
+                                    if (prevMatch2 && prevMatch2.winner_id && !m.player2_id) {
+                                        missingPlayer2 = prevMatch2.winner_id;
+                                    }
+                                }
+                            }
+
+                            // 如果前一轮推断不出来，尝试从后一轮推断
+                            if ((!m.player1_id && !missingPlayer1) || (!m.player2_id && !missingPlayer2)) {
+                                if (rIdx < roundOrder.length - 1) {
+                                    const nextRound = roundOrder[rIdx + 1];
+                                    const nextMatches = matchesByRound[nextRound];
+                                    if (nextMatches && nextMatches.length > 0) {
+                                        // 找到下一轮中包含本场胜者的比赛
+                                        for (const nm of nextMatches) {
+                                            if (nm.player1_id && m.player1_id && nm.player1_id === m.player1_id) {
+                                                // 本场 player1 赢了，进入下一轮的 player1
+                                                missingPlayer2 = missingPlayer2 || null;
+                                            }
+                                            if (nm.player1_id && m.player2_id && nm.player1_id === m.player2_id) {
+                                                // 本场 player2 赢了，进入下一轮的 player1
+                                                if (!m.player1_id) missingPlayer1 = m.winner_id || null;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            const fix = {
+                                matchId: m.id,
+                                round: round,
+                                match_order: m.match_order,
+                                current_player1: m.player1_id,
+                                current_player2: m.player2_id,
+                                fix_player1: missingPlayer1,
+                                fix_player2: missingPlayer2,
+                                current_winner: m.winner_id,
+                                status: m.status
+                            };
+                            fixes.push(fix);
+                        }
+                    }
+                }
+
+                hideProgress();
+
+                if (fixes.length === 0) {
+                    showToast('没有检测到缺失球员的比赛', 'info');
+                    return;
+                }
+
+                // 显示检测到的问题，让用户确认
+                const fixList = fixes.map(f => 
+                    `${f.round} 第${f.match_order}场 (ID: ${f.match_id}): ` +
+                    `player1=${f.current_player1 || '缺失' + (f.fix_player1 ? '→' + f.fix_player1 : '')}, ` +
+                    `player2=${f.current_player2 || '缺失' + (f.fix_player2 ? '→' + f.fix_player2 : '')}`
+                ).join('\\n');
+
+                if (!confirm(`检测到 ${fixes.length} 场缺失球员的比赛：\\n\\n${fixList}\\n\\n注意：自动推断可能不准确，建议确认后再修复。确定修复吗？`)) return;
+
+                showProgress('正在修复比赛数据...');
+
+                let fixedCount = 0;
+                let errorCount = 0;
+
+                for (const fix of fixes) {
+                    const updateData = {};
+                    if (fix.fix_player1) updateData.player1_id = fix.fix_player1;
+                    if (fix.fix_player2) updateData.player2_id = fix.fix_player2;
+                    
+                    if (Object.keys(updateData).length > 0) {
+                        const result = await updateMatch(fix.matchId, updateData);
+                        if (result.success) {
+                            fixedCount++;
+                        } else {
+                            errorCount++;
+                            console.error('修复失败:', fix.matchId, result.error);
+                        }
+                    }
+                }
+
+                hideProgress();
+                showToast(`修复完成！成功修复 ${fixedCount} 场，失败 ${errorCount} 场`, fixedCount > 0 ? 'success' : 'error');
+                adminLoadMatchList();
+
+            } catch (err) {
+                hideProgress();
+                console.error('修复失败:', err);
+                showToast('修复失败: ' + (err.message || err), 'error');
+            }
         };
 
         window.adminGenerateDraw = async function() {

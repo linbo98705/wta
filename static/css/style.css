@@ -3712,7 +3712,7 @@ textarea.form-control {
     /* 移动端：弹窗优化 - 三段式 */
     .modal {
         width: calc(100% - 24px);
-        max-width: none;
+        max-width: none !important;
         max-height: 88vh;
         border-radius: 16px;
         padding: 0;
@@ -3733,6 +3733,7 @@ textarea.form-control {
     .modal-body {
         padding: 16px 20px;
         overflow-y: auto;
+        overflow-x: auto;
         flex: 1;
     }
 
@@ -3749,7 +3750,12 @@ textarea.form-control {
         padding: 10px 16px;
     }
 
-    /* 移动端：表单优化 */
+    /* 移动端：表单两列改单列 */
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
     .form-group {
         margin-bottom: 12px;
     }
@@ -3762,6 +3768,55 @@ textarea.form-control {
     .form-control {
         padding: 9px 12px;
         font-size: 0.875rem;
+    }
+
+    /* 移动端：比赛编辑弹窗内的4列输入区改2列 */
+    #guessTextInputGrid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    /* 移动端：竞猜编辑表格 - 保持最小宽度，由modal-body横向滚动 */
+    .modal-body .guess-edit-table-7 {
+        min-width: 560px;
+        font-size: 0.75rem;
+    }
+
+    .modal-body .guess-edit-table-5 {
+        min-width: 480px;
+        font-size: 0.75rem;
+    }
+
+    .guess-predict-input,
+    .guess-name-input,
+    .guess-score-input {
+        font-size: 0.75rem;
+        padding: 5px 6px;
+    }
+
+    .guess-ps-input {
+        font-size: 0.75rem;
+    }
+
+    /* 移动端：球员搜索下拉适配 */
+    .player-select-dropdown {
+        left: 0;
+        right: 0;
+        max-width: none;
+    }
+
+    /* 移动端：弹窗内的对阵展示紧凑 */
+    .guess-matchup {
+        padding: 12px 14px;
+        gap: 8px;
+    }
+
+    .guess-matchup-player {
+        font-size: 0.9375rem;
+    }
+
+    .guess-matchup-vs {
+        font-size: 1rem;
+        padding: 0 10px;
     }
 
     /* 移动端：select下拉箭头优化 */
@@ -3901,32 +3956,47 @@ textarea.form-control {
         font-size: 0.75rem;
     }
 
-    /* 弹窗全屏 */
+    /* 弹窗全屏 - 三段式 */
     .modal {
         width: 100%;
-        max-width: none;
+        max-width: none !important;
         max-height: 100vh;
         height: 100vh;
-        padding: 12px;
+        padding: 0;
         border-radius: 0;
+        display: flex;
+        flex-direction: column;
     }
 
     .modal-header {
-        margin-bottom: 12px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid var(--gray-200);
+        padding: 14px 16px;
+        margin-bottom: 0;
+        flex-shrink: 0;
+        border-bottom: 1px solid var(--gray-100);
     }
 
     .modal-header h3 {
         font-size: 0.9375rem;
     }
 
+    .modal-body {
+        padding: 14px 16px;
+        overflow-y: auto;
+        overflow-x: auto;
+        flex: 1;
+    }
+
     .modal-actions {
-        position: sticky;
-        bottom: 0;
-        background: white;
-        padding-top: 12px;
-        margin-top: 12px;
+        padding: 12px 16px 16px;
+        margin-top: 0;
+        gap: 8px;
+        flex-shrink: 0;
+        border-top: 1px solid var(--gray-100);
+        background: var(--gray-50);
+    }
+
+    .modal-actions .btn {
+        padding: 10px 14px;
     }
 
     /* 按钮进一步缩小 */

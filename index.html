@@ -1942,25 +1942,27 @@
 
 <!-- Player Edit Modal -->
 <div class="modal-overlay" id="playerEditModal">
-    <div class="modal">
+    <div class="modal" style="max-width: 480px;">
         <div class="modal-header">
             <h3 id="playerEditModalTitle">编辑球员</h3>
             <button class="modal-close" onclick="closeModal('playerEditModal')">&times;</button>
         </div>
-        <form id="playerEditForm" onsubmit="adminSavePlayerEdit(event)">
+        <form id="playerEditForm" onsubmit="adminSavePlayerEdit(event)" style="display:contents;">
             <input type="hidden" id="peId">
-            <div class="form-group"><label>姓名 *</label><input type="text" class="form-control" id="peName" required placeholder="球员姓名"></div>
-            <div class="form-row">
-                <div class="form-group"><label>国家/地区</label><input type="text" class="form-control" id="peCountry" placeholder="如：中国"></div>
-                <div class="form-group"><label>国家/地区代码</label><input type="text" class="form-control" id="peCountryCode" placeholder="2位字母，如：CN" maxlength="2" style="width:120px; text-transform:uppercase;"></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>单打排名</label><input type="number" class="form-control" id="peRanking" min="1" placeholder="单打排名" style="width:160px;"></div>
-                <div class="form-group"><label>双打排名</label><input type="number" class="form-control" id="peDoublesRanking" min="1" placeholder="双打排名" style="width:160px;"></div>
+            <div class="modal-body">
+                <div class="form-group"><label>姓名 *</label><input type="text" class="form-control" id="peName" required placeholder="球员姓名"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>国家/地区</label><input type="text" class="form-control" id="peCountry" placeholder="如：中国"></div>
+                    <div class="form-group"><label>国家/地区代码</label><input type="text" class="form-control" id="peCountryCode" placeholder="2位字母，如：CN" maxlength="2" style="width:120px; text-transform:uppercase;"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>单打排名</label><input type="number" class="form-control" id="peRanking" min="1" placeholder="单打排名"></div>
+                    <div class="form-group"><label>双打排名</label><input type="number" class="form-control" id="peDoublesRanking" min="1" placeholder="双打排名"></div>
+                </div>
             </div>
             <div class="modal-actions">
-                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('playerEditModal')">取消</button>
-                <button type="submit" class="btn btn-primary btn-sm">保存</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('playerEditModal')">取消</button>
+                <button type="submit" class="btn btn-primary">保存</button>
             </div>
         </form>
     </div>
@@ -1968,37 +1970,39 @@
 
 <!-- Tournament Modal -->
 <div class="modal-overlay" id="tournamentModal">
-    <div class="modal">
+    <div class="modal" style="max-width: 640px;">
         <div class="modal-header">
             <h3 id="tournamentModalTitle">创建赛事</h3>
             <button class="modal-close" onclick="closeModal('tournamentModal')">&times;</button>
         </div>
-        <form id="tournamentForm" onsubmit="adminSaveTournament(event)">
+        <form id="tournamentForm" onsubmit="adminSaveTournament(event)" style="display:contents;">
             <input type="hidden" id="tId">
-            <div class="form-group"><label>赛事名称（英文）*</label><input type="text" class="form-control" id="tNameEn" required placeholder="如：China Open"></div>
-            <div class="form-group"><label>赛事名称（中文）*</label><input type="text" class="form-control" id="tNameCn" required placeholder="如：中国网球公开赛"></div>
-            <div class="form-row">
-                <div class="form-group"><label>举办地点*</label><input type="text" class="form-control" id="tLocation" required placeholder="如：北京, 中国"></div>
-                <div class="form-group"><label>赛事级别*</label><select class="form-control" id="tCategory"><option value="Grand Slam">Grand Slam</option><option value="WTA 1000">WTA 1000</option><option value="WTA 500" selected>WTA 500</option><option value="WTA 250">WTA 250</option><option value="WTA 125">WTA 125</option></select></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>场地类型*</label><select class="form-control" id="tSurface"><option value="Hard">硬地 (Hard)</option><option value="Clay">红土 (Clay)</option><option value="Grass">草地 (Grass)</option></select></div>
-                <div class="form-group"><label>签位大小*</label><select class="form-control" id="tDrawSize"><option value="16">16签</option><option value="24">24签</option><option value="32" selected>32签</option><option value="64">64签</option><option value="96">96签</option><option value="128">128签</option></select></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>比赛类型*</label><select class="form-control" id="tMatchType"><option value="singles" selected>单打</option><option value="doubles">双打</option></select></div>
-                <div class="form-group"><label>开始日期*</label><input type="date" class="form-control" id="tStartDate" required></div>
-                <div class="form-group"><label>结束日期*</label><input type="date" class="form-control" id="tEndDate" required></div>
-            </div>
-            <div class="form-row">
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label>赛事名称（英文）*</label><input type="text" class="form-control" id="tNameEn" required placeholder="如：China Open"></div>
+                    <div class="form-group"><label>赛事名称（中文）*</label><input type="text" class="form-control" id="tNameCn" required placeholder="如：中国网球公开赛"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>举办地点*</label><input type="text" class="form-control" id="tLocation" required placeholder="如：北京, 中国"></div>
+                    <div class="form-group"><label>赛事级别*</label><select class="form-control" id="tCategory"><option value="Grand Slam">Grand Slam</option><option value="WTA 1000">WTA 1000</option><option value="WTA 500" selected>WTA 500</option><option value="WTA 250">WTA 250</option><option value="WTA 125">WTA 125</option></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>场地类型*</label><select class="form-control" id="tSurface"><option value="Hard">硬地 (Hard)</option><option value="Clay">红土 (Clay)</option><option value="Grass">草地 (Grass)</option></select></div>
+                    <div class="form-group"><label>签位大小*</label><select class="form-control" id="tDrawSize"><option value="16">16签</option><option value="24">24签</option><option value="32" selected>32签</option><option value="64">64签</option><option value="96">96签</option><option value="128">128签</option></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>比赛类型*</label><select class="form-control" id="tMatchType"><option value="singles" selected>单打</option><option value="doubles">双打</option></select></div>
+                    <div class="form-group"><label>开始日期*</label><input type="date" class="form-control" id="tStartDate" required></div>
+                    <div class="form-group"><label>结束日期*</label><input type="date" class="form-control" id="tEndDate" required></div>
+                </div>
                 <div class="form-group"><label>页面主题</label><select class="form-control" id="tTheme"><option value="purple" selected>紫色（默认）</option><option value="us-open">美网深蓝</option><option value="purple-orange">紫橙搭配</option><option value="hard">硬地蓝</option><option value="clay">红土橙</option><option value="grass">草地绿</option></select></div>
+                <div class="form-group"><label>赛事 Logo</label><input type="file" class="form-control" id="tLogoFile" accept="image/png,image/jpeg,image/jpg,image/svg+xml" onchange="previewTournamentLogo(this)"><div id="tLogoPreview" style="margin-top:8px; display:none;"><img id="tLogoPreviewImg" style="max-height:80px; border-radius:8px; background:#fff; padding:4px;"></div><p style="font-size:0.75rem; color:var(--gray-400); margin-top:4px;">支持 PNG / JPG / SVG 格式，建议尺寸不小于 200x200</p></div>
+                <input type="hidden" id="tLogoUrl" value="">
+                <div class="form-group"><label>场地排序</label><input type="text" class="form-control" id="tCourtOrder" placeholder="如：中央球场,1号球场,2号球场"><p style="font-size:0.75rem; color:var(--gray-400); margin-top:4px;">用英文逗号分隔场地名称，赛程赛果页将按此顺序排列场地列；未配置的场地排在最后</p></div>
             </div>
-            <div class="form-group"><label>赛事 Logo</label><input type="file" class="form-control" id="tLogoFile" accept="image/png,image/jpeg,image/jpg,image/svg+xml" onchange="previewTournamentLogo(this)"><div id="tLogoPreview" style="margin-top:8px; display:none;"><img id="tLogoPreviewImg" style="max-height:80px; border-radius:8px; background:#fff; padding:4px;"></div><p style="font-size:0.75rem; color:var(--gray-400); margin-top:4px;">支持 PNG / JPG / SVG 格式，建议尺寸不小于 200x200</p></div>
-            <input type="hidden" id="tLogoUrl" value="">
-            <div class="form-group" style="margin-top: 12px;"><label>场地排序</label><input type="text" class="form-control" id="tCourtOrder" placeholder="如：中央球场,1号球场,2号球场"><p style="font-size:0.75rem; color:var(--gray-400); margin-top:4px;">用英文逗号分隔场地名称，赛程赛果页将按此顺序排列场地列；未配置的场地排在最后</p></div>
             <div class="modal-actions">
-                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('tournamentModal')">取消</button>
-                <button type="submit" class="btn btn-primary btn-sm">保存</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('tournamentModal')">取消</button>
+                <button type="submit" class="btn btn-primary">保存</button>
             </div>
         </form>
     </div>
@@ -2098,12 +2102,12 @@
 
 <!-- Match Modal -->
 <div class="modal-overlay" id="matchModal">
-    <div class="modal" style="max-width: 720px;">
+    <div class="modal" style="max-width: 760px;">
         <div class="modal-header">
             <h3 id="matchModalTitle">添加比赛</h3>
             <button class="modal-close" onclick="closeModal('matchModal')">&times;</button>
         </div>
-        <form id="matchForm" onsubmit="adminSaveMatch(event)">
+        <form id="matchForm" onsubmit="adminSaveMatch(event)" style="display:contents;">
             <input type="hidden" id="mId">
             <input type="hidden" id="mRound">
             <input type="hidden" id="mOrder" value="1">
@@ -2111,105 +2115,107 @@
             <input type="hidden" id="mPlayer2">
             <input type="hidden" id="mPlayer3">
             <input type="hidden" id="mPlayer4">
-            <div class="guess-matchup">
-                <div class="guess-matchup-player" id="matchupP1">球员1</div>
-                <div class="guess-matchup-player doubles-only" id="matchupP3" style="font-size:0.875rem; color:var(--gray-500);">球员3</div>
-                <div class="guess-matchup-vs">VS</div>
-                <div class="guess-matchup-player" id="matchupP2">球员2</div>
-                <div class="guess-matchup-player doubles-only" id="matchupP4" style="font-size:0.875rem; color:var(--gray-500);">球员4</div>
-            </div>
-            <div style="text-align:center; margin-top:8px;">
-                <button type="button" class="btn btn-outline btn-xs" onclick="adminTogglePlayerSettings()" id="btnTogglePlayerSettings">
-                    <span class="ai-icon-sm">${icoUsers}</span> 修改对阵球员
-                </button>
-            </div>
-            <div id="playerSettingsPanel" style="display:none; margin-top:12px; padding:12px; background:var(--gray-50); border-radius:8px;">
+            <div class="modal-body">
+                <div class="guess-matchup">
+                    <div class="guess-matchup-player" id="matchupP1">球员1</div>
+                    <div class="guess-matchup-player doubles-only" id="matchupP3" style="font-size:0.875rem; color:var(--gray-500);">球员3</div>
+                    <div class="guess-matchup-vs">VS</div>
+                    <div class="guess-matchup-player" id="matchupP2">球员2</div>
+                    <div class="guess-matchup-player doubles-only" id="matchupP4" style="font-size:0.875rem; color:var(--gray-500);">球员4</div>
+                </div>
+                <div style="text-align:center; margin-top:8px;">
+                    <button type="button" class="btn btn-outline btn-xs" onclick="adminTogglePlayerSettings()" id="btnTogglePlayerSettings">
+                        <span class="ai-icon-sm">${icoUsers}</span> 修改对阵球员
+                    </button>
+                </div>
+                <div id="playerSettingsPanel" style="display:none; margin-top:12px; padding:12px; background:var(--gray-50); border-radius:8px;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>球员1（上方）</label>
+                            <div style="display:flex; gap:6px;">
+                                <input type="text" class="form-control" id="player1Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(1)" autocomplete="off">
+                            </div>
+                            <div id="player1SelectList" class="player-select-dropdown" style="display:none;"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>球员2（下方）</label>
+                            <div style="display:flex; gap:6px;">
+                                <input type="text" class="form-control" id="player2Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(2)" autocomplete="off">
+                            </div>
+                            <div id="player2SelectList" class="player-select-dropdown" style="display:none;"></div>
+                        </div>
+                    </div>
+                    <div class="form-row doubles-only">
+                        <div class="form-group">
+                            <label>球员3（上方搭档）</label>
+                            <div style="display:flex; gap:6px;">
+                                <input type="text" class="form-control" id="player3Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(3)" autocomplete="off">
+                            </div>
+                            <div id="player3SelectList" class="player-select-dropdown" style="display:none;"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>球员4（下方搭档）</label>
+                            <div style="display:flex; gap:6px;">
+                                <input type="text" class="form-control" id="player4Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(4)" autocomplete="off">
+                            </div>
+                            <div id="player4SelectList" class="player-select-dropdown" style="display:none;"></div>
+                        </div>
+                    </div>
+                    <p style="font-size:0.75rem; color:var(--gray-400); margin:8px 0 0 0;">提示：在搜索框中输入球员姓名，从下拉列表中选择。可用于修复缺失球员的比赛。</p>
+                </div>
+                <div class="form-group" style="margin-top: 16px;">
+                    <label style="display:flex; justify-content:space-between; align-items:center;">
+                        <span><span class="ai-icon-sm">${icoEdit}</span>快速解析竞猜内容（分开填写）</span>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessTextSeparate()"><span class="ai-icon-sm">${icoSearch}</span>解析填充</button>
+                    </label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;" id="guessTextInputGrid">
+                        <div>
+                            <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelA">球员1</label>
+                            <textarea class="form-control" id="matchGuessTextInputA" rows="4"
+                                placeholder="每行一个TB，如：&#10;6-3 6-4&#10;7-5 6-2&#10;6-1 4-6 6-3"></textarea>
+                        </div>
+                        <div class="doubles-only">
+                            <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelA2">球员3</label>
+                            <textarea class="form-control" id="matchGuessTextInputA2" rows="4"
+                                placeholder="每行一个TB，如：&#10;6-3 6-4&#10;7-5 6-2"></textarea>
+                        </div>
+                        <div>
+                            <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelB">球员2</label>
+                            <textarea class="form-control" id="matchGuessTextInputB" rows="4"
+                                placeholder="每行一个TB，如：&#10;3-6 4-6&#10;5-7 2-6&#10;1-6 6-4 3-6"></textarea>
+                        </div>
+                        <div class="doubles-only">
+                            <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelB2">球员4</label>
+                            <textarea class="form-control" id="matchGuessTextInputB2" rows="4"
+                                placeholder="每行一个TB，如：&#10;3-6 4-6&#10;5-7 2-6"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <table class="guess-edit-table-7" id="guessEditTable" style="width:100%; border-collapse:collapse; margin-top: 8px;">
+                    <thead><tr><th class="ge-score-col">得分</th><th class="ge-predict-col"><div id="geHeadA">球员1</div><div class="doubles-only" id="geHeadA2" style="font-size:0.75rem;">球员3</div></th><th class="ge-vs-col">VS</th><th class="ge-predict-col"><div id="geHeadB">球员2</div><div class="doubles-only" id="geHeadB2" style="font-size:0.75rem;">球员4</div></th><th class="ge-score-col">得分</th></tr></thead>
+                    <tbody>
+                        <tr><td><select class="guess-ps-input" id="gaPs1"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred1" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred1" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB1</td><td><input type="text" class="guess-predict-input" id="gbPred1" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred1" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs1"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
+                        <tr><td><select class="guess-ps-input" id="gaPs2"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred2" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred2" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB2</td><td><input type="text" class="guess-predict-input" id="gbPred2" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred2" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs2"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
+                        <tr><td><select class="guess-ps-input" id="gaPs3"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred3" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred3" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB3</td><td><input type="text" class="guess-predict-input" id="gbPred3" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred3" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs3"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
+                        <tr><td><select class="guess-ps-input" id="gaPs4"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred4" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred4" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB4</td><td><input type="text" class="guess-predict-input" id="gbPred4" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred4" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs4"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
+                        <tr><td><select class="guess-ps-input" id="gaPs5"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred5" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred5" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB5</td><td><input type="text" class="guess-predict-input" id="gbPred5" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred5" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs5"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
+                        <tr><td><select class="guess-ps-input" id="gaPs6"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred6" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred6" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB6</td><td><input type="text" class="guess-predict-input" id="gbPred6" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred6" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs6"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
+                    </tbody>
+                    <tfoot><tr><td class="ge-total-cell"><span id="geTotalA">0</span></td><td colspan="3" class="ge-total-label">TOTAL POINTS</td><td class="ge-total-cell"><span id="geTotalB">0</span></td></tr></tfoot>
+                </table>
+                <div class="form-row" style="margin-top: 16px;">
+                    <div class="form-group"><label>竞猜胜者</label><select class="form-control" id="mGuessWinner"><option value="">自动判定（总分高者）</option><option value="player1" id="gwOption1">球员1</option><option value="player2" id="gwOption2">球员2</option></select></div>
+                    <div class="form-group"><label>胜利原因</label><select class="form-control" id="mGuessReason"><option value="">请选择</option><option value="TB1">TB1</option><option value="TB2">TB2</option><option value="TB3">TB3</option><option value="TB4">TB4</option><option value="TB5">TB5</option><option value="TB6">TB6</option><option value="ZD">ZD</option><option value="时间">时间</option><option value="对手退赛">对手退赛</option></select></div>
+                </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>球员1（上方）</label>
-                        <div style="display:flex; gap:6px;">
-                            <input type="text" class="form-control" id="player1Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(1)" autocomplete="off">
-                        </div>
-                        <div id="player1SelectList" class="player-select-dropdown" style="display:none;"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>球员2（下方）</label>
-                        <div style="display:flex; gap:6px;">
-                            <input type="text" class="form-control" id="player2Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(2)" autocomplete="off">
-                        </div>
-                        <div id="player2SelectList" class="player-select-dropdown" style="display:none;"></div>
-                    </div>
-                </div>
-                <div class="form-row doubles-only">
-                    <div class="form-group">
-                        <label>球员3（上方搭档）</label>
-                        <div style="display:flex; gap:6px;">
-                            <input type="text" class="form-control" id="player3Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(3)" autocomplete="off">
-                        </div>
-                        <div id="player3SelectList" class="player-select-dropdown" style="display:none;"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>球员4（下方搭档）</label>
-                        <div style="display:flex; gap:6px;">
-                            <input type="text" class="form-control" id="player4Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(4)" autocomplete="off">
-                        </div>
-                        <div id="player4SelectList" class="player-select-dropdown" style="display:none;"></div>
-                    </div>
-                </div>
-                <p style="font-size:0.75rem; color:var(--gray-400); margin:8px 0 0 0;">提示：在搜索框中输入球员姓名，从下拉列表中选择。可用于修复缺失球员的比赛。</p>
-            </div>
-            <div class="form-group" style="margin-top: 12px;">
-                <label style="display:flex; justify-content:space-between; align-items:center;">
-                    <span><span class="ai-icon-sm">${icoEdit}</span>快速解析竞猜内容（分开填写）</span>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessTextSeparate()"><span class="ai-icon-sm">${icoSearch}</span>解析填充</button>
-                </label>
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;" id="guessTextInputGrid">
-                    <div>
-                        <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelA">球员1</label>
-                        <textarea class="form-control" id="matchGuessTextInputA" rows="4"
-                            placeholder="每行一个TB，如：&#10;6-3 6-4&#10;7-5 6-2&#10;6-1 4-6 6-3"></textarea>
-                    </div>
-                    <div class="doubles-only">
-                        <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelA2">球员3</label>
-                        <textarea class="form-control" id="matchGuessTextInputA2" rows="4"
-                            placeholder="每行一个TB，如：&#10;6-3 6-4&#10;7-5 6-2"></textarea>
-                    </div>
-                    <div>
-                        <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelB">球员2</label>
-                        <textarea class="form-control" id="matchGuessTextInputB" rows="4"
-                            placeholder="每行一个TB，如：&#10;3-6 4-6&#10;5-7 2-6&#10;1-6 6-4 3-6"></textarea>
-                    </div>
-                    <div class="doubles-only">
-                        <label style="font-size:0.8125rem; color:var(--gray-600); font-weight:600;" id="guessLabelB2">球员4</label>
-                        <textarea class="form-control" id="matchGuessTextInputB2" rows="4"
-                            placeholder="每行一个TB，如：&#10;3-6 4-6&#10;5-7 2-6"></textarea>
-                    </div>
+                    <div class="form-group"><label>比赛日期</label><input type="date" class="form-control" id="mMatchDate"></div>
+                    <div class="form-group"><label>场地</label><input type="text" class="form-control" id="mCourt" placeholder="如：中央球场、1号球场"></div>
+                    <div class="form-group"><label>状态</label><select class="form-control" id="mStatus"><option value="scheduled">待进行</option><option value="live">进行中</option><option value="completed">已完成</option></select></div>
                 </div>
             </div>
-            <table class="guess-edit-table-7" id="guessEditTable" style="width:100%; border-collapse:collapse;">
-                <thead><tr><th class="ge-score-col">得分</th><th class="ge-predict-col"><div id="geHeadA">球员1</div><div class="doubles-only" id="geHeadA2" style="font-size:0.75rem;">球员3</div></th><th class="ge-vs-col">VS</th><th class="ge-predict-col"><div id="geHeadB">球员2</div><div class="doubles-only" id="geHeadB2" style="font-size:0.75rem;">球员4</div></th><th class="ge-score-col">得分</th></tr></thead>
-                <tbody>
-                    <tr><td><select class="guess-ps-input" id="gaPs1"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred1" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred1" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB1</td><td><input type="text" class="guess-predict-input" id="gbPred1" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred1" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs1"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
-                    <tr><td><select class="guess-ps-input" id="gaPs2"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred2" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred2" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB2</td><td><input type="text" class="guess-predict-input" id="gbPred2" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred2" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs2"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
-                    <tr><td><select class="guess-ps-input" id="gaPs3"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred3" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred3" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB3</td><td><input type="text" class="guess-predict-input" id="gbPred3" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred3" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs3"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
-                    <tr><td><select class="guess-ps-input" id="gaPs4"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred4" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred4" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB4</td><td><input type="text" class="guess-predict-input" id="gbPred4" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred4" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs4"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
-                    <tr><td><select class="guess-ps-input" id="gaPs5"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred5" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred5" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB5</td><td><input type="text" class="guess-predict-input" id="gbPred5" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred5" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs5"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
-                    <tr><td><select class="guess-ps-input" id="gaPs6"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td><td><input type="text" class="guess-predict-input" id="gaPred6" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="ga2Pred6" placeholder="球员名 比分" style="width:100%;"></td><td class="ge-tb-cell">TB6</td><td><input type="text" class="guess-predict-input" id="gbPred6" placeholder="球员名 比分" style="width:100%;"><input type="text" class="guess-predict-input doubles-only" id="gb2Pred6" placeholder="球员名 比分" style="width:100%;"></td><td><select class="guess-ps-input" id="gbPs6"><option value="">-</option><option value="0">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></td></tr>
-                </tbody>
-                <tfoot><tr><td class="ge-total-cell"><span id="geTotalA">0</span></td><td colspan="3" class="ge-total-label">TOTAL POINTS</td><td class="ge-total-cell"><span id="geTotalB">0</span></td></tr></tfoot>
-            </table>
-            <div class="form-row" style="margin-top: 12px;">
-                <div class="form-group"><label>竞猜胜者</label><select class="form-control" id="mGuessWinner"><option value="">自动判定（总分高者）</option><option value="player1" id="gwOption1">球员1</option><option value="player2" id="gwOption2">球员2</option></select></div>
-                <div class="form-group"><label>胜利原因</label><select class="form-control" id="mGuessReason"><option value="">请选择</option><option value="TB1">TB1</option><option value="TB2">TB2</option><option value="TB3">TB3</option><option value="TB4">TB4</option><option value="TB5">TB5</option><option value="TB6">TB6</option><option value="ZD">ZD</option><option value="时间">时间</option><option value="对手退赛">对手退赛</option></select></div>
-            </div>
-            <div class="form-row" style="margin-top: 12px;">
-                <div class="form-group"><label>比赛日期</label><input type="date" class="form-control" id="mMatchDate" style="width: 200px;"></div>
-                <div class="form-group"><label>场地</label><input type="text" class="form-control" id="mCourt" placeholder="如：中央球场、1号球场"></div>
-            </div>
-            <div class="form-group" style="margin-top: 12px;"><label>状态</label><select class="form-control" id="mStatus"><option value="scheduled">待进行</option><option value="live">进行中</option><option value="completed">已完成</option></select></div>
             <div class="modal-actions">
-                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('matchModal')">取消</button>
-                <button type="submit" class="btn btn-primary btn-sm">保存</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('matchModal')">取消</button>
+                <button type="submit" class="btn btn-primary">保存</button>
             </div>
         </form>
     </div>

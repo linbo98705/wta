@@ -1709,6 +1709,7 @@
         const icoLayers = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l9.55 4.66a2 2 0 0 0 1.66 0l9.56-4.66a1 1 0 0 0 0-1.84Z"/><path d="m22 17.65-9.56 4.66a2 2 0 0 1-1.64 0L2 17.65"/><path d="m22 12.65-9.56 4.66a2 2 0 0 1-1.64 0L2 12.65"/></svg>';
         const icoForward = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-6a4 4 0 0 1 4-4h12"/></svg>';
         const icoEdit = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+        const icoChevronUp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
 
         document.body.classList.add('admin-page');
         app.innerHTML = `
@@ -2117,6 +2118,46 @@
                 <div class="guess-matchup-vs">VS</div>
                 <div class="guess-matchup-player" id="matchupP2">球员2</div>
                 <div class="guess-matchup-player doubles-only" id="matchupP4" style="font-size:0.875rem; color:var(--gray-500);">球员4</div>
+            </div>
+            <div style="text-align:center; margin-top:8px;">
+                <button type="button" class="btn btn-outline btn-xs" onclick="adminTogglePlayerSettings()" id="btnTogglePlayerSettings">
+                    <span class="ai-icon-sm">${icoUsers}</span> 修改对阵球员
+                </button>
+            </div>
+            <div id="playerSettingsPanel" style="display:none; margin-top:12px; padding:12px; background:var(--gray-50); border-radius:8px;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>球员1（上方）</label>
+                        <div style="display:flex; gap:6px;">
+                            <input type="text" class="form-control" id="player1Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(1)" autocomplete="off">
+                        </div>
+                        <div id="player1SelectList" class="player-select-dropdown" style="display:none;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>球员2（下方）</label>
+                        <div style="display:flex; gap:6px;">
+                            <input type="text" class="form-control" id="player2Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(2)" autocomplete="off">
+                        </div>
+                        <div id="player2SelectList" class="player-select-dropdown" style="display:none;"></div>
+                    </div>
+                </div>
+                <div class="form-row doubles-only">
+                    <div class="form-group">
+                        <label>球员3（上方搭档）</label>
+                        <div style="display:flex; gap:6px;">
+                            <input type="text" class="form-control" id="player3Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(3)" autocomplete="off">
+                        </div>
+                        <div id="player3SelectList" class="player-select-dropdown" style="display:none;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>球员4（下方搭档）</label>
+                        <div style="display:flex; gap:6px;">
+                            <input type="text" class="form-control" id="player4Search" placeholder="搜索球员..." oninput="adminFilterPlayerSelect(4)" autocomplete="off">
+                        </div>
+                        <div id="player4SelectList" class="player-select-dropdown" style="display:none;"></div>
+                    </div>
+                </div>
+                <p style="font-size:0.75rem; color:var(--gray-400); margin:8px 0 0 0;">提示：在搜索框中输入球员姓名，从下拉列表中选择。可用于修复缺失球员的比赛。</p>
             </div>
             <div class="form-group" style="margin-top: 12px;">
                 <label style="display:flex; justify-content:space-between; align-items:center;">
@@ -3807,6 +3848,122 @@
             }
             return { name: name, score: scoreParts.join(' '), wins: wins };
         }
+
+        // 球员选择相关变量和函数
+        let matchTournamentPlayers = [];
+
+        window.adminTogglePlayerSettings = function() {
+            const panel = document.getElementById('playerSettingsPanel');
+            const btn = document.getElementById('btnTogglePlayerSettings');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                btn.innerHTML = '<span class="ai-icon-sm">' + icoChevronUp + '</span> 收起球员设置';
+                // 加载赛事球员列表
+                adminLoadMatchTournamentPlayers();
+            } else {
+                panel.style.display = 'none';
+                btn.innerHTML = '<span class="ai-icon-sm">' + icoUsers + '</span> 修改对阵球员';
+                // 关闭所有下拉框
+                for (let i = 1; i <= 4; i++) {
+                    const list = document.getElementById('player' + i + 'SelectList');
+                    if (list) list.style.display = 'none';
+                }
+            }
+        };
+
+        window.adminLoadMatchTournamentPlayers = async function() {
+            const tid = document.getElementById('matchTournamentSelect').value;
+            if (!tid) return;
+            const players = await getLiveTournamentPlayers(parseInt(tid));
+            matchTournamentPlayers = Array.isArray(players) ? players : [];
+            // 初始化搜索框的值
+            const p1Id = document.getElementById('mPlayer1').value;
+            const p2Id = document.getElementById('mPlayer2').value;
+            const p3Id = document.getElementById('mPlayer3').value;
+            const p4Id = document.getElementById('mPlayer4').value;
+            if (p1Id) {
+                const p = matchTournamentPlayers.find(x => x.id === parseInt(p1Id));
+                document.getElementById('player1Search').value = p ? (p.name || '') : '';
+            }
+            if (p2Id) {
+                const p = matchTournamentPlayers.find(x => x.id === parseInt(p2Id));
+                document.getElementById('player2Search').value = p ? (p.name || '') : '';
+            }
+            if (p3Id) {
+                const p = matchTournamentPlayers.find(x => x.id === parseInt(p3Id));
+                document.getElementById('player3Search').value = p ? (p.name || '') : '';
+            }
+            if (p4Id) {
+                const p = matchTournamentPlayers.find(x => x.id === parseInt(p4Id));
+                document.getElementById('player4Search').value = p ? (p.name || '') : '';
+            }
+        };
+
+        window.adminFilterPlayerSelect = function(playerNum) {
+            const searchInput = document.getElementById('player' + playerNum + 'Search');
+            const dropdown = document.getElementById('player' + playerNum + 'SelectList');
+            const keyword = searchInput.value.trim().toLowerCase();
+
+            if (!keyword) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            const filtered = matchTournamentPlayers.filter(p => 
+                (p.name || '').toLowerCase().includes(keyword)
+            ).slice(0, 20); // 最多显示20个
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="no-result">未找到匹配的球员</div>';
+            } else {
+                dropdown.innerHTML = filtered.map(p => 
+                    '<div class="player-option" onclick="adminSelectPlayer(' + playerNum + ', ' + p.id + ', \'' + escapeHtml(p.name || '') + '\')">' +
+                    escapeHtml(p.name || '未知') +
+                    '<span class="player-rank">#' + (p.ranking || p.t_seed || '-') + '</span>' +
+                    '</div>'
+                ).join('');
+            }
+            dropdown.style.display = 'block';
+        };
+
+        window.adminSelectPlayer = function(playerNum, playerId, playerName) {
+            // 更新隐藏的球员ID
+            document.getElementById('mPlayer' + playerNum).value = playerId;
+            // 更新搜索框显示
+            document.getElementById('player' + playerNum + 'Search').value = playerName;
+            // 关闭下拉框
+            document.getElementById('player' + playerNum + 'SelectList').style.display = 'none';
+            // 更新对阵显示
+            if (playerNum === 1) {
+                document.getElementById('matchupP1').textContent = playerName;
+                document.getElementById('geHeadA').textContent = playerName;
+                document.getElementById('guessLabelA').textContent = playerName;
+            } else if (playerNum === 2) {
+                document.getElementById('matchupP2').textContent = playerName;
+                document.getElementById('geHeadB').textContent = playerName;
+                document.getElementById('guessLabelB').textContent = playerName;
+            } else if (playerNum === 3) {
+                document.getElementById('matchupP3').textContent = playerName;
+                document.getElementById('geHeadA2').textContent = playerName;
+                document.getElementById('guessLabelA2').textContent = playerName;
+            } else if (playerNum === 4) {
+                document.getElementById('matchupP4').textContent = playerName;
+                document.getElementById('geHeadB2').textContent = playerName;
+                document.getElementById('guessLabelB2').textContent = playerName;
+            }
+            showToast('已选择球员：' + playerName, 'success');
+        };
+
+        // 点击页面其他地方关闭下拉框
+        document.addEventListener('click', function(e) {
+            for (let i = 1; i <= 4; i++) {
+                const searchInput = document.getElementById('player' + i + 'Search');
+                const dropdown = document.getElementById('player' + i + 'SelectList');
+                if (searchInput && dropdown && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            }
+        });
 
         // 分开解析四名球员的竞猜内容
         window.parseMatchGuessTextSeparate = function() {

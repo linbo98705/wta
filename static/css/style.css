@@ -1741,6 +1741,53 @@ img { max-width: 100%; height: auto; }
     padding: 0 20px;
 }
 
+/* 球员选择下拉框 */
+.player-select-dropdown {
+    position: absolute;
+    z-index: 100;
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin-top: 2px;
+}
+
+.player-select-dropdown .player-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.player-select-dropdown .player-option:hover {
+    background: var(--gray-50);
+}
+
+.player-select-dropdown .player-option:last-child {
+    border-bottom: none;
+}
+
+.player-select-dropdown .player-option .player-rank {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+    margin-left: 8px;
+}
+
+.player-select-dropdown .no-result {
+    padding: 12px;
+    text-align: center;
+    color: var(--gray-400);
+    font-size: 0.8125rem;
+}
+
+.btn.btn-xs {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+}
+
 .guess-names-row {
     display: flex;
     gap: 12px;

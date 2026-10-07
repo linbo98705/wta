@@ -1716,7 +1716,7 @@
     <nav class="admin-sidebar">
         <div class="user-info-box">
             <div class="ui-name">${escapeHtml(profile?.display_name || '当前用户')}</div>
-            <div class="ui-role">${currentRole === 'admin' ? '超级管理员' : '编辑员'}</div>
+            <div class="ui-role">${currentRole === 'admin' ? '超级管理员' : '管理员'}</div>
         </div>
         <div class="sidebar-section">
             <div class="sidebar-section-title">赛事运营</div>
@@ -4312,9 +4312,9 @@
             tbody.innerHTML = profiles.map(p => {
                 const pId = String(p.id);
                 const owned = assignMap[pId] || [];
-                const roleOpts = ['admin', 'editor'].map(r =>
+                const roleOpts = ['editor'].map(r =>
                     '<option value="' + r + '"' + (p.role === r ? ' selected' : '') + '>' +
-                    (r === 'admin' ? '超级管理员' : '编辑员') + '</option>'
+                    '管理员' + '</option>'
                 ).join('');
                 const tourItems = tList.map(t => {
                     const tid = Number(t.id);
@@ -4412,14 +4412,18 @@
         window.adminSaveUserAssignment = async function(uid) {
             const roleSel = document.querySelector('.user-role-select[data-uid="' + uid + '"]');
             const items = document.querySelectorAll('.tour-drop-item[data-uid="' + uid + '"]');
+            // admin 用户没有 select，保持 admin 角色不变
             const role = roleSel ? roleSel.value : 'admin';
             const checkedTids = [];
             items.forEach(t => { if (t.classList.contains('tour-drop-on')) checkedTids.push(Number(t.dataset.tid)); });
 
             try {
-                const { error: rErr } = await supabase.from('profiles').update({ role }).eq('id', uid);
-                if (rErr) throw rErr;
-                // admin 角色默认全权限，清空赛事分配
+                // 只有非 admin 用户才更新角色，admin 角色不可修改
+                if (roleSel) {
+                    const { error: rErr } = await supabase.from('profiles').update({ role }).eq('id', uid);
+                    if (rErr) throw rErr;
+                }
+                // admin 角色默认全权限，清空赛事分配；非 admin 则重新分配
                 const { error: dErr } = await supabase.from('user_tournaments').delete().eq('user_id', uid);
                 if (dErr) throw dErr;
                 if (role !== 'admin' && checkedTids.length) {

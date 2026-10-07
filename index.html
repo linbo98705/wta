@@ -1717,8 +1717,11 @@
     <!-- Admin Sidebar -->
     <nav class="admin-sidebar">
         <div class="user-info-box">
-            <div class="ui-name">${escapeHtml(profile?.display_name || '当前用户')}</div>
-            <div class="ui-role">${currentRole === 'admin' ? '超级管理员' : '管理员'}</div>
+            <div class="ui-avatar">${(profile?.display_name || '管').charAt(0)}</div>
+            <div>
+                <div class="ui-name">${escapeHtml(profile?.display_name || '当前用户')}</div>
+                <div class="ui-role">${currentRole === 'admin' ? '超级管理员' : '管理员'}</div>
+            </div>
         </div>
         <div class="sidebar-section">
             <div class="sidebar-section-title">赛事运营</div>

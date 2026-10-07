@@ -1843,7 +1843,6 @@
                         </select>
                         <button class="btn btn-outline btn-sm" id="btnImportEntry" onclick="document.getElementById('entryFileInput').click()"><span class="ai-icon-sm">${icoUpload}</span>导入名单</button>
                         <input type="file" id="entryFileInput" accept=".csv,.xlsx,.xls" style="display:none;" onchange="adminImportEntryFile(this)">
-                        <button class="btn btn-outline btn-sm" onclick="adminRebuildSnapshot()"><span class="ai-icon-sm">${icoRefresh}</span>重建快照</button>
                         <button class="btn btn-outline btn-sm" onclick="adminRecalcSeeds()"><span class="ai-icon-sm">${icoHash}</span>重算种子</button>
                         <button class="btn btn-primary btn-sm" id="btnAddSinglesEntry" onclick="adminOpenEntryModal()">+ 添加球员</button>
                         <button class="btn btn-primary btn-sm" id="btnAddDoublesEntry" onclick="adminOpenDoublesEntryModal()" style="background:var(--accent-green);">+ 双打报名</button>
@@ -1871,7 +1870,6 @@
                         <button class="btn btn-primary btn-sm" onclick="adminOpenMatchModal()" style="display:none;">+ 添加比赛</button>
                         <select class="form-control" id="matchExportDateSelect" style="width:auto; font-size:0.8125rem; padding:4px 8px;"><option value="">所有日期</option></select>
                         <button class="btn btn-outline btn-sm" onclick="adminExportMatchupsText()"><span class="ai-icon-sm">${icoFileText}</span>导出对阵</button>
-                        <button class="btn btn-warning btn-sm" onclick="adminFixMissingPlayers()"><span class="ai-icon-sm">${icoRefresh}</span>修复缺失球员</button>
                     </div>
                 </div>
                 <div class="card-body" style="overflow-x:auto;">

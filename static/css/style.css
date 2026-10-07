@@ -2881,13 +2881,258 @@ textarea.form-control {
         display: flex;
         flex-direction: column;
         position: absolute;
-        top: 48px;
+        top: 52px;
         left: 0;
         right: 0;
         background: var(--purple);
         padding: 8px;
     }
     .mobile-menu-btn { display: block; }
+
+    /* ─── 前端页面移动端优化 ─── */
+
+    /* 赛事子导航：横向滚动 */
+    .tournament-subnav {
+        position: sticky;
+        top: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .tournament-subnav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tournament-subnav .container {
+        min-width: max-content;
+        gap: 0;
+    }
+
+    .tournament-subnav a {
+        padding: 10px 14px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+
+    /* 赛事头部：紧凑化 */
+    .tournament-header {
+        padding: 24px 0 20px;
+    }
+
+    .tournament-header-content {
+        padding: 0 16px;
+    }
+
+    .tournament-header h1 {
+        font-size: 1.25rem;
+        margin-bottom: 6px;
+    }
+
+    .tournament-header-meta {
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        font-size: 0.75rem;
+    }
+
+    .tournament-header-meta span {
+        font-size: 0.75rem;
+    }
+
+    /* 快捷入口：两列布局 */
+    #quickLinks {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .quick-link-card {
+        padding: 14px 12px !important;
+    }
+
+    .quick-link-icon {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 8px !important;
+    }
+
+    .quick-link-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* 首页赛事卡片：单列 */
+    .tournament-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    /* section 间距缩小 */
+    .section {
+        padding: 28px 0;
+    }
+
+    .section-header {
+        margin-bottom: 18px;
+    }
+
+    .section-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .section-header p {
+        font-size: 0.8125rem;
+    }
+
+    /* 数据表格：横向滚动 + 紧凑 */
+    .data-table {
+        font-size: 0.8125rem;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 12px;
+    }
+
+    /* 参赛名单表格：隐藏部分列 */
+    .player-list-card .data-table th:nth-child(3),
+    .player-list-card .data-table td:nth-child(3),
+    .player-list-card .data-table th:nth-child(6),
+    .player-list-card .data-table td:nth-child(6) { display: none; }
+
+    /* 签表容器：横向滚动 */
+    .bracket-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .bracket-wrap {
+        min-width: 700px;
+    }
+
+    /* 比赛卡片：更紧凑 */
+    .match-card {
+        border-radius: 12px;
+    }
+
+    .match-card-body {
+        padding: 12px 14px;
+    }
+
+    .mc-player-name {
+        font-size: 0.8125rem;
+    }
+
+    .mc-player-score {
+        font-size: 0.875rem;
+    }
+
+    /* 筛选/视图切换按钮：缩小 */
+    .view-toggle,
+    .view-btn {
+        font-size: 0.75rem;
+        padding: 6px 12px;
+    }
+
+    /* 卡片头部：纵向排列 */
+    .card-header {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .card-header h2,
+    .card-header h3 {
+        font-size: 1rem;
+    }
+
+    /* 竞猜页面优化 */
+    .dg-card {
+        margin-bottom: 14px;
+    }
+
+    .dg-table {
+        font-size: 0.8125rem;
+    }
+
+    .dg-table th,
+    .dg-table td {
+        padding: 8px 10px;
+    }
+
+    .dg-tb {
+        width: 40px;
+        font-size: 0.75rem;
+    }
+
+    .dg-result {
+        width: 80px;
+        font-size: 0.75rem;
+    }
+
+    .dg-deadline {
+        font-size: 0.75rem;
+    }
+
+    /* 登录页优化 */
+    .section > .container > div[style*="max-width:420px"] {
+        margin: 30px auto !important;
+    }
+
+    /* 容器内边距减小 */
+    .container {
+        padding: 0 14px;
+    }
+
+    /* 徽章/标签缩小 */
+    .badge {
+        font-size: 0.6875rem;
+        padding: 2px 8px;
+    }
+
+    .seed-badge {
+        min-width: 22px;
+        height: 20px;
+        padding: 0 6px;
+        font-size: 0.6875rem;
+        border-radius: 5px;
+    }
+
+    .seed-badge.seed-top4 {
+        min-width: 24px;
+        height: 22px;
+        font-size: 0.75rem;
+    }
+
+    .seed-badge.seed-top8 {
+        min-width: 22px;
+        height: 20px;
+        font-size: 0.6875rem;
+    }
+
+    /* 按钮更紧凑 */
+    .btn {
+        padding: 8px 14px;
+        font-size: 0.8125rem;
+    }
+
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+    }
+
+    /* 表单更紧凑 */
+    .form-group {
+        margin-bottom: 12px;
+    }
+
+    .form-group label {
+        font-size: 0.8125rem;
+        margin-bottom: 5px;
+    }
+
+    .form-control {
+        padding: 8px 12px;
+        font-size: 0.875rem;
+    }
 
     .admin-layout {
         grid-template-columns: 1fr;

@@ -782,6 +782,52 @@ async function addTournamentPlayer(tid, data) {
         }
         return { success: false, error: error.message };
     }
+
+    // 如果赛事已有快照，同时添加到快照表（保持排名为赛事开始时的排名）
+    const snapExists = await hasSnapshot(tid);
+    if (snapExists) {
+        try {
+            // 获取球员信息
+            const { data: playerData, error: pErr } = await supabase
+                .from('players')
+                .select('id, name, country, country_code, ranking, doubles_ranking')
+                .eq('id', data.player_id)
+                .single();
+
+            if (!pErr && playerData) {
+                // 获取赛事信息和开始日期
+                const tournament = await getTournament(tid);
+                let ranking = playerData.ranking || 999;
+                let doublesRanking = playerData.doubles_ranking || 999;
+
+                // 如果有开始日期，尝试从历史排名表获取赛事开始时的排名
+                if (tournament?.start_date) {
+                    const histSingles = await getPlayerRankingAtDate(playerData.name, tournament.start_date, '单打');
+                    const histDoubles = await getPlayerRankingAtDate(playerData.name, tournament.start_date, '双打');
+                    if (histSingles) ranking = histSingles;
+                    if (histDoubles) doublesRanking = histDoubles;
+                }
+
+                // 插入快照
+                const snapRow = {
+                    tournament_id: tid,
+                    player_id: playerData.id,
+                    name: playerData.name,
+                    country: playerData.country || '',
+                    country_code: playerData.country_code || '',
+                    ranking: ranking,
+                    doubles_ranking: doublesRanking,
+                    seed: data.seed || 0,
+                    entry_type: data.entry_type || 'main',
+                    partner_id: data.partner_id || null,
+                };
+                await supabase.from('tournament_player_snapshots').insert(snapRow);
+            }
+        } catch (snapErr) {
+            console.warn('添加球员到快照失败（不影响主流程）:', snapErr);
+        }
+    }
+
     return { success: true, error: null };
 }
 
@@ -807,6 +853,12 @@ async function removeTournamentPlayer(tid, pid) {
             .delete()
             .eq('tournament_id', tid)
             .eq('player_id', partnerId);
+        // 同时从快照中删除搭档
+        await supabase
+            .from('tournament_player_snapshots')
+            .delete()
+            .eq('tournament_id', tid)
+            .eq('player_id', partnerId);
     }
 
     const { error } = await supabase
@@ -818,6 +870,14 @@ async function removeTournamentPlayer(tid, pid) {
     if (error) {
         return { success: false, error: error.message };
     }
+
+    // 同时从快照中删除
+    await supabase
+        .from('tournament_player_snapshots')
+        .delete()
+        .eq('tournament_id', tid)
+        .eq('player_id', pid);
+
     return { success: true, error: null, partnerRemoved: !!partnerId };
 }
 
@@ -843,6 +903,20 @@ async function updateTournamentPlayer(tid, pid, data) {
     if (error) {
         return { success: false, error: error.message };
     }
+
+    // 同时更新快照表中的种子和参赛类型
+    const snapUpdates = {};
+    if (data.seed !== undefined) snapUpdates.seed = data.seed;
+    if (data.entry_type !== undefined) snapUpdates.entry_type = data.entry_type;
+    if (data.partner_id !== undefined) snapUpdates.partner_id = data.partner_id;
+    if (Object.keys(snapUpdates).length > 0) {
+        await supabase
+            .from('tournament_player_snapshots')
+            .update(snapUpdates)
+            .eq('tournament_id', tid)
+            .eq('player_id', pid);
+    }
+
     return { success: true, error: null };
 }
 
@@ -861,66 +935,124 @@ async function recalcSeeds(tid) {
     const isDoubles = tournament.match_type === 'doubles';
     const maxSeeds = getNumSeeds(drawSize);
 
-    const selectFields = isDoubles
-        ? 'id, seed, partner_id, player:player_id(id, ranking, doubles_ranking)'
-        : 'id, seed, player:player_id(ranking)';
-
-    const { data: tpRows, error: tpError } = await supabase
-        .from('tournament_players')
-        .select(selectFields)
-        .eq('tournament_id', tid);
-
-    if (tpError) {
-        return { success: false, seeded: 0, maxSeeds, error: tpError.message };
-    }
+    // 检查是否有快照，如果有则用快照排名来计算种子
+    const snapExists = await hasSnapshot(tid);
 
     if (isDoubles) {
-        // 双打：优先使用 partner_id 配对，无 partner_id 的按 doubles_ranking 自动配对
-        const playerMap = {};
-        (tpRows || []).forEach(r => { playerMap[r.player.id] = r; });
-        const paired = new Set();
-        const teams = [];
+        let teams = [];
 
-        // 1. 先处理有 partner_id 的球员
-        (tpRows || []).forEach(r => {
-            if (paired.has(r.player.id)) return;
-            if (r.partner_id && playerMap[r.partner_id] && !paired.has(r.partner_id)) {
-                const partner = playerMap[r.partner_id];
-                paired.add(r.player.id);
-                paired.add(partner.player.id);
-                const dr1 = (r.player && r.player.doubles_ranking) || 999;
-                const dr2 = (partner.player && partner.player.doubles_ranking) || 999;
+        if (snapExists) {
+            // 有快照：从快照表读取双打排名
+            const { data: snapRows, error: snapErr } = await supabase
+                .from('tournament_player_snapshots')
+                .select('player_id, seed, doubles_ranking, partner_id')
+                .eq('tournament_id', tid);
+
+            if (snapErr) {
+                return { success: false, seeded: 0, maxSeeds, error: snapErr.message };
+            }
+
+            const playerMap = {};
+            (snapRows || []).forEach(r => { playerMap[r.player_id] = r; });
+            const paired = new Set();
+
+            // 1. 先处理有 partner_id 的球员
+            (snapRows || []).forEach(r => {
+                if (paired.has(r.player_id)) return;
+                if (r.partner_id && playerMap[r.partner_id] && !paired.has(r.partner_id)) {
+                    const partner = playerMap[r.partner_id];
+                    paired.add(r.player_id);
+                    paired.add(partner.player_id);
+                    const dr1 = r.doubles_ranking || 999;
+                    const dr2 = partner.doubles_ranking || 999;
+                    teams.push({
+                        members: [
+                            { player_id: r.player_id, old_seed: r.seed || 0, doubles_ranking: dr1 },
+                            { player_id: partner.player_id, old_seed: partner.seed || 0, doubles_ranking: dr2 },
+                        ],
+                        rankSum: dr1 + dr2,
+                    });
+                }
+            });
+
+            // 2. 无 partner_id 的按 doubles_ranking 排序后两两配对
+            const unpaired = (snapRows || []).filter(r => !paired.has(r.player_id));
+            unpaired.sort((a, b) => (a.doubles_ranking || 999) - (b.doubles_ranking || 999));
+            for (let i = 0; i + 1 < unpaired.length; i += 2) {
+                const dr1 = unpaired[i].doubles_ranking || 999;
+                const dr2 = unpaired[i + 1].doubles_ranking || 999;
                 teams.push({
                     members: [
-                        { tp_id: r.id, old_seed: r.seed || 0, doubles_ranking: dr1 },
-                        { tp_id: partner.id, old_seed: partner.seed || 0, doubles_ranking: dr2 },
+                        { player_id: unpaired[i].player_id, old_seed: unpaired[i].seed || 0, doubles_ranking: dr1 },
+                        { player_id: unpaired[i + 1].player_id, old_seed: unpaired[i + 1].seed || 0, doubles_ranking: dr2 },
                     ],
                     rankSum: dr1 + dr2,
                 });
             }
-        });
+            if (unpaired.length % 2 === 1) {
+                const last = unpaired[unpaired.length - 1];
+                teams.push({
+                    members: [{ player_id: last.player_id, old_seed: last.seed || 0, doubles_ranking: last.doubles_ranking || 999 }],
+                    rankSum: last.doubles_ranking || 999,
+                });
+            }
+        } else {
+            // 无快照：从实时数据读取
+            const selectFields = 'id, seed, partner_id, player:player_id(id, ranking, doubles_ranking)';
+            const { data: tpRows, error: tpError } = await supabase
+                .from('tournament_players')
+                .select(selectFields)
+                .eq('tournament_id', tid);
 
-        // 2. 无 partner_id 的球员按 doubles_ranking 排序后两两配对
-        const unpaired = (tpRows || []).filter(r => !paired.has(r.player.id));
-        unpaired.sort((a, b) => ((a.player && a.player.doubles_ranking) || 999) - ((b.player && b.player.doubles_ranking) || 999));
-        for (let i = 0; i + 1 < unpaired.length; i += 2) {
-            const dr1 = (unpaired[i].player && unpaired[i].player.doubles_ranking) || 999;
-            const dr2 = (unpaired[i + 1].player && unpaired[i + 1].player.doubles_ranking) || 999;
-            teams.push({
-                members: [
-                    { tp_id: unpaired[i].id, old_seed: unpaired[i].seed || 0, doubles_ranking: dr1 },
-                    { tp_id: unpaired[i + 1].id, old_seed: unpaired[i + 1].seed || 0, doubles_ranking: dr2 },
-                ],
-                rankSum: dr1 + dr2,
+            if (tpError) {
+                return { success: false, seeded: 0, maxSeeds, error: tpError.message };
+            }
+
+            const playerMap = {};
+            (tpRows || []).forEach(r => { playerMap[r.player.id] = r; });
+            const paired = new Set();
+
+            // 1. 先处理有 partner_id 的球员
+            (tpRows || []).forEach(r => {
+                if (paired.has(r.player.id)) return;
+                if (r.partner_id && playerMap[r.partner_id] && !paired.has(r.partner_id)) {
+                    const partner = playerMap[r.partner_id];
+                    paired.add(r.player.id);
+                    paired.add(partner.player.id);
+                    const dr1 = (r.player && r.player.doubles_ranking) || 999;
+                    const dr2 = (partner.player && partner.player.doubles_ranking) || 999;
+                    teams.push({
+                        members: [
+                            { tp_id: r.id, player_id: r.player.id, old_seed: r.seed || 0, doubles_ranking: dr1 },
+                            { tp_id: partner.id, player_id: partner.player.id, old_seed: partner.seed || 0, doubles_ranking: dr2 },
+                        ],
+                        rankSum: dr1 + dr2,
+                    });
+                }
             });
-        }
-        if (unpaired.length % 2 === 1) {
-            const last = unpaired[unpaired.length - 1];
-            const dr1 = (last.player && last.player.doubles_ranking) || 999;
-            teams.push({
-                members: [{ tp_id: last.id, old_seed: last.seed || 0, doubles_ranking: dr1 }],
-                rankSum: dr1,
-            });
+
+            // 2. 无 partner_id 的球员按 doubles_ranking 排序后两两配对
+            const unpaired = (tpRows || []).filter(r => !paired.has(r.player.id));
+            unpaired.sort((a, b) => ((a.player && a.player.doubles_ranking) || 999) - ((b.player && b.player.doubles_ranking) || 999));
+            for (let i = 0; i + 1 < unpaired.length; i += 2) {
+                const dr1 = (unpaired[i].player && unpaired[i].player.doubles_ranking) || 999;
+                const dr2 = (unpaired[i + 1].player && unpaired[i + 1].player.doubles_ranking) || 999;
+                teams.push({
+                    members: [
+                        { tp_id: unpaired[i].id, player_id: unpaired[i].player.id, old_seed: unpaired[i].seed || 0, doubles_ranking: dr1 },
+                        { tp_id: unpaired[i + 1].id, player_id: unpaired[i + 1].player.id, old_seed: unpaired[i + 1].seed || 0, doubles_ranking: dr2 },
+                    ],
+                    rankSum: dr1 + dr2,
+                });
+            }
+            if (unpaired.length % 2 === 1) {
+                const last = unpaired[unpaired.length - 1];
+                const dr1 = (last.player && last.player.doubles_ranking) || 999;
+                teams.push({
+                    members: [{ tp_id: last.id, player_id: last.player.id, old_seed: last.seed || 0, doubles_ranking: dr1 }],
+                    rankSum: dr1,
+                });
+            }
         }
 
         // 按排名总和升序排序（总和越小排名越高）
@@ -932,44 +1064,90 @@ async function recalcSeeds(tid) {
             const newSeed = seeded < maxSeeds ? seeded + 1 : 0;
             for (const member of team.members) {
                 if (newSeed !== member.old_seed) {
-                    updates.push({ id: member.tp_id, seed: newSeed });
+                    updates.push({ player_id: member.player_id, tp_id: member.tp_id, seed: newSeed });
                 }
             }
             if (newSeed > 0) seeded++;
         }
 
         if (updates.length > 0) {
+            // 更新 tournament_players 表
             await Promise.all(
-                updates.map(u => supabase.from('tournament_players').update({ seed: u.seed }).eq('id', u.id))
+                updates.filter(u => u.tp_id).map(u => supabase.from('tournament_players').update({ seed: u.seed }).eq('id', u.tp_id))
             );
+            // 如果有快照，同时更新快照表
+            if (snapExists) {
+                await Promise.all(
+                    updates.map(u => supabase.from('tournament_player_snapshots').update({ seed: u.seed }).eq('tournament_id', tid).eq('player_id', u.player_id))
+                );
+            }
         }
 
         return { success: true, seeded, maxSeeds, updated: updates.length, error: null };
     }
 
     // 单打：按 ranking 排序安排种子
-    const sorted = (tpRows || [])
-        .map(r => ({
-            tp_id: r.id,
+    let sorted = [];
+
+    if (snapExists) {
+        // 有快照：从快照表读取排名
+        const { data: snapRows, error: snapErr } = await supabase
+            .from('tournament_player_snapshots')
+            .select('player_id, seed, ranking')
+            .eq('tournament_id', tid)
+            .order('ranking', { ascending: true });
+
+        if (snapErr) {
+            return { success: false, seeded: 0, maxSeeds, error: snapErr.message };
+        }
+
+        sorted = (snapRows || []).map(r => ({
+            player_id: r.player_id,
             old_seed: r.seed || 0,
-            ranking: (r.player && r.player.ranking) || 999,
-        }))
-        .sort((a, b) => a.ranking - b.ranking);
+            ranking: r.ranking || 999,
+        }));
+    } else {
+        // 无快照：从实时数据读取
+        const { data: tpRows, error: tpError } = await supabase
+            .from('tournament_players')
+            .select('id, seed, player:player_id(ranking)')
+            .eq('tournament_id', tid);
+
+        if (tpError) {
+            return { success: false, seeded: 0, maxSeeds, error: tpError.message };
+        }
+
+        sorted = (tpRows || [])
+            .map(r => ({
+                tp_id: r.id,
+                player_id: r.player?.id,
+                old_seed: r.seed || 0,
+                ranking: (r.player && r.player.ranking) || 999,
+            }))
+            .sort((a, b) => a.ranking - b.ranking);
+    }
 
     const updates = [];
     let seeded = 0;
     for (let i = 0; i < sorted.length; i++) {
         const newSeed = seeded < maxSeeds ? seeded + 1 : 0;
         if (newSeed !== sorted[i].old_seed) {
-            updates.push({ id: sorted[i].tp_id, seed: newSeed });
+            updates.push({ player_id: sorted[i].player_id, tp_id: sorted[i].tp_id, seed: newSeed });
         }
         if (newSeed > 0) seeded++;
     }
 
     if (updates.length > 0) {
+        // 更新 tournament_players 表
         await Promise.all(
-            updates.map(u => supabase.from('tournament_players').update({ seed: u.seed }).eq('id', u.id))
+            updates.filter(u => u.tp_id).map(u => supabase.from('tournament_players').update({ seed: u.seed }).eq('id', u.tp_id))
         );
+        // 如果有快照，同时更新快照表
+        if (snapExists) {
+            await Promise.all(
+                updates.map(u => supabase.from('tournament_player_snapshots').update({ seed: u.seed }).eq('tournament_id', tid).eq('player_id', u.player_id))
+            );
+        }
     }
 
     return { success: true, seeded, maxSeeds, updated: updates.length, error: null };
@@ -1643,32 +1821,148 @@ async function autoAdvanceByes(tid, roundOrder, startRoundIdx = 0) {
 }
 
 /**
+ * 根据日期获取该日期之前最近一期的全部排名映射
+ * @param {string} dateStr - 日期字符串 (YYYY-MM-DD)
+ * @param {string} category - '单打' 或 '双打'
+ * @returns {Promise<Object>} { playerNameLowerCase: rank }
+ */
+async function _getRankingsAtDate(dateStr, category) {
+    if (!dateStr) return {};
+
+    // 查找该日期之前最近的一期
+    const { data: latestPeriod, error } = await supabase
+        .from('rankings')
+        .select('period_no')
+        .eq('category', category)
+        .lte('period', dateStr)
+        .order('period', { ascending: false })
+        .limit(1);
+
+    if (error || !latestPeriod || latestPeriod.length === 0) return {};
+
+    const periodNo = latestPeriod[0].period_no;
+    const { data: rankingData, error: rErr } = await supabase
+        .from('rankings')
+        .select('rank, username')
+        .eq('category', category)
+        .eq('period_no', periodNo);
+
+    if (rErr || !rankingData) return {};
+
+    const map = {};
+    rankingData.forEach(r => {
+        const key = (r.username || '').toLowerCase().trim();
+        if (key) map[key] = r.rank;
+    });
+    return map;
+}
+
+/**
+ * 根据日期查找球员在该时间的排名（从 rankings 历史表查找最接近的一期）
+ * @param {string} playerName - 球员姓名
+ * @param {string} dateStr - 日期字符串 (YYYY-MM-DD)
+ * @param {string} category - '单打' 或 '双打'
+ * @returns {Promise<number|null>} 排名，找不到返回 null
+ */
+async function getPlayerRankingAtDate(playerName, dateStr, category) {
+    if (!playerName || !dateStr) return null;
+    const key = playerName.toLowerCase().trim();
+
+    // 查找该日期之前或当天最近的一期排名
+    const { data, error } = await supabase
+        .from('rankings')
+        .select('rank, period, period_no')
+        .eq('category', category)
+        .lte('period', dateStr)
+        .order('period', { ascending: false })
+        .limit(50); // 取最近一期的前50名来匹配
+
+    if (error || !data || data.length === 0) return null;
+
+    // 找到同一期的所有排名数据
+    const periodNo = data[0].period_no;
+    const { data: periodData, error: pErr } = await supabase
+        .from('rankings')
+        .select('rank, username')
+        .eq('category', category)
+        .eq('period_no', periodNo);
+
+    if (pErr || !periodData) return null;
+
+    const match = periodData.find(r => (r.username || '').toLowerCase().trim() === key);
+    return match ? match.rank : null;
+}
+
+/**
+ * 检查赛事是否已有快照
+ * @param {number} tid - 赛事 ID
+ * @returns {Promise<boolean>}
+ */
+async function hasSnapshot(tid) {
+    const { count, error } = await supabase
+        .from('tournament_player_snapshots')
+        .select('*', { count: 'exact', head: true })
+        .eq('tournament_id', tid);
+    return !error && count > 0;
+}
+
+/**
  * 冻结球员数据（创建快照，不重新生成签表）
+ * 优先使用赛事开始时的排名（从 rankings 历史表查找），保持排名冻结在赛事开始时
  * @param {number} tid - 赛事 ID
  * @returns {Promise<Object>} { success, frozen, error }
  */
 async function freezeSnapshot(tid) {
+    const tournament = await getTournament(tid);
     const players = await getLiveTournamentPlayers(tid);
     if (!players || players.length === 0) {
         return { success: false, frozen: 0, error: '该赛事暂无参赛球员' };
     }
 
+    // 尝试从 rankings 表获取赛事开始时的排名（如果有开始日期）
+    const startDate = tournament?.start_date;
+    let historicalRankingMap = {};
+    let historicalDoublesRankingMap = {};
+
+    if (startDate) {
+        // 获取赛事开始时的单打排名
+        const sRank = await _getRankingsAtDate(startDate, '单打');
+        historicalRankingMap = sRank;
+        // 获取赛事开始时的双打排名
+        const dRank = await _getRankingsAtDate(startDate, '双打');
+        historicalDoublesRankingMap = dRank;
+    }
+
     // 删除旧快照
     await supabase.from('tournament_player_snapshots').delete().eq('tournament_id', tid);
 
-    // 插入新快照
-    const rows = players.map(p => ({
-        tournament_id: tid,
-        player_id: p.id,
-        name: p.name,
-        country: p.country || '',
-        country_code: p.country_code || '',
-        ranking: p.ranking || 999,
-        doubles_ranking: p.doubles_ranking || 999,
-        seed: p.t_seed || 0,
-        entry_type: p.entry_type || 'main',
-        partner_id: p.partner_id || null,
-    }));
+    // 插入新快照（优先使用历史排名，其次用当前排名）
+    const rows = players.map(p => {
+        const nameKey = (p.name || '').toLowerCase().trim();
+        let ranking = p.ranking || 999;
+        let doublesRanking = p.doubles_ranking || 999;
+
+        // 如果有历史排名数据，优先使用
+        if (historicalRankingMap[nameKey]) {
+            ranking = historicalRankingMap[nameKey];
+        }
+        if (historicalDoublesRankingMap[nameKey]) {
+            doublesRanking = historicalDoublesRankingMap[nameKey];
+        }
+
+        return {
+            tournament_id: tid,
+            player_id: p.id,
+            name: p.name,
+            country: p.country || '',
+            country_code: p.country_code || '',
+            ranking: ranking,
+            doubles_ranking: doublesRanking,
+            seed: p.t_seed || 0,
+            entry_type: p.entry_type || 'main',
+            partner_id: p.partner_id || null,
+        };
+    });
 
     const BATCH_SIZE = 200;
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {

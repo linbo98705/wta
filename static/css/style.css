@@ -2341,11 +2341,32 @@ textarea.form-control {
     width: 90%;
     max-width: 560px;
     max-height: 85vh;
+    padding: 24px;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.12);
+    animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 带 header + body + actions 三段式布局的弹窗 */
+.modal.modal--form {
+    padding: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.12);
-    animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal.modal--form .modal-header {
+    flex-shrink: 0;
+}
+
+.modal.modal--form .modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal.modal--form .modal-actions {
+    flex-shrink: 0;
 }
 
 .modal-header {

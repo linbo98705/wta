@@ -1843,7 +1843,6 @@
                         <input type="file" id="entryFileInput" accept=".csv,.xlsx,.xls" style="display:none;" onchange="adminImportEntryFile(this)">
                         <button class="btn btn-primary btn-sm" id="btnAddSinglesEntry" onclick="adminOpenEntryModal()">+ 添加球员</button>
                         <button class="btn btn-primary btn-sm" id="btnAddDoublesEntry" onclick="adminOpenDoublesEntryModal()" style="background:var(--accent-green);">+ 双打报名</button>
-                        <button class="btn btn-outline btn-sm" onclick="adminFreezeSnapshot()"><span class="ai-icon-sm">${icoLock}</span>冻结球员数据</button>
                     </div>
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
@@ -3984,7 +3983,17 @@
                 });
                 hideProgress();
                 if (result.success) {
-                    showToast('签表已生成！共创建 ' + result.matchesCreated + ' 场比赛，轮空种子已自动晋级', 'success');
+                    // 生成签表后自动冻结球员数据快照
+                    try {
+                        const freezeResult = await freezeSnapshot(parseInt(tid));
+                        if (freezeResult.success) {
+                            showToast('签表已生成！共创建 ' + result.matchesCreated + ' 场比赛，轮空种子已自动晋级，球员数据已冻结', 'success');
+                        } else {
+                            showToast('签表已生成，但数据冻结失败: ' + (freezeResult.error || '未知错误'), 'warning');
+                        }
+                    } catch (e) {
+                        showToast('签表已生成，但数据冻结失败', 'warning');
+                    }
                     adminLoadMatchList();
                 } else {
                     showToast('生成失败: ' + (result.error || '未知错误'), 'error');

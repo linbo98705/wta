@@ -2407,16 +2407,36 @@ img { max-width: 100%; height: auto; }
 }
 
 /* 竞猜管理表格 */
+.guess-admin-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.guess-admin-table th,
 .guess-admin-table td {
-    min-width: 160px;
+    overflow: hidden;
+    word-wrap: break-word;
+    word-break: break-all;
+}
+
+.guess-admin-table td {
     vertical-align: top;
 }
 
+.guess-admin-table th:nth-child(1) { width: 56px; }
+.guess-admin-table th:nth-child(2) { width: 92px; }
+.guess-admin-table th:nth-child(3) { width: 130px; }
+.guess-admin-table th:nth-child(4),
+.guess-admin-table th:nth-child(5) { width: 15%; }
+.guess-admin-table th:nth-child(6),
+.guess-admin-table th:nth-child(7),
+.guess-admin-table th:nth-child(8),
+.guess-admin-table th:nth-child(9) { width: 13%; }
+.guess-admin-table th:nth-child(10) { width: 72px; }
+
 .guess-match-cell {
-    line-height: 1.4;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    line-height: 1.35;
+    display: block;
 }
 
 .guess-match-name {
@@ -2424,7 +2444,9 @@ img { max-width: 100%; height: auto; }
     color: var(--gray-800);
     font-weight: 600;
     word-break: break-all;
-    padding-bottom: 0;
+    word-wrap: break-word;
+    margin-bottom: 5px;
+    display: block;
 }
 
 .guess-result {

@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css?v=52">
+    <link rel="stylesheet" href="static/css/style.css?v=53">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -233,6 +233,40 @@
         background: rgba(255,255,255,0.12);
         font-weight: 600;
     }
+
+    /* Back to top button */
+    .back-to-top {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--purple);
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(91, 45, 142, 0.3);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.2s ease;
+        z-index: 999;
+    }
+    .back-to-top svg { width: 18px; height: 18px; }
+    .back-to-top.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    .back-to-top:hover {
+        background: var(--purple-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(91, 45, 142, 0.4);
+    }
     </style>
 </head>
 <body>
@@ -308,6 +342,17 @@
 </div>`;
     }
 
+    // ── Error State Helper ──
+    function errorStateHtml(message, retryFnName) {
+        return '<div style="text-align:center; padding:60px 20px; color:var(--gray-500);">'
+            + '<div style="width:48px; height:48px; margin:0 auto 16px; border-radius:50%; background:var(--gray-100); display:flex; align-items:center; justify-content:center;">'
+            + '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gray-400);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+            + '</div>'
+            + '<p style="font-size:0.875rem; margin-bottom:16px;">' + escapeHtml(message || '加载失败，请稍后重试') + '</p>'
+            + (retryFnName ? '<button class="btn btn-sm btn-primary" onclick="' + retryFnName + '">重新加载</button>' : '')
+            + '</div>';
+    }
+
     // ══════════════════════════════════════════════════════════════
     // renderHome() - Tournament List
     // ══════════════════════════════════════════════════════════════
@@ -347,7 +392,14 @@
         const grid = document.getElementById('tournamentGrid');
         const empty = document.getElementById('emptyState');
 
-        if (!Array.isArray(data) || data.length === 0) {
+        if (!Array.isArray(data)) {
+            grid.innerHTML = errorStateHtml('赛事列表加载失败，请检查网络后重试', 'renderHomeRetry');
+            grid.style.display = 'block';
+            empty.style.display = 'none';
+            window.renderHomeRetry = function() { renderHome(); };
+            return;
+        }
+        if (data.length === 0) {
             grid.style.display = 'none';
             empty.style.display = 'block';
             return;
@@ -445,7 +497,8 @@
 
         const t = await getTournament(tid);
         if (!t) {
-            document.getElementById('tName').textContent = '赛事未找到';
+            app.innerHTML = subnavHtml(tid, '') + '<section class="section"><div class="container"><div class="card">' + errorStateHtml('赛事不存在或加载失败', 'retryTournamentHome') + '</div></div></section>';
+            window.retryTournamentHome = function() { renderTournamentHome(tid); };
             return;
         }
 
@@ -565,7 +618,8 @@
 
         const players = await getTournamentPlayers(tid);
         if (!Array.isArray(players)) {
-            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="' + (isDoubles ? 6 : 6) + '" class="text-center">加载失败</td></tr>';
+            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="' + (isDoubles ? 6 : 6) + '">' + errorStateHtml('球员数据加载失败', 'retryPlayers') + '</td></tr>';
+            window.retryPlayers = function() { renderPlayers(tid); };
             return;
         }
 
@@ -965,7 +1019,11 @@
         }
 
         const matches = await getMatches(tid);
-        if (!Array.isArray(matches)) return;
+        if (!Array.isArray(matches)) {
+            document.getElementById('matchList').innerHTML = errorStateHtml('赛程数据加载失败', 'retrySchedule');
+            window.retrySchedule = function() { renderSchedule(tid); };
+            return;
+        }
 
         const players = await getTournamentPlayers(tid);
         const playerMap = {};
@@ -1438,7 +1496,12 @@
         }
 
         const guesses = await getDailyGuesses(tid);
-        if (!Array.isArray(guesses) || guesses.length === 0) {
+        if (!Array.isArray(guesses)) {
+            document.getElementById('guessList').innerHTML = errorStateHtml('竞猜数据加载失败', 'retryGuesses');
+            window.retryGuesses = function() { renderGuesses(tid); };
+            return;
+        }
+        if (guesses.length === 0) {
             document.getElementById('guessList').innerHTML = '';
             return;
         }
@@ -4339,6 +4402,27 @@
     window.addEventListener('hashchange', router);
     // Initial route
     router();
+
+    // ── Back to top button ──
+    (function() {
+        const btn = document.createElement('button');
+        btn.className = 'back-to-top';
+        btn.title = '返回顶部';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>';
+        btn.onclick = function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+        document.body.appendChild(btn);
+
+        function toggleBtn() {
+            if (window.scrollY > 400) {
+                btn.classList.add('visible');
+            } else {
+                btn.classList.remove('visible');
+            }
+        }
+        window.addEventListener('scroll', toggleBtn, { passive: true });
+    })();
 
     </script>
 </body>

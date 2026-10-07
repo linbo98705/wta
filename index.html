@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css?v=50">
+    <link rel="stylesheet" href="static/css/style.css?v=51">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -310,7 +310,8 @@
             </div>
         </div>
         <div class="tournament-grid" id="tournamentGrid">
-            <div class="loading">加载中...</div>
+            ${Array.from({length: 3}).map(() => `
+            <div class="skeleton skeleton-card" style="height:180px;"></div>`).join('')}
         </div>
         <div class="empty-state" id="emptyState" style="display:none;">
             <h3>暂无赛事</h3>
@@ -497,7 +498,15 @@
                         </tr>
                     </thead>
                     <tbody id="playerTableBody">
-                        <tr><td colspan="6" class="loading">加载中...</td></tr>
+                        ${Array.from({length: 8}).map((_, i) => `
+                        <tr>
+                            <td><span class="skeleton" style="width:20px;height:14px;"></span></td>
+                            <td><div style="display:flex;align-items:center;gap:8px;"><span class="skeleton skeleton-avatar"></span><span class="skeleton" style="width:100px;height:14px;"></span></div></td>
+                            <td><span class="skeleton" style="width:70px;height:14px;"></span></td>
+                            <td><span class="skeleton" style="width:30px;height:14px;"></span></td>
+                            <td><span class="skeleton" style="width:24px;height:24px;border-radius:50%;"></span></td>
+                            <td><span class="skeleton" style="width:50px;height:14px;"></span></td>
+                        </tr>`).join('')}
                     </tbody>
                 </table>
             </div>
@@ -855,16 +864,36 @@
         <div class="card">
             <div class="card-header flex-between">
                 <h3>赛程赛果</h3>
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <select class="form-control" id="dateFilter" onchange="filterByDate(this.value)" style="width:auto; font-size:0.8125rem; padding:4px 8px;">
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <button class="btn btn-sm btn-outline" id="prevDayBtn" onclick="navigateDate(-1)" title="上一日" style="padding:4px 10px;">&larr;</button>
+                    <select class="form-control" id="dateFilter" onchange="filterByDate(this.value)" style="width:auto; font-size:0.8125rem; padding:4px 8px; min-width:140px;">
                         <option value="">所有日期</option>
                     </select>
+                    <button class="btn btn-sm btn-outline" id="nextDayBtn" onclick="navigateDate(1)" title="下一日" style="padding:4px 10px;">&rarr;</button>
                     <span id="matchCount" style="font-size:0.875rem; color:var(--gray-500);"></span>
                 </div>
             </div>
             <div class="card-body">
                 <div id="matchList">
-                    <div class="loading">加载中...</div>
+                    ${Array.from({length: 5}).map(() => `
+                    <div style="padding:12px 0; border-bottom:1px solid var(--gray-200);">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                            <span class="skeleton" style="width:50px;height:16px;border-radius:3px;"></span>
+                            <span class="skeleton" style="width:60px;height:14px;border-radius:3px;"></span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="skeleton skeleton-avatar" style="width:24px;height:24px;"></span>
+                            <span class="skeleton" style="width:80px;height:14px;flex:1;"></span>
+                            <span class="skeleton" style="width:30px;height:14px;"></span>
+                            <span class="skeleton" style="width:20px;height:14px;"></span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                            <span class="skeleton skeleton-avatar" style="width:24px;height:24px;"></span>
+                            <span class="skeleton" style="width:80px;height:14px;flex:1;"></span>
+                            <span class="skeleton" style="width:30px;height:14px;"></span>
+                            <span class="skeleton" style="width:20px;height:14px;"></span>
+                        </div>
+                    </div>`).join('')}
                 </div>
             </div>
         </div>
@@ -1183,6 +1212,24 @@
             renderMatches();
         };
 
+        window.navigateDate = function(direction) {
+            const sel = document.getElementById('dateFilter');
+            if (!sel) return;
+            const opts = [...sel.options].map(o => o.value).filter(v => v);
+            if (opts.length === 0) return;
+            let idx = opts.indexOf(_currentDate);
+            if (idx === -1) {
+                idx = direction > 0 ? 0 : opts.length - 1;
+            } else {
+                idx += direction;
+                if (idx < 0) idx = 0;
+                if (idx >= opts.length) idx = opts.length - 1;
+            }
+            const newDate = opts[idx];
+            sel.value = newDate;
+            filterByDate(newDate);
+        };
+
         window.exportScheduleImage = async function() {
             const matchListEl = document.getElementById('matchList');
             if (!matchListEl) { showToast('未找到赛程内容', 'error'); return; }
@@ -1344,7 +1391,8 @@
 <section class="section">
     <div class="container">
         <div id="guessList">
-            <div class="loading">加载中...</div>
+            ${Array.from({length: 3}).map(() => `
+            <div class="skeleton skeleton-card" style="height:160px;margin-bottom:20px;"></div>`).join('')}
         </div>
     </div>
 </section>`;
@@ -2413,22 +2461,34 @@
             adminUpdateBatchDelBtn();
         }
 
-        window.adminFilterPlayerList = function() {
+        let _playerSearchTimer = null;
+        window.adminFilterPlayerList = function(immediate) {
             const keyword = (document.getElementById('playerSearchInput').value || '').trim().toLowerCase();
             const countryFilter = document.getElementById('playerCountryFilter') ? document.getElementById('playerCountryFilter').value : '';
-            var filtered = allPlayersCache;
-            if (countryFilter) {
-                filtered = filtered.filter(function(p) { return (p.country || '') === countryFilter; });
+
+            const doFilter = () => {
+                var filtered = allPlayersCache;
+                if (countryFilter) {
+                    filtered = filtered.filter(function(p) { return (p.country || '') === countryFilter; });
+                }
+                if (keyword) {
+                    filtered = filtered.filter(function(p) {
+                        return (p.name || '').toLowerCase().includes(keyword) || (p.country || '').toLowerCase().includes(keyword) || String(p.ranking || '').includes(keyword) || String(p.doubles_ranking || '').includes(keyword) || String(p.id || '').includes(keyword);
+                    });
+                }
+                playerFilteredData = filtered;
+                playerPage = 1;
+                document.getElementById('playerCount').textContent = '找到 ' + filtered.length + ' / ' + allPlayersCache.length + ' 名球员';
+                adminRenderPlayerListPaginated(filtered, playerPage);
+            };
+
+            if (immediate || !keyword) {
+                clearTimeout(_playerSearchTimer);
+                doFilter();
+            } else {
+                clearTimeout(_playerSearchTimer);
+                _playerSearchTimer = setTimeout(doFilter, 200);
             }
-            if (keyword) {
-                filtered = filtered.filter(function(p) {
-                    return (p.name || '').toLowerCase().includes(keyword) || (p.country || '').toLowerCase().includes(keyword) || String(p.ranking || '').includes(keyword) || String(p.doubles_ranking || '').includes(keyword) || String(p.id || '').includes(keyword);
-                });
-            }
-            playerFilteredData = filtered;
-            playerPage = 1;
-            document.getElementById('playerCount').textContent = '找到 ' + filtered.length + ' / ' + allPlayersCache.length + ' 名球员';
-            adminRenderPlayerListPaginated(filtered, playerPage);
         };
 
         function adminRenderPlayerListPaginated(players, page) {

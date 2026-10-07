@@ -787,32 +787,50 @@ img { max-width: 100%; height: auto; }
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #D4A017, #FFD700);
-    color: #5C4400;
-    font-size: 0.6875rem;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    color: #92400E;
+    font-size: 0.75rem;
     font-weight: 700;
-    box-shadow: 0 1px 3px rgba(212, 160, 23, 0.3);
+    box-shadow: 0 2px 4px rgba(251, 191, 36, 0.2);
     flex-shrink: 0;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.seed-badge::before {
+    content: '';
+    display: none;
 }
 
 .seed-badge.empty {
-    background: var(--gray-200);
+    background: var(--gray-100);
     color: var(--gray-400);
     box-shadow: none;
+    font-weight: 500;
 }
 
-/* Top 8 seeds get special ring */
+/* Top 8 seeds get special treatment */
 .seed-badge.seed-top {
-    width: 26px;
-    height: 26px;
-    font-size: 0.75rem;
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: #5C3A00;
-    box-shadow: 0 2px 6px rgba(255, 165, 0, 0.35);
-    border: 2px solid #FFE066;
+    background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
+    color: #78350F;
+    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+    font-weight: 800;
+    min-width: 30px;
+    height: 30px;
+}
+
+/* 大种子(1-4)特殊样式 */
+.seed-badge[data-seed="1"],
+.seed-badge[data-seed="2"],
+.seed-badge[data-seed="3"],
+.seed-badge[data-seed="4"] {
+    background: linear-gradient(135deg, #FB923C 0%, #EA580C 100%);
+    color: white;
+    box-shadow: 0 4px 10px rgba(234, 88, 12, 0.35);
 }
 
 /* ── Draw Bracket ──────────────────────── */

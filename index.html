@@ -2999,9 +2999,9 @@
                     return;
                 }
                 tbody.innerHTML = teams.map(function(t) {
-                    var seedHtml = t.seed > 0 ? '<span class="seed-badge">' + t.seed + '</span>' : '-';
-                    var p1Html = '<div class="player-row"><div class="player-avatar">' + (t.p1.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(t.p1.name) + '</strong></div>';
-                    var p2Html = t.p2 ? '<div class="player-row"><div class="player-avatar">' + (t.p2.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(t.p2.name) + '</strong></div>' : '<span style="color:var(--gray-400);">—</span>';
+                    var seedHtml = t.seed > 0 ? '<span class="seed-badge" data-seed="' + t.seed + '">' + t.seed + '</span>' : '-';
+                    var p1Html = '<div class="player-row"><strong>' + escapeHtml(t.p1.name) + '</strong></div>';
+                    var p2Html = t.p2 ? '<div class="player-row"><strong>' + escapeHtml(t.p2.name) + '</strong></div>' : '<span style="color:var(--gray-400);">—</span>';
                     var r1 = t.p1.doubles_ranking && t.p1.doubles_ranking < 999 ? '#' + t.p1.doubles_ranking : '-';
                     var r2 = t.p2 && t.p2.doubles_ranking && t.p2.doubles_ranking < 999 ? '#' + t.p2.doubles_ranking : '-';
                     var sumHtml = '<strong>' + t.rankSum + '</strong>';
@@ -3010,7 +3010,7 @@
                 }).join('');
             } else {
                 // 单打：保持原有逻辑
-                tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><div class="player-avatar">' + (p.name[0] || '').toUpperCase() + '</div><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td class="hide-mobile">' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正赛') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
+                tbody.innerHTML = players.map(p => '<tr><td>' + (p.t_seed > 0 ? '<span class="seed-badge" data-seed="' + p.t_seed + '">' + p.t_seed + '</span>' : '-') + '</td><td><div class="player-row"><strong>' + escapeHtml(p.name) + '</strong></div></td><td>' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + '</td><td>' + (p.ranking < 999 ? '#' + p.ranking : '-') + '</td><td class="hide-mobile">' + (p.entry_type === 'wc' ? '外卡' : p.entry_type === 'q' ? '资格赛' : '正赛') + '</td><td><button class="btn btn-outline btn-sm" onclick="adminEditEntry(' + p.id + ',\'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\',\'' + p.entry_type + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + p.id + ')">移除</button></td></tr>').join('');
             }
         };
 

@@ -2416,6 +2416,19 @@ img { max-width: 100%; height: auto; }
     border-radius: 999px;
 }
 
+/* ── Mobile Tab Bar (hidden on desktop) ── */
+.mobile-tabbar {
+    display: none;
+}
+
+.mobile-more-overlay {
+    display: none;
+}
+
+.mobile-more-menu {
+    display: none;
+}
+
 .admin-content {
     padding: 28px;
     background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);

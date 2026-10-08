@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css?v=62">
+    <link rel="stylesheet" href="static/css/style.css?v=63">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -2164,6 +2164,9 @@
             <button class="modal-close" onclick="closeModal('tournamentPickerModal')">&times;</button>
         </div>
         <div class="modal-body" style="padding: 12px;">
+            <div class="tp-search-wrap">
+                <input type="text" class="form-control tp-search-input" id="tournamentPickerSearch" placeholder="搜索赛事…" oninput="adminFilterTournamentPicker(this)">
+            </div>
             <div class="tournament-picker-list" id="tournamentPickerList"></div>
         </div>
     </div>
@@ -2422,6 +2425,34 @@
                 __pickerCallback(t);
             }
             closeModal('tournamentPickerModal');
+        };
+
+        window.adminFilterTournamentPicker = function(input) {
+            const keyword = input.value.trim().toLowerCase();
+            const list = document.getElementById('tournamentPickerList');
+            if (!list) return;
+            const cards = list.querySelectorAll('.tp-card');
+            let visibleCount = 0;
+            cards.forEach(card => {
+                const name = card.querySelector('.tp-card-title')?.textContent?.toLowerCase() || '';
+                const cat = card.querySelector('.tp-badge-cat')?.textContent?.toLowerCase() || '';
+                const match = name.includes(keyword) || cat.includes(keyword);
+                card.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+            // 如果没有结果显示提示
+            const emptyEl = list.querySelector('.tp-empty');
+            if (visibleCount === 0) {
+                if (!emptyEl) {
+                    const div = document.createElement('div');
+                    div.className = 'tp-empty';
+                    div.style.cssText = 'text-align:center; padding:30px; color:var(--gray-400); font-size:0.875rem;';
+                    div.textContent = '未找到匹配的赛事';
+                    list.appendChild(div);
+                }
+            } else if (emptyEl) {
+                emptyEl.remove();
+            }
         };
 
         // ── Tournament Admin Picker ──

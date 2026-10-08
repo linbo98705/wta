@@ -2839,6 +2839,26 @@ textarea.form-control {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin-top: 10px;
+}
+
+.tp-search-wrap {
+    margin-bottom: 4px;
+}
+
+.tp-search-input {
+    padding: 10px 14px;
+    font-size: 0.875rem;
+    border-radius: 10px;
+    border: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    transition: all 0.2s ease;
+}
+
+.tp-search-input:focus {
+    background: white;
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
 }
 
 .tp-card {

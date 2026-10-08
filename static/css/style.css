@@ -2797,6 +2797,15 @@ textarea.form-control {
     overflow-x: auto;
     flex: 1;
     min-height: 0;
+    /* 确保所有子元素宽度一致：由最宽的内容撑开 */
+    min-width: min-content;
+    width: 100%;
+}
+
+/* 弹窗内所有块级子元素撑满可用宽度，与最宽元素对齐 */
+.modal.modal--form .modal-body > * {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .modal.modal--form .modal-actions {
@@ -3670,26 +3679,23 @@ textarea.form-control {
     /* 移动端：侧边栏新样式适配 */
     .admin-sidebar {
         display: flex;
-        overflow-x: auto;
-        padding: 8px 8px;
+        overflow-x: hidden;
+        padding: 6px 6px;
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
+        width: 100%;
         z-index: 100;
         background: linear-gradient(180deg, #1E1B4B 0%, #312E81 100%);
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
-
-    .admin-sidebar::-webkit-scrollbar {
-        display: none;
     }
 
     .sidebar-section {
         padding: 0;
         display: flex;
-        gap: 4px;
+        gap: 2px;
+        flex: 1;
+        min-width: 0;
     }
 
     .sidebar-section-title {
@@ -3699,17 +3705,29 @@ textarea.form-control {
     .admin-sidebar a {
         white-space: nowrap;
         border-left: none;
-        border-bottom: none;
-        padding: 8px 14px;
-        font-size: 0.8125rem;
+        border-bottom: 2px solid transparent;
+        padding: 4px 2px;
+        font-size: 0.625rem;
         margin: 0;
-        border-radius: 8px;
+        border-radius: 6px;
+        flex: 1;
+        flex-direction: column;
+        gap: 2px;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        min-width: 0;
+    }
+
+    .admin-sidebar a .ai-icon {
+        width: 20px;
+        height: 20px;
+        margin: 0 auto;
     }
 
     .admin-sidebar a.active {
-        border-bottom: none;
-        background: linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(99, 102, 241, 0.9) 100%);
-        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+        border-bottom: 2px solid var(--accent-gold);
+        background: rgba(255,255,255,0.12);
         color: white;
     }
 
@@ -3719,14 +3737,19 @@ textarea.form-control {
 
     .admin-sidebar a.nav-sep {
         border-top: none !important;
-        border-left: 1px solid rgba(255,255,255,0.2);
-        margin-top: 0;
-        margin-left: 4px;
-        padding-left: 12px;
+        border-left: 1px solid rgba(255,255,255,0.15);
+        margin-top: 6px;
+        margin-bottom: 6px;
+        margin-left: 2px;
+        margin-right: 2px;
+        padding: 0;
+        flex: 0;
+        min-width: 1px;
+        width: 1px;
     }
 
     .admin-sidebar a.nav-sep:first-of-type {
-        margin-left: auto;
+        margin-left: 4px;
     }
 
     /* 移动端：管理后台表格优化 */
@@ -3847,12 +3870,6 @@ textarea.form-control {
     .modal-body .guess-edit-table-5 {
         min-width: 480px;
         font-size: 0.75rem;
-    }
-
-    /* 弹窗内所有内容元素保持统一最小宽度，确保对齐一致 */
-    .modal-body .guess-matchup,
-    .modal-body .form-row {
-        min-width: 560px;
     }
 
     .modal-body .data-table {
@@ -4193,10 +4210,12 @@ textarea.form-control {
         margin: 10px 0 8px;
     }
 
-    /* 480px以下：弹窗内所有内容元素保持统一最小宽度，确保对齐一致 */
-    .modal-body .guess-matchup,
-    .modal-body .form-row,
+    /* 480px以下：竞猜编辑表格更紧凑 */
     .modal-body .guess-edit-table-7,
+    .modal-body .guess-edit-table-5 {
+        font-size: 0.6875rem;
+    }
+
     .modal-body .data-table {
         min-width: 500px;
     }

@@ -2780,6 +2780,13 @@ textarea.form-control {
     flex-direction: column;
 }
 
+.modal.modal--form form {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
 .modal.modal--form .modal-header {
     flex-shrink: 0;
 }
@@ -2787,7 +2794,9 @@ textarea.form-control {
 .modal.modal--form .modal-body {
     padding: 20px 24px;
     overflow-y: auto;
+    overflow-x: auto;
     flex: 1;
+    min-height: 0;
 }
 
 .modal.modal--form .modal-actions {
@@ -3163,8 +3172,7 @@ textarea.form-control {
 
     .admin-sidebar {
         display: flex;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow-x: hidden;
         padding: 0;
         position: fixed;
         top: 0;
@@ -3179,12 +3187,33 @@ textarea.form-control {
         display: none;
     }
 
+    .sidebar-section {
+        display: flex;
+        padding: 0;
+    }
+
+    .sidebar-section-title {
+        display: none;
+    }
+
     .admin-sidebar a {
         white-space: nowrap;
         border-left: none;
         border-bottom: 3px solid transparent;
-        padding: 10px 12px;
-        font-size: 0.8125rem;
+        padding: 6px 8px;
+        font-size: 0.6875rem;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+        justify-content: center;
+        text-align: center;
+        min-width: 0;
+    }
+
+    .admin-sidebar a .ai-icon {
+        width: 20px;
+        height: 20px;
+        margin: 0 auto;
     }
 
     .admin-sidebar {
@@ -3761,6 +3790,14 @@ textarea.form-control {
         overflow-y: auto;
         overflow-x: auto;
         flex: 1;
+        min-height: 0;
+    }
+
+    .modal.modal--form form {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
     }
 
     .modal-actions {
@@ -3810,6 +3847,16 @@ textarea.form-control {
     .modal-body .guess-edit-table-5 {
         min-width: 480px;
         font-size: 0.75rem;
+    }
+
+    /* 弹窗内所有内容元素保持统一最小宽度，确保对齐一致 */
+    .modal-body .guess-matchup,
+    .modal-body .form-row {
+        min-width: 560px;
+    }
+
+    .modal-body .data-table {
+        min-width: 560px;
     }
 
     .guess-predict-input,
@@ -3991,13 +4038,25 @@ textarea.form-control {
         padding: 12px 10px;
     }
 
-    .admin-content {
-        padding: 44px 8px 12px;
+    .admin-sidebar a {
+        padding: 5px 4px;
+        font-size: 0.625rem;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+        justify-content: center;
+        text-align: center;
+        min-width: 0;
     }
 
-    .admin-sidebar a {
-        padding: 8px 10px;
-        font-size: 0.75rem;
+    .admin-sidebar a .ai-icon {
+        width: 18px;
+        height: 18px;
+        margin: 0 auto;
+    }
+
+    .admin-content {
+        padding: 44px 8px 12px;
     }
 
     /* 弹窗全屏 - 三段式 */
@@ -4028,6 +4087,14 @@ textarea.form-control {
         overflow-y: auto;
         overflow-x: auto;
         flex: 1;
+        min-height: 0;
+    }
+
+    .modal.modal--form form {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
     }
 
     .modal-actions {
@@ -4124,6 +4191,14 @@ textarea.form-control {
         padding: 8px 10px;
         gap: 6px;
         margin: 10px 0 8px;
+    }
+
+    /* 480px以下：弹窗内所有内容元素保持统一最小宽度，确保对齐一致 */
+    .modal-body .guess-matchup,
+    .modal-body .form-row,
+    .modal-body .guess-edit-table-7,
+    .modal-body .data-table {
+        min-width: 500px;
     }
 
     .guess-matchup-player {

@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css?v=63">
+    <link rel="stylesheet" href="static/css/style.css?v=64">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -3240,7 +3240,7 @@
             var head = document.getElementById('entryTableHead');
             if (head) {
                 if (isDoubles) {
-                    head.innerHTML = '<th>种子</th><th>球员1</th><th>球员2</th><th>双打排名1</th><th>双打排名2</th><th>排名总和</th><th>操作</th>';
+                    head.innerHTML = '<th style="width:50px;">种子</th><th>球员</th><th style="width:80px;">双打排名</th><th style="width:70px;">排名总和</th><th style="width:120px;">操作</th>';
                 } else {
                     head.innerHTML = '<th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th>';
                 }
@@ -3267,7 +3267,7 @@
         window.adminRenderEntryList = function(players, countryFilter) {
             const tbody = document.getElementById('entryTable');
             const isDoubles = entryTournamentType === 'doubles';
-            var colCount = isDoubles ? 7 : 6;
+            var colCount = isDoubles ? 5 : 6;
             if (players.error || !Array.isArray(players) || players.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="' + colCount + '" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
                 return;
@@ -3313,15 +3313,27 @@
                     tbody.innerHTML = '<tr><td colspan="' + colCount + '" class="text-center" style="padding:40px;">暂无参赛球员</td></tr>';
                     return;
                 }
-                tbody.innerHTML = teams.map(function(t) {
+                tbody.innerHTML = teams.map(function(t, idx) {
                     var seedHtml = t.seed > 0 ? '<span class="seed-badge" data-seed="' + t.seed + '">' + t.seed + '</span>' : '-';
-                    var p1Html = '<div class="player-row"><strong>' + escapeHtml(t.p1.name) + '</strong></div>';
-                    var p2Html = t.p2 ? '<div class="player-row"><strong>' + escapeHtml(t.p2.name) + '</strong></div>' : '<span style="color:var(--gray-400);">—</span>';
+                    var p1Name = '<strong>' + escapeHtml(t.p1.name) + '</strong>';
+                    var p2Name = t.p2 ? '<strong>' + escapeHtml(t.p2.name) + '</strong>' : '<span style="color:var(--gray-400);">—</span>';
+                    var p1Country = t.p1.country ? '<span class="doubles-country">' + countryFlag(t.p1.country_code || '', t.p1.country) + ' ' + escapeHtml(t.p1.country) + '</span>' : '';
+                    var p2Country = t.p2 && t.p2.country ? '<span class="doubles-country">' + countryFlag(t.p2.country_code || '', t.p2.country) + ' ' + escapeHtml(t.p2.country) + '</span>' : '';
                     var r1 = t.p1.doubles_ranking && t.p1.doubles_ranking < 999 ? '#' + t.p1.doubles_ranking : '-';
                     var r2 = t.p2 && t.p2.doubles_ranking && t.p2.doubles_ranking < 999 ? '#' + t.p2.doubles_ranking : '-';
-                    var sumHtml = '<strong>' + t.rankSum + '</strong>';
                     var actions = '<button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + t.p1.id + ')">移除整组</button>';
-                    return '<tr><td>' + seedHtml + '</td><td>' + p1Html + '</td><td>' + p2Html + '</td><td>' + r1 + '</td><td>' + r2 + '</td><td>' + sumHtml + '</td><td>' + actions + '</td></tr>';
+                    var altClass = idx % 2 === 0 ? ' doubles-row-alt' : '';
+                    return '<tr class="doubles-team-row' + altClass + '">'
+                        + '<td class="doubles-seed-cell" rowspan="2">' + seedHtml + '</td>'
+                        + '<td class="doubles-player-cell"><div class="doubles-player">' + p1Name + p1Country + '</div></td>'
+                        + '<td class="doubles-rank-cell"><div class="doubles-rank">' + r1 + '</div></td>'
+                        + '<td class="doubles-sum-cell" rowspan="2"><strong>' + t.rankSum + '</strong></td>'
+                        + '<td class="doubles-action-cell" rowspan="2">' + actions + '</td>'
+                        + '</tr>'
+                        + '<tr class="doubles-team-row doubles-team-row-2' + altClass + '">'
+                        + '<td class="doubles-player-cell"><div class="doubles-player doubles-player-2">' + p2Name + p2Country + '</div></td>'
+                        + '<td class="doubles-rank-cell"><div class="doubles-rank">' + r2 + '</div></td>'
+                        + '</tr>';
                 }).join('');
             } else {
                 // 单打：保持原有逻辑

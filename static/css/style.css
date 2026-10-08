@@ -865,6 +865,81 @@ img { max-width: 100%; height: auto; }
     display: none;
 }
 
+/* ── Doubles Entry Table (two rows per team) ── */
+.doubles-team-row.doubles-row-alt td {
+    background: var(--gray-50);
+}
+
+.doubles-team-row.doubles-team-row-2 td {
+    border-top: none;
+    padding-top: 4px;
+    padding-bottom: 10px;
+}
+
+.doubles-team-row:not(.doubles-team-row-2) td {
+    padding-bottom: 4px;
+}
+
+.doubles-seed-cell {
+    text-align: center;
+    vertical-align: middle;
+    width: 50px;
+}
+
+.doubles-player-cell {
+    min-width: 0;
+}
+
+.doubles-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.doubles-player strong {
+    font-size: 0.875rem;
+    color: var(--gray-900);
+}
+
+.doubles-player.doubles-player-2 strong {
+    color: var(--gray-600);
+    font-weight: 500;
+}
+
+.doubles-country {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.doubles-rank-cell {
+    text-align: center;
+    vertical-align: middle;
+    width: 80px;
+}
+
+.doubles-rank {
+    font-size: 0.8125rem;
+    color: var(--gray-700);
+    font-weight: 500;
+}
+
+.doubles-sum-cell {
+    text-align: center;
+    vertical-align: middle;
+    width: 70px;
+    color: var(--purple);
+    font-size: 0.9375rem;
+}
+
+.doubles-action-cell {
+    vertical-align: middle;
+    width: 120px;
+}
+
 .seed-badge {
     display: inline-flex;
     align-items: center;

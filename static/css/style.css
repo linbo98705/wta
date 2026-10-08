@@ -2797,15 +2797,6 @@ textarea.form-control {
     overflow-x: auto;
     flex: 1;
     min-height: 0;
-    /* 确保所有子元素宽度一致：由最宽的内容撑开 */
-    min-width: min-content;
-    width: 100%;
-}
-
-/* 弹窗内所有块级子元素撑满可用宽度，与最宽元素对齐 */
-.modal.modal--form .modal-body > * {
-    width: 100%;
-    box-sizing: border-box;
 }
 
 .modal.modal--form .modal-actions {
@@ -3680,7 +3671,7 @@ textarea.form-control {
     .admin-sidebar {
         display: flex;
         overflow-x: hidden;
-        padding: 6px 6px;
+        padding: 4px 6px;
         position: fixed;
         top: 0;
         left: 0;
@@ -3692,10 +3683,7 @@ textarea.form-control {
 
     .sidebar-section {
         padding: 0;
-        display: flex;
-        gap: 2px;
-        flex: 1;
-        min-width: 0;
+        display: contents;
     }
 
     .sidebar-section-title {
@@ -3703,26 +3691,27 @@ textarea.form-control {
     }
 
     .admin-sidebar a {
-        white-space: nowrap;
         border-left: none;
         border-bottom: 2px solid transparent;
-        padding: 4px 2px;
+        padding: 6px 2px;
         font-size: 0.625rem;
         margin: 0;
         border-radius: 6px;
         flex: 1;
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
         justify-content: center;
         align-items: center;
         text-align: center;
         min-width: 0;
+        overflow: hidden;
     }
 
     .admin-sidebar a .ai-icon {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         margin: 0 auto;
+        flex-shrink: 0;
     }
 
     .admin-sidebar a.active {
@@ -3738,12 +3727,12 @@ textarea.form-control {
     .admin-sidebar a.nav-sep {
         border-top: none !important;
         border-left: 1px solid rgba(255,255,255,0.15);
-        margin-top: 6px;
-        margin-bottom: 6px;
+        margin-top: 8px;
+        margin-bottom: 8px;
         margin-left: 2px;
         margin-right: 2px;
         padding: 0;
-        flex: 0;
+        flex: 0 0 1px;
         min-width: 1px;
         width: 1px;
     }
@@ -3876,6 +3865,16 @@ textarea.form-control {
         min-width: 560px;
     }
 
+    /* 弹窗内所有内容元素统一最小宽度，确保对齐一致 */
+    .modal-body .guess-matchup,
+    .modal-body .form-row,
+    .modal-body .form-group,
+    .modal-body > div[style*="margin-top"],
+    .modal-body > div[style*="overflow-x:auto"] {
+        min-width: 560px;
+        box-sizing: border-box;
+    }
+
     .guess-predict-input,
     .guess-name-input,
     .guess-score-input {
@@ -3959,6 +3958,17 @@ textarea.form-control {
 
     .admin-panel .data-table td:last-child .btn span {
         display: inline-flex;
+    }
+
+    /* 移动端：表格文字截断，防止溢出 */
+    .admin-panel .data-table {
+        table-layout: fixed;
+    }
+
+    .admin-panel .data-table td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     /* 移动端：分页优化 */
@@ -4218,6 +4228,16 @@ textarea.form-control {
 
     .modal-body .data-table {
         min-width: 500px;
+    }
+
+    /* 480px以下：弹窗内所有内容元素统一最小宽度 */
+    .modal-body .guess-matchup,
+    .modal-body .form-row,
+    .modal-body .form-group,
+    .modal-body > div[style*="margin-top"],
+    .modal-body > div[style*="overflow-x:auto"] {
+        min-width: 500px;
+        box-sizing: border-box;
     }
 
     .guess-matchup-player {

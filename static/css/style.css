@@ -2711,6 +2711,111 @@ textarea.form-control {
     margin-bottom: 6px;
 }
 
+/* ── Tournament Selector ───────────────── */
+.tournament-selector {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, var(--purple) 0%, var(--purple-light) 100%);
+    color: white;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+    white-space: nowrap;
+}
+
+.tournament-selector:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.tournament-selector .trophy-icon {
+    font-size: 1rem;
+}
+
+.tournament-selector .ts-name {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tournament-selector .ts-arrow {
+    font-size: 0.625rem;
+    opacity: 0.8;
+}
+
+/* 赛事选择器弹窗 */
+.tournament-picker-modal {
+    max-width: 420px;
+    padding: 0;
+}
+
+.tournament-picker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tp-card {
+    padding: 14px 16px;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-100);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tp-card:hover {
+    background: var(--purple-lighter);
+    border-color: var(--purple);
+}
+
+.tp-card:active {
+    transform: scale(0.98);
+}
+
+.tp-card-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 6px;
+}
+
+.tp-card-meta {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.tp-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
+.tp-badge-cat {
+    background: var(--purple-lighter);
+    color: var(--purple-dark);
+}
+
+.tp-badge-type {
+    background: var(--accent-green);
+    color: white;
+}
+
+.tp-card-date {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
 /* ── Modal ─────────────────────────────── */
 .modal-overlay {
     display: none;
@@ -3667,78 +3772,178 @@ textarea.form-control {
         padding: 56px 12px 16px;
     }
 
-    /* 移动端：侧边栏新样式适配 */
+    /* 移动端：隐藏侧边栏，改用底部Tab栏 */
     .admin-sidebar {
+        display: none;
+    }
+
+    /* 移动端底部Tab栏 */
+    .mobile-tabbar {
         display: flex;
-        overflow-x: hidden;
-        padding: 4px 6px;
         position: fixed;
-        top: 0;
+        bottom: 0;
         left: 0;
         right: 0;
-        width: 100%;
+        background: white;
+        border-top: 1px solid var(--gray-200);
         z-index: 100;
-        background: linear-gradient(180deg, #1E1B4B 0%, #312E81 100%);
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
     }
 
-    .sidebar-section {
-        padding: 0;
-        display: contents;
-    }
-
-    .sidebar-section-title {
-        display: none;
-    }
-
-    .admin-sidebar a {
-        border-left: none;
-        border-bottom: 2px solid transparent;
-        padding: 6px 2px;
-        font-size: 0.625rem;
-        margin: 0;
-        border-radius: 6px;
+    .mobile-tabbar a {
         flex: 1;
+        display: flex;
         flex-direction: column;
-        gap: 3px;
-        justify-content: center;
         align-items: center;
-        text-align: center;
-        min-width: 0;
-        overflow: hidden;
+        justify-content: center;
+        gap: 3px;
+        padding: 8px 4px;
+        font-size: 0.6875rem;
+        color: var(--gray-500);
+        text-decoration: none;
+        transition: color 0.2s;
     }
 
-    .admin-sidebar a .ai-icon {
-        width: 22px;
-        height: 22px;
-        margin: 0 auto;
-        flex-shrink: 0;
+    .mobile-tabbar a .ai-icon {
+        width: 24px;
+        height: 24px;
     }
 
-    .admin-sidebar a.active {
-        border-bottom: 2px solid var(--accent-gold);
-        background: rgba(255,255,255,0.12);
-        color: white;
+    .mobile-tabbar a.active {
+        color: var(--purple);
     }
 
-    .admin-sidebar a.active::before {
+    /* 移动端更多菜单遮罩 */
+    .mobile-more-overlay {
         display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 199;
     }
 
-    .admin-sidebar a.nav-sep {
-        border-top: none !important;
-        border-left: 1px solid rgba(255,255,255,0.15);
-        margin-top: 8px;
-        margin-bottom: 8px;
-        margin-left: 2px;
-        margin-right: 2px;
-        padding: 0;
-        flex: 0 0 1px;
-        min-width: 1px;
-        width: 1px;
+    .mobile-more-overlay.active {
+        display: block;
     }
 
-    .admin-sidebar a.nav-sep:first-of-type {
-        margin-left: 4px;
+    /* 移动端更多菜单 */
+    .mobile-more-menu {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 20px 20px 0 0;
+        z-index: 200;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        padding-bottom: env(safe-area-inset-bottom);
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .mobile-more-menu.active {
+        transform: translateY(0);
+    }
+
+    .mobile-more-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .mobile-more-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--purple), var(--purple-light));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    .mobile-more-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+
+    .mobile-more-role {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin-top: 2px;
+    }
+
+    .mobile-more-list {
+        padding: 8px 0;
+    }
+
+    .mobile-more-list a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+        color: var(--gray-700);
+        text-decoration: none;
+        font-size: 0.9375rem;
+        transition: background 0.15s;
+    }
+
+    .mobile-more-list a:active {
+        background: var(--gray-50);
+    }
+
+    .mobile-more-list a .ai-icon {
+        width: 20px;
+        height: 20px;
+        color: var(--gray-400);
+    }
+
+    .mobile-more-list a.danger {
+        color: var(--red-600);
+    }
+
+    .mobile-more-list a.danger .ai-icon {
+        color: var(--red-400);
+    }
+
+    /* 移动端内容区底部留白给Tab栏 */
+    .admin-content {
+        padding-bottom: 70px !important;
+    }
+
+    /* 移动端：赛事选择器 */
+    .tournament-selector {
+        padding: 6px 12px;
+        font-size: 0.8125rem;
+        gap: 6px;
+    }
+
+    .tournament-selector .trophy-icon {
+        font-size: 0.875rem;
+    }
+
+    .tournament-selector .ts-name {
+        max-width: 140px;
+    }
+
+    .tournament-picker-modal {
+        width: calc(100% - 32px);
+        max-height: 80vh;
+    }
+
+    .tp-card {
+        padding: 12px 14px;
+    }
+
+    .tp-card-title {
+        font-size: 0.875rem;
     }
 
     /* 移动端：管理后台表格优化 */

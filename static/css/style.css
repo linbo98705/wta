@@ -2584,58 +2584,125 @@ img { max-width: 100%; height: auto; }
 
 .tour-drop-btn {
     width: 100%;
-    padding: 6px 12px;
-    border: 1px solid var(--gray-300);
-    border-radius: 6px;
+    padding: 7px 14px;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
     background: var(--white);
-    font-size: 0.8rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
     color: var(--gray-700);
     text-align: left;
     cursor: pointer;
-    transition: border-color 0.15s ease;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
 .tour-drop-btn:hover {
-    border-color: var(--purple-lighter);
+    border-color: var(--purple);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
+}
+
+.tour-drop-btn::after {
+    content: '▾';
+    font-size: 0.7rem;
+    color: var(--gray-400);
+    flex-shrink: 0;
 }
 
 .tour-drop-panel {
     display: none;
     position: absolute;
-    top: calc(100% + 2px);
+    top: calc(100% + 6px);
     left: 0;
     right: 0;
-    max-height: 240px;
+    max-height: 280px;
     overflow-y: auto;
     background: var(--white);
-    border: 1px solid var(--gray-300);
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     z-index: 100;
+    overflow: hidden;
+}
+
+.tour-drop-panel.active {
+    display: block;
+    animation: dropFadeIn 0.2s ease;
+}
+
+@keyframes dropFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tour-drop-search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border: none;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 0.8125rem;
+    outline: none;
+    background: var(--gray-50);
+}
+
+.tour-drop-search:focus {
+    background: var(--white);
 }
 
 .tour-drop-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
+    gap: 10px;
+    padding: 10px 14px;
     cursor: pointer;
-    font-size: 0.8rem;
-    color: var(--gray-500);
-    transition: background 0.1s ease;
+    font-size: 0.8125rem;
+    color: var(--gray-600);
+    transition: background 0.15s ease;
+    border-bottom: 1px solid var(--gray-50);
+}
+
+.tour-drop-item:last-child {
+    border-bottom: none;
 }
 
 .tour-drop-item:hover {
-    background: var(--gray-100);
+    background: var(--purple-lighter);
+}
+
+.tour-drop-item span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tour-drop-item em {
+    font-style: normal;
+    color: var(--gray-400);
+    font-size: 0.7rem;
+    margin-left: 6px;
+    flex-shrink: 0;
 }
 
 .tour-drop-on {
     color: var(--purple-dark);
     font-weight: 600;
+    background: var(--purple-lighter);
 }
 
 .tour-drop-on input[type=checkbox] {
     accent-color: var(--purple);
+}
+
+.tour-drop-item input[type=checkbox] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    cursor: pointer;
 }
 
 .form-group {
@@ -3944,6 +4011,20 @@ textarea.form-control {
 
     .tp-card-title {
         font-size: 0.875rem;
+    }
+
+    /* 移动端：用户管理赛事选择下拉框 */
+    .tour-drop-wrap {
+        max-width: 100%;
+    }
+
+    .tour-drop-btn {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+    }
+
+    .tour-drop-panel {
+        max-height: 50vh !important;
     }
 
     /* 移动端：管理后台表格优化 */

@@ -3636,6 +3636,34 @@ textarea.form-control {
         display: none !important;
     }
 
+    /* 移动端：双打报名表格优化 */
+    .doubles-rank-cell {
+        display: none;
+    }
+    .doubles-seed-cell {
+        width: 40px;
+    }
+    .doubles-sum-cell {
+        width: 50px;
+        font-size: 0.8125rem;
+    }
+    .doubles-action-cell {
+        width: 50px;
+    }
+    .doubles-action-cell .btn {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+    .doubles-player {
+        gap: 4px;
+    }
+    .doubles-player strong {
+        font-size: 0.8125rem;
+    }
+    .doubles-country {
+        font-size: 0.6875rem;
+    }
+
     /* 移动端：表格行高紧凑 */
     .data-table th {
         padding: 8px 10px;
@@ -4004,6 +4032,7 @@ textarea.form-control {
 
     /* 移动端更多菜单 */
     .mobile-more-menu {
+        display: block;
         position: fixed;
         bottom: 0;
         left: 0;

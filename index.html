@@ -609,15 +609,15 @@
         if (isDoubles) {
             var theadRow = document.querySelector('.data-table thead tr');
             if (theadRow) {
-                theadRow.innerHTML = '<th style="width:36px; white-space:nowrap;">#</th><th style="white-space:nowrap;">球员1</th><th style="white-space:nowrap;">球员2</th><th style="width:50px; white-space:nowrap;">总和</th><th style="width:40px; white-space:nowrap;">种子</th><th style="width:60px; white-space:nowrap;" class="hide-mobile">入围</th>';
+                theadRow.innerHTML = '<th style="width:36px; white-space:nowrap;">#</th><th style="white-space:nowrap;">球员</th><th style="width:60px; white-space:nowrap;">排名总和</th><th style="width:50px; white-space:nowrap;">种子</th><th style="width:70px; white-space:nowrap;" class="hide-mobile">入围</th>';
             }
             var loadingTd = document.querySelector('#playerTableBody tr td');
-            if (loadingTd) loadingTd.setAttribute('colspan', '6');
+            if (loadingTd) loadingTd.setAttribute('colspan', '5');
         }
 
         const players = await getTournamentPlayers(tid);
         if (!Array.isArray(players)) {
-            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="' + (isDoubles ? 6 : 6) + '">' + errorStateHtml('球员数据加载失败', 'retryPlayers') + '</td></tr>';
+            document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="' + (isDoubles ? 5 : 6) + '">' + errorStateHtml('球员数据加载失败', 'retryPlayers') + '</td></tr>';
             window.retryPlayers = function() { renderPlayers(tid); };
             return;
         }
@@ -639,7 +639,7 @@
         const players = window._frontPlayersCache || [];
         const countryFilter = document.getElementById('frontPlayerCountryFilter') ? document.getElementById('frontPlayerCountryFilter').value : '';
         const isDoubles = !!window._frontIsDoubles;
-        var colCount = isDoubles ? 6 : 6;
+        var colCount = isDoubles ? 5 : 6;
 
         if (isDoubles) {
             // 双打：优先使用 partner_id 配对，无 partner_id 的按 doubles_ranking 自动配对
@@ -691,13 +691,23 @@
             document.getElementById('playerTableBody').innerHTML = filteredTeams.map(function(t, idx) {
                 var r1 = t.p1.doubles_ranking || 999;
                 var r2 = t.p2 ? (t.p2.doubles_ranking || 999) : 999;
-                var p1Html = '<div class="player-row">' + countryFlag(t.p1.country_code || '', t.p1.country) + '<strong>' + escapeHtml(t.p1.name) + '</strong> <span style="color:var(--gray-500); font-size:0.8125rem;">#' + (r1 < 999 ? r1 : '-') + '</span></div>';
-                var p2Html = t.p2 ? '<div class="player-row">' + countryFlag(t.p2.country_code || '', t.p2.country) + '<strong>' + escapeHtml(t.p2.name) + '</strong> <span style="color:var(--gray-500); font-size:0.8125rem;">#' + (r2 < 999 ? r2 : '-') + '</span></div>' : '<span style="color:var(--gray-400);">—</span>';
+                var p1Html = '<div class="doubles-player">' + countryFlag(t.p1.country_code || '', t.p1.country) + '<strong>' + escapeHtml(t.p1.name) + '</strong> <span style="color:var(--gray-500); font-size:0.8125rem;">#' + (r1 < 999 ? r1 : '-') + '</span></div>';
+                var p2Html = t.p2 ? '<div class="doubles-player doubles-player-2">' + countryFlag(t.p2.country_code || '', t.p2.country) + '<strong>' + escapeHtml(t.p2.name) + '</strong> <span style="color:var(--gray-500); font-size:0.8125rem;">#' + (r2 < 999 ? r2 : '-') + '</span></div>' : '<div class="doubles-player doubles-player-2"><span style="color:var(--gray-400);">—</span></div>';
                 var maxSeeds = window._frontMaxSeeds || 8;
                 var calcSeed = idx < maxSeeds ? idx + 1 : 0;
                 var seedHtml = calcSeed > 0 ? '<span class="seed-badge">' + calcSeed + '</span>' : '<span class="seed-badge empty">-</span>';
                 var entryHtml = t.entryType === 'wc' ? '外卡 (WC)' : t.entryType === 'q' ? '资格赛 (Q)' : '正赛';
-                return '<tr><td>' + (idx + 1) + '</td><td>' + p1Html + '</td><td>' + p2Html + '</td><td><strong>' + t.rankSum + '</strong></td><td>' + seedHtml + '</td><td class="hide-mobile">' + entryHtml + '</td></tr>';
+                var altClass = idx % 2 === 0 ? ' doubles-row-alt' : '';
+                return '<tr class="doubles-team-row' + altClass + '">'
+                    + '<td class="doubles-seed-cell" rowspan="2">' + (idx + 1) + '</td>'
+                    + '<td class="doubles-player-cell">' + p1Html + '</td>'
+                    + '<td class="doubles-sum-cell" rowspan="2"><strong>' + t.rankSum + '</strong></td>'
+                    + '<td class="doubles-seed-cell" rowspan="2">' + seedHtml + '</td>'
+                    + '<td class="hide-mobile" rowspan="2">' + entryHtml + '</td>'
+                    + '</tr>'
+                    + '<tr class="doubles-team-row doubles-team-row-2' + altClass + '">'
+                    + '<td class="doubles-player-cell">' + p2Html + '</td>'
+                    + '</tr>';
             }).join('');
         } else {
             // 单打：原有逻辑

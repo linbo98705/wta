@@ -3726,7 +3726,8 @@ textarea.form-control {
         margin-top: 6px;
     }
     #panel-entry .entry-data-table.is-doubles .doubles-col-p1 {
-        min-width: 140px;
+        min-width: 200px;
+        width: auto;
     }
     #panel-entry .entry-data-table.is-doubles .doubles-player {
         display: flex;

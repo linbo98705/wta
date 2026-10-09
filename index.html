@@ -3857,8 +3857,7 @@
                     if (aT > 0 || bT > 0) scoreDisplay = aT + ' - ' + bT;
                 }
                 if (scoreDisplay !== '-' && reason) scoreDisplay += ' (' + reason + ')';
-                const actionBtns = '<button class="btn btn-outline btn-sm" onclick="adminEditMatch(' + m.id + ')">编辑</button>' +
-                    (m.status === 'completed' ? ' <button class="btn btn-warning btn-sm" onclick="adminRevertMatch(' + m.id + ')">撤销</button>' : '');
+                const actionBtns = (m.status === 'completed' ? '<button class="btn btn-warning btn-sm" onclick="adminRevertMatch(' + m.id + ')">撤销</button>' : '');
                 const rowClass = isCollapsed ? 'collapsed-match-row' : '';
                 const rowStyle = isCollapsed ? 'display:none;' : '';
                 // 双打：显示搭档名

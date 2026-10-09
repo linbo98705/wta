@@ -2214,7 +2214,7 @@
                     <div class="guess-matchup-player" id="matchupP2">球员2</div>
                     <div class="guess-matchup-player doubles-only" id="matchupP4" style="font-size:0.875rem; color:var(--gray-500);">球员4</div>
                 </div>
-                <div style="text-align:center; margin-top:8px;">
+                <div style="text-align:center; margin-top:8px; display:none;">
                     <button type="button" class="btn btn-outline btn-xs" onclick="adminTogglePlayerSettings()" id="btnTogglePlayerSettings">
                         <span class="ai-icon-sm">${icoUsers}</span> 修改对阵球员
                     </button>
@@ -3857,7 +3857,8 @@
                     if (aT > 0 || bT > 0) scoreDisplay = aT + ' - ' + bT;
                 }
                 if (scoreDisplay !== '-' && reason) scoreDisplay += ' (' + reason + ')';
-                const actionBtns = (m.status === 'completed' ? '<button class="btn btn-warning btn-sm" onclick="adminRevertMatch(' + m.id + ')">撤销</button>' : '');
+                const actionBtns = '<button class="btn btn-outline btn-sm" onclick="adminEditMatch(' + m.id + ')">编辑</button>' +
+                    (m.status === 'completed' ? ' <button class="btn btn-warning btn-sm" onclick="adminRevertMatch(' + m.id + ')">撤销</button>' : '');
                 const rowClass = isCollapsed ? 'collapsed-match-row' : '';
                 const rowStyle = isCollapsed ? 'display:none;' : '';
                 // 双打：显示搭档名

@@ -17,12 +17,18 @@
     .dg-card { margin-bottom: 20px; }
     .dg-countdown { font-size: 0.875rem; font-weight: 700; color: var(--accent-gold); font-variant-numeric: tabular-nums; }
     .dg-deadline { font-size: 0.75rem; color: var(--gray-500); margin-top: 2px; }
-    .dg-table { width: 100%; border-collapse: collapse; }
+    .dg-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     .dg-table thead { background: var(--gray-100); }
     .dg-table th { padding: 10px 16px; font-size: 0.8125rem; font-weight: 700; color: var(--gray-600); text-align: left; border-bottom: 1px solid var(--gray-200); }
     .dg-table td { padding: 12px 16px; font-size: 0.875rem; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
     .dg-table tbody tr:hover { background: var(--purple-bg); }
     .dg-table tbody tr:last-child td { border-bottom: none; }
+    .dg-table th:nth-child(2),
+    .dg-table th:nth-child(3),
+    .dg-table td:nth-child(2),
+    .dg-table td:nth-child(3) {
+        width: calc((100% - 60px) / 2);
+    }
     .dg-tb { font-weight: 700; color: var(--purple); width: 60px; }
     .dg-match { color: var(--black); }
     .dg-result { color: var(--accent-green); font-weight: 600; }
@@ -3255,7 +3261,7 @@
             if (isDoubles) {
                 if (entryTable) entryTable.classList.add('is-doubles');
                 if (head) {
-                    head.innerHTML = '<th class="doubles-seed-head" style="width:50px;">种子</th><th>球员</th><th class="doubles-rank-cell" style="width:80px;">双打排名</th><th class="doubles-sum-head" style="width:70px;">排名总和</th><th class="doubles-action-head" style="width:120px;">操作</th>';
+                    head.innerHTML = '<th class="doubles-seed-head" style="width:50px;">种子</th><th class="doubles-col-p1">球员1</th><th class="doubles-col-p2">球员2</th><th class="doubles-sum-head" style="width:70px;">排名总和</th><th class="doubles-action-head" style="width:120px;">操作</th>';
                 }
             } else {
                 if (entryTable) entryTable.classList.remove('is-doubles');
@@ -3340,17 +3346,17 @@
                     var r1 = t.p1.doubles_ranking && t.p1.doubles_ranking < 999 ? '#' + t.p1.doubles_ranking : '-';
                     var r2 = t.p2 && t.p2.doubles_ranking && t.p2.doubles_ranking < 999 ? '#' + t.p2.doubles_ranking : '-';
                     var actions = '<button class="btn btn-danger btn-sm" onclick="adminRemoveEntry(' + t.p1.id + ')">移除整组</button>';
-                    var altClass = idx % 2 === 0 ? ' doubles-row-alt' : '';
-                    return '<tr class="doubles-team-row' + altClass + '">'
-                        + '<td class="doubles-seed-cell" rowspan="2">' + seedHtml + '</td>'
-                        + '<td class="doubles-player-cell"><div class="doubles-player">' + p1Name + p1Country + '</div></td>'
-                        + '<td class="doubles-rank-cell"><div class="doubles-rank">' + r1 + '</div></td>'
-                        + '<td class="doubles-sum-cell" rowspan="2"><strong>' + t.rankSum + '</strong></td>'
-                        + '<td class="doubles-action-cell" rowspan="2">' + actions + '</td>'
-                        + '</tr>'
-                        + '<tr class="doubles-team-row doubles-team-row-2' + altClass + '">'
-                        + '<td class="doubles-player-cell"><div class="doubles-player doubles-player-2">' + p2Name + p2Country + '</div></td>'
-                        + '<td class="doubles-rank-cell"><div class="doubles-rank">' + r2 + '</div></td>'
+                    // 球员1单元格：PC端只显示球员1，移动端同时显示球员2（两行，不换行）
+                    var p1Cell = '<div class="doubles-player">' + p1Name + p1Country + ' <span class="doubles-rank-inline">' + r1 + '</span></div>'
+                        + '<div class="doubles-player doubles-player-2 doubles-mobile-only">' + p2Name + p2Country + ' <span class="doubles-rank-inline">' + r2 + '</span></div>';
+                    // 球员2单元格：PC端显示，移动端隐藏
+                    var p2Cell = t.p2 ? '<td class="doubles-col-p2"><div class="doubles-player">' + p2Name + p2Country + ' <span class="doubles-rank-inline">' + r2 + '</span></div></td>' : '<td class="doubles-col-p2"><span style="color:var(--gray-400);">—</span></td>';
+                    return '<tr class="doubles-team-row">'
+                        + '<td class="doubles-seed-cell">' + seedHtml + '</td>'
+                        + '<td class="doubles-col-p1">' + p1Cell + '</td>'
+                        + p2Cell
+                        + '<td class="doubles-sum-cell"><strong>' + t.rankSum + '</strong></td>'
+                        + '<td class="doubles-action-cell">' + actions + '</td>'
                         + '</tr>';
                 }).join('');
             } else {

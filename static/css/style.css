@@ -486,6 +486,7 @@ img { max-width: 100%; height: auto; }
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
+    table-layout: fixed;
 }
 
 .dg-table th {
@@ -502,6 +503,13 @@ img { max-width: 100%; height: auto; }
 .dg-table td {
     padding: 8px 12px;
     border-bottom: 1px solid var(--gray-200);
+}
+
+.dg-table th:nth-child(2),
+.dg-table th:nth-child(3),
+.dg-table td:nth-child(2),
+.dg-table td:nth-child(3) {
+    width: calc((100% - 60px) / 2);
 }
 
 .dg-tb {
@@ -949,6 +957,17 @@ img { max-width: 100%; height: auto; }
 .doubles-action-cell {
     vertical-align: middle;
     width: 120px;
+}
+
+/* 双打：球员信息不换行 */
+.doubles-player {
+    white-space: nowrap;
+    flex-wrap: nowrap;
+}
+
+/* 双打：移动端才显示的球员2（在球员1单元格内） */
+.doubles-mobile-only {
+    display: none;
 }
 
 .seed-badge {
@@ -3396,13 +3415,19 @@ textarea.form-control {
         padding: 8px 10px;
     }
 
+    .dg-table th:nth-child(2),
+    .dg-table th:nth-child(3),
+    .dg-table td:nth-child(2),
+    .dg-table td:nth-child(3) {
+        width: calc((100% - 40px) / 2);
+    }
+
     .dg-tb {
         width: 40px;
         font-size: 0.75rem;
     }
 
     .dg-result {
-        width: 80px;
         font-size: 0.75rem;
     }
 
@@ -3666,8 +3691,30 @@ textarea.form-control {
     #panel-entry .entry-data-table.is-doubles {
         min-width: 280px;
     }
-    #panel-entry .entry-data-table.is-doubles .doubles-rank-cell {
+    /* 移动端隐藏球员2列，球员1列内两行显示 */
+    #panel-entry .entry-data-table.is-doubles .doubles-col-p2 {
         display: none;
+    }
+    #panel-entry .entry-data-table.is-doubles .doubles-mobile-only {
+        display: flex;
+        margin-top: 4px;
+    }
+    #panel-entry .entry-data-table.is-doubles .doubles-player {
+        gap: 4px;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+    }
+    #panel-entry .entry-data-table.is-doubles .doubles-player strong {
+        font-size: 0.8125rem;
+    }
+    #panel-entry .entry-data-table.is-doubles .doubles-country {
+        font-size: 0.6875rem;
+    }
+    #panel-entry .entry-data-table.is-doubles .doubles-rank-inline {
+        color: var(--gray-500);
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-left: auto;
     }
     #panel-entry .entry-data-table.is-doubles .doubles-seed-cell {
         width: 44px;
@@ -3700,22 +3747,6 @@ textarea.form-control {
     #panel-entry .entry-data-table.is-doubles .doubles-action-cell .btn::before {
         content: '🗑';
         font-size: 0.875rem;
-    }
-    #panel-entry .entry-data-table.is-doubles .doubles-player-cell {
-        padding: 6px 8px;
-    }
-    #panel-entry .entry-data-table.is-doubles .doubles-player {
-        gap: 4px;
-    }
-    #panel-entry .entry-data-table.is-doubles .doubles-player strong {
-        font-size: 0.8125rem;
-    }
-    #panel-entry .entry-data-table.is-doubles .doubles-country {
-        font-size: 0.6875rem;
-    }
-    #panel-entry .entry-data-table.is-doubles .doubles-team-row td {
-        padding-top: 6px;
-        padding-bottom: 6px;
     }
 
     /* 移动端：表格行高紧凑 */

@@ -4461,6 +4461,31 @@ textarea.form-control {
         width: 100%;
     }
 
+    /* 竞猜编辑弹窗移动端适配：内容宽度适配屏幕，不超出 */
+    #guessModal .modal-body .guess-matchup,
+    #guessModal .modal-body .form-row,
+    #guessModal .modal-body .form-group,
+    #guessModal .modal-body > div[style*="margin-top"],
+    #guessModal .modal-body > div[style*="overflow-x:auto"] {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #guessModal .modal-body .guess-edit-table-7 {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #guessModal .modal-body .guess-edit-table-5 {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #guessModal .modal-body .data-table {
+        min-width: 0;
+        width: 100%;
+    }
+
     .guess-ps-input {
         font-size: 0.75rem;
     }

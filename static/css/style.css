@@ -4486,6 +4486,47 @@ textarea.form-control {
         width: 100%;
     }
 
+    /* 其他表单弹窗移动端适配：内容宽度适配屏幕 */
+    #tournamentModal .modal-body .form-row,
+    #tournamentModal .modal-body .form-group,
+    #tournamentModal .modal-body > div[style*="margin-top"] {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #doublesEntryModal .modal-body .form-row,
+    #doublesEntryModal .modal-body .form-group,
+    #doublesEntryModal .modal-body > div[style*="margin-top"] {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #playerEditModal .modal-body .form-row,
+    #playerEditModal .modal-body .form-group,
+    #playerEditModal .modal-body > div[style*="margin-top"] {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #entryModal .modal-body .form-row,
+    #entryModal .modal-body .form-group,
+    #entryModal .modal-body > div[style*="margin-top"] {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #entryEditModal .modal-body .form-row,
+    #entryEditModal .modal-body .form-group,
+    #entryEditModal .modal-body > div[style*="margin-top"] {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #exportMatchupModal .modal-body textarea {
+        min-width: 0;
+        width: 100%;
+    }
+
     .guess-ps-input {
         font-size: 0.75rem;
     }

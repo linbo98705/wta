@@ -2257,7 +2257,7 @@
                 <div class="form-group" style="margin-top: 16px;">
                     <label style="display:flex; justify-content:space-between; align-items:center;">
                         <span><span class="ai-icon-sm">${icoEdit}</span>快速解析竞猜内容（分开填写）</span>
-                        <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessTextSeparate()"><span class="ai-icon-sm">${icoSearch}</span>解析填充</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessTextSeparate()"><span class="ai-icon-sm">${icoSearch}</span>一键填充</button>
                     </label>
                     <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;" id="guessTextInputGrid">
                         <div>
@@ -2329,7 +2329,7 @@
                 <div class="form-group">
                     <label style="display:flex; justify-content:space-between; align-items:center;">
                         <span>批量导入（支持对阵、日期、截止时间一起粘贴）</span>
-                        <button type="button" class="btn btn-sm btn-outline" onclick="adminParseGuessMatches()"><span class="ai-icon-sm">${icoSettings}</span>解析填充</button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="adminParseGuessMatches()"><span class="ai-icon-sm">${icoSettings}</span>一键填充</button>
                     </label>
                     <textarea class="form-control" id="gBulkMatches" rows="4" placeholder="达尼丽娜/费尔南德斯 vs 汤千慧/徐一璠&#10;郑钦文 vs 艾拉&#10;截止时间 7.28 23:00" style="font-family:monospace; font-size:0.8125rem;"></textarea>
                 </div>
@@ -4819,11 +4819,53 @@
                 return null;
             }
 
-            // 从字符串中提取时间 HH:MM
+            // 从字符串中提取时间，支持多种格式：
+            // 23:00 / 23：00 / 23.00 / 2300 / 23点 / 23点30 / 23点30分 / 晚上11点 / 下午3点30
             function extractTime(str) {
-                const m = str.match(/(\d{1,2})[：:](\d{2})/);
+                // 先尝试标准 HH:MM 格式（支持中文冒号和英文冒号）
+                let m = str.match(/(\d{1,2})[：:.](\d{2})/);
                 if (m) {
                     return String(m[1]).padStart(2, '0') + ':' + m[2];
+                }
+                // 尝试 4位数字 如 2300 / 0830
+                m = str.match(/[^\d](\d{4})[^\d]/);
+                if (!m) m = str.match(/^(\d{4})$/);
+                if (m) {
+                    const h = parseInt(m[1].substring(0, 2), 10);
+                    const min = parseInt(m[1].substring(2, 4), 10);
+                    if (h >= 0 && h <= 23 && min >= 0 && min <= 59) {
+                        return String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0');
+                    }
+                }
+                // 尝试带"点/时"的中文格式，如 23点 / 23点30 / 23点30分 / 23时30分
+                m = str.match(/(\d{1,2})[点时](\d{1,2})?(分)?/);
+                if (m) {
+                    let h = parseInt(m[1], 10);
+                    let min = m[2] ? parseInt(m[2], 10) : 0;
+                    // 处理上午/下午/晚上
+                    const ampmMatch = str.match(/上午|下午|晚上|凌晨|中午|am|pm/i);
+                    if (ampmMatch) {
+                        const ampm = ampmMatch[0].toLowerCase();
+                        if ((ampm === '下午' || ampm === '晚上' || ampm === 'pm') && h < 12) {
+                            h += 12;
+                        } else if ((ampm === '上午' || ampm === '凌晨' || ampm === 'am') && h === 12) {
+                            h = 0;
+                        } else if (ampm === '中午' && h === 12) {
+                            h = 12;
+                        }
+                    }
+                    if (h >= 0 && h <= 23 && min >= 0 && min <= 59) {
+                        return String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0');
+                    }
+                }
+                // 尝试纯数字小时（如 "23" 表示 23:00），需要上下文判断
+                m = str.match(/[^\d](\d{1,2})[点时]?\s*$/);
+                if (!m) m = str.match(/^(\d{1,2})[点时]?\s*$/);
+                if (m && !/\d{1,2}[.\-\/月]\d{1,2}/.test(str)) {
+                    const h = parseInt(m[1], 10);
+                    if (h >= 0 && h <= 23) {
+                        return String(h).padStart(2, '0') + ':00';
+                    }
                 }
                 return null;
             }

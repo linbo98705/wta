@@ -611,6 +611,8 @@
             if (theadRow) {
                 theadRow.innerHTML = '<th style="width:36px; white-space:nowrap;">#</th><th style="white-space:nowrap;">球员</th><th style="width:60px; white-space:nowrap;">排名总和</th><th style="width:50px; white-space:nowrap;">种子</th><th style="width:70px; white-space:nowrap;" class="hide-mobile">入围</th>';
             }
+            var playerTable = document.querySelector('.player-list-card .data-table');
+            if (playerTable) playerTable.classList.add('is-doubles');
             var loadingTd = document.querySelector('#playerTableBody tr td');
             if (loadingTd) loadingTd.setAttribute('colspan', '5');
         }
@@ -3250,7 +3252,7 @@
             var head = document.getElementById('entryTableHead');
             if (head) {
                 if (isDoubles) {
-                    head.innerHTML = '<th style="width:50px;">种子</th><th>球员</th><th style="width:80px;">双打排名</th><th style="width:70px;">排名总和</th><th style="width:120px;">操作</th>';
+                    head.innerHTML = '<th class="doubles-seed-head" style="width:50px;">种子</th><th>球员</th><th class="doubles-rank-cell" style="width:80px;">双打排名</th><th class="doubles-sum-head" style="width:70px;">排名总和</th><th class="doubles-action-head" style="width:120px;">操作</th>';
                 } else {
                     head.innerHTML = '<th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th>';
                 }
@@ -3764,7 +3766,8 @@
             const tid = document.getElementById('matchTournamentSelect').value;
             if (!tid) return;
             const matches = await getMatches(parseInt(tid));
-            allMatchesCache = Array.isArray(matches) ? matches : [];
+            // 过滤掉轮空比赛，不显示在管理列表中
+            allMatchesCache = Array.isArray(matches) ? matches.filter(m => m.status !== 'bye') : [];
             matchFilteredData = allMatchesCache;
             matchPage = 1;
             const tbody = document.getElementById('matchTable');
@@ -3827,8 +3830,8 @@
                 return;
             }
 
-            const activeMatches = matches.filter(m => m.status !== 'completed' && m.status !== 'bye');
-            const collapsedMatches = matches.filter(m => m.status === 'completed' || m.status === 'bye');
+            const activeMatches = matches.filter(m => m.status !== 'completed');
+            const collapsedMatches = matches.filter(m => m.status === 'completed');
             // 赛事是否已结束：没有进行中或待进行的比赛
             const isTournamentOver = activeMatches.length === 0 && collapsedMatches.length > 0;
 
@@ -3869,7 +3872,7 @@
                     });
                 } else {
                     // 赛事进行中：折叠已完成的比赛
-                    html += '<tr class="collapsed-section-toggle" onclick="adminToggleCollapsedMatches(this)" style="cursor:pointer; background:var(--gray-50);"><td colspan="9" style="text-align:center; padding:10px; font-weight:600; color:var(--gray-500);"><span class="toggle-icon" style="display:inline-block; transition:transform 0.2s;">&#9654;</span> 已折叠 ' + collapsedMatches.length + ' 场（已完成/轮空）<span style="font-size:0.75rem; color:var(--gray-400); margin-left:8px;">点击展开</span></td></tr>';
+                    html += '<tr class="collapsed-section-toggle" onclick="adminToggleCollapsedMatches(this)" style="cursor:pointer; background:var(--gray-50);"><td colspan="9" style="text-align:center; padding:10px; font-weight:600; color:var(--gray-500);"><span class="toggle-icon" style="display:inline-block; transition:transform 0.2s;">&#9654;</span> 已折叠 ' + collapsedMatches.length + ' 场已完成比赛<span style="font-size:0.75rem; color:var(--gray-400); margin-left:8px;">点击展开</span></td></tr>';
                     collapsedMatches.forEach(m => {
                         html += renderMatchRow(m, true);
                     });

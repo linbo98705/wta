@@ -4436,6 +4436,31 @@ textarea.form-control {
         padding: 5px 6px;
     }
 
+    /* 比赛编辑弹窗移动端适配：内容宽度适配屏幕，不超出 */
+    #matchModal .modal-body .guess-matchup,
+    #matchModal .modal-body .form-row,
+    #matchModal .modal-body .form-group,
+    #matchModal .modal-body > div[style*="margin-top"],
+    #matchModal .modal-body > div[style*="overflow-x:auto"] {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #matchModal .modal-body .guess-edit-table-7 {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #matchModal .modal-body .guess-edit-table-5 {
+        min-width: 0;
+        width: 100%;
+    }
+
+    #matchModal .modal-body .data-table {
+        min-width: 0;
+        width: 100%;
+    }
+
     .guess-ps-input {
         font-size: 0.75rem;
     }

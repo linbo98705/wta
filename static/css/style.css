@@ -927,6 +927,17 @@ img { max-width: 100%; height: auto; }
     font-weight: 500;
 }
 
+.doubles-rank-inline {
+    color: var(--gray-500);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+/* 移动端才显示的球员2（在球员1单元格内） */
+.doubles-mobile-only {
+    display: none;
+}
+
 .doubles-sum-cell {
     text-align: center;
     vertical-align: middle;
@@ -3311,9 +3322,20 @@ textarea.form-control {
     .player-list-card .data-table:not(.is-doubles) th:nth-child(6),
     .player-list-card .data-table:not(.is-doubles) td:nth-child(6) { display: none; }
 
-    /* 双打参赛名单：入围列移动端隐藏 */
-    .player-list-card .data-table.is-doubles th:nth-child(5),
-    .player-list-card .data-table.is-doubles td:nth-child(5) { display: none; }
+    /* 双打参赛名单移动端：隐藏球员2列和入围列，球员1列显示两行 */
+    .player-list-card .data-table.is-doubles .doubles-col-p2 { display: none; }
+    .player-list-card .data-table.is-doubles th:nth-child(6),
+    .player-list-card .data-table.is-doubles td:nth-child(6) { display: none; }
+    .player-list-card .data-table.is-doubles .doubles-mobile-only {
+        display: flex;
+        margin-top: 4px;
+    }
+    .player-list-card .data-table.is-doubles .doubles-player {
+        gap: 6px;
+    }
+    .player-list-card .data-table.is-doubles .doubles-player strong {
+        font-size: 0.8125rem;
+    }
 
     /* 签表容器：横向滚动 */
     .bracket-container {
@@ -3641,29 +3663,32 @@ textarea.form-control {
     }
 
     /* 移动端：双打报名表格优化 */
-    .doubles-rank-cell {
+    #panel-entry .entry-data-table.is-doubles {
+        min-width: 280px;
+    }
+    #panel-entry .entry-data-table.is-doubles .doubles-rank-cell {
         display: none;
     }
-    .doubles-seed-cell {
+    #panel-entry .entry-data-table.is-doubles .doubles-seed-cell {
         width: 44px;
         padding: 8px 4px;
     }
-    .doubles-seed-cell .seed-badge {
+    #panel-entry .entry-data-table.is-doubles .doubles-seed-cell .seed-badge {
         width: 22px;
         height: 22px;
         font-size: 0.6875rem;
         min-width: 22px;
     }
-    .doubles-sum-cell {
+    #panel-entry .entry-data-table.is-doubles .doubles-sum-cell {
         width: 52px;
         font-size: 0.8125rem;
         padding: 8px 4px;
     }
-    .doubles-action-cell {
+    #panel-entry .entry-data-table.is-doubles .doubles-action-cell {
         width: 48px;
         padding: 8px 4px;
     }
-    .doubles-action-cell .btn {
+    #panel-entry .entry-data-table.is-doubles .doubles-action-cell .btn {
         padding: 4px 6px;
         font-size: 0;
         width: 32px;
@@ -3672,23 +3697,23 @@ textarea.form-control {
         align-items: center;
         justify-content: center;
     }
-    .doubles-action-cell .btn::before {
+    #panel-entry .entry-data-table.is-doubles .doubles-action-cell .btn::before {
         content: '🗑';
         font-size: 0.875rem;
     }
-    .doubles-player-cell {
+    #panel-entry .entry-data-table.is-doubles .doubles-player-cell {
         padding: 6px 8px;
     }
-    .doubles-player {
+    #panel-entry .entry-data-table.is-doubles .doubles-player {
         gap: 4px;
     }
-    .doubles-player strong {
+    #panel-entry .entry-data-table.is-doubles .doubles-player strong {
         font-size: 0.8125rem;
     }
-    .doubles-country {
+    #panel-entry .entry-data-table.is-doubles .doubles-country {
         font-size: 0.6875rem;
     }
-    .doubles-team-row td {
+    #panel-entry .entry-data-table.is-doubles .doubles-team-row td {
         padding-top: 6px;
         padding-bottom: 6px;
     }
@@ -4385,11 +4410,14 @@ textarea.form-control {
     #panel-players .data-table th:nth-child(4),
     #panel-players .data-table td:nth-child(4) { display: none; }
 
-    /* 移动端：报名管理表格 - 隐藏更多列 */
-    #panel-entry .data-table th:nth-child(3),
-    #panel-entry .data-table td:nth-child(3),
-    #panel-entry .data-table th:nth-child(5),
-    #panel-entry .data-table td:nth-child(5) { display: none; }
+    /* 移动端：报名管理表格 - 隐藏更多列（单打） */
+    #panel-entry .entry-data-table:not(.is-doubles) th:nth-child(3),
+    #panel-entry .entry-data-table:not(.is-doubles) td:nth-child(3),
+    #panel-entry .entry-data-table:not(.is-doubles) th:nth-child(5),
+    #panel-entry .entry-data-table:not(.is-doubles) td:nth-child(5) { display: none; }
+
+    /* 移动端：报名管理双打表格 - 隐藏双打排名列 */
+    #panel-entry .entry-data-table.is-doubles .doubles-rank-cell { display: none; }
 
     /* 移动端：比赛管理表格 - 隐藏更多列 */
     #panel-matches .data-table th:nth-child(1),

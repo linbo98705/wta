@@ -609,12 +609,13 @@
         if (isDoubles) {
             var theadRow = document.querySelector('.data-table thead tr');
             if (theadRow) {
-                theadRow.innerHTML = '<th style="width:36px; white-space:nowrap;">#</th><th style="white-space:nowrap;">球员</th><th style="width:60px; white-space:nowrap;">排名总和</th><th style="width:50px; white-space:nowrap;">种子</th><th style="width:70px; white-space:nowrap;" class="hide-mobile">入围</th>';
+                // PC端：6列表头，移动端通过CSS隐藏部分列
+                theadRow.innerHTML = '<th style="width:36px; white-space:nowrap;">#</th><th class="doubles-col-p1">球员1</th><th class="doubles-col-p2">球员2</th><th style="width:60px; white-space:nowrap;">排名总和</th><th style="width:50px; white-space:nowrap;">种子</th><th style="width:70px; white-space:nowrap;" class="hide-mobile">入围</th>';
             }
             var playerTable = document.querySelector('.player-list-card .data-table');
             if (playerTable) playerTable.classList.add('is-doubles');
             var loadingTd = document.querySelector('#playerTableBody tr td');
-            if (loadingTd) loadingTd.setAttribute('colspan', '5');
+            if (loadingTd) loadingTd.setAttribute('colspan', '6');
         }
 
         const players = await getTournamentPlayers(tid);
@@ -641,7 +642,7 @@
         const players = window._frontPlayersCache || [];
         const countryFilter = document.getElementById('frontPlayerCountryFilter') ? document.getElementById('frontPlayerCountryFilter').value : '';
         const isDoubles = !!window._frontIsDoubles;
-        var colCount = isDoubles ? 5 : 6;
+        var colCount = isDoubles ? 6 : 6;
 
         if (isDoubles) {
             // 双打：优先使用 partner_id 配对，无 partner_id 的按 doubles_ranking 自动配对
@@ -693,22 +694,22 @@
             document.getElementById('playerTableBody').innerHTML = filteredTeams.map(function(t, idx) {
                 var r1 = t.p1.doubles_ranking || 999;
                 var r2 = t.p2 ? (t.p2.doubles_ranking || 999) : 999;
-                var p1Html = '<div class="doubles-player">' + countryFlag(t.p1.country_code || '', t.p1.country) + '<strong>' + escapeHtml(t.p1.name) + '</strong> <span style="color:var(--gray-500); font-size:0.8125rem;">#' + (r1 < 999 ? r1 : '-') + '</span></div>';
-                var p2Html = t.p2 ? '<div class="doubles-player doubles-player-2">' + countryFlag(t.p2.country_code || '', t.p2.country) + '<strong>' + escapeHtml(t.p2.name) + '</strong> <span style="color:var(--gray-500); font-size:0.8125rem;">#' + (r2 < 999 ? r2 : '-') + '</span></div>' : '<div class="doubles-player doubles-player-2"><span style="color:var(--gray-400);">—</span></div>';
+                // 球员1单元格：PC端只显示球员1，移动端同时显示球员2（两行）
+                var p1Cell = '<div class="doubles-player">' + countryFlag(t.p1.country_code || '', t.p1.country) + '<strong>' + escapeHtml(t.p1.name) + '</strong> <span class="doubles-rank-inline">#' + (r1 < 999 ? r1 : '-') + '</span></div>'
+                    + '<div class="doubles-player doubles-player-2 doubles-mobile-only">' + countryFlag((t.p2 && t.p2.country_code) || '', (t.p2 && t.p2.country) || '') + '<strong>' + escapeHtml(t.p2 ? t.p2.name : '—') + '</strong> <span class="doubles-rank-inline">#' + (r2 < 999 ? r2 : '-') + '</span></div>';
+                // 球员2单元格：PC端显示，移动端隐藏
+                var p2Cell = t.p2 ? '<td class="doubles-col-p2"><div class="doubles-player">' + countryFlag(t.p2.country_code || '', t.p2.country) + '<strong>' + escapeHtml(t.p2.name) + '</strong> <span class="doubles-rank-inline">#' + (r2 < 999 ? r2 : '-') + '</span></div></td>' : '<td class="doubles-col-p2"><span style="color:var(--gray-400);">—</span></td>';
                 var maxSeeds = window._frontMaxSeeds || 8;
                 var calcSeed = idx < maxSeeds ? idx + 1 : 0;
                 var seedHtml = calcSeed > 0 ? '<span class="seed-badge">' + calcSeed + '</span>' : '<span class="seed-badge empty">-</span>';
                 var entryHtml = t.entryType === 'wc' ? '外卡 (WC)' : t.entryType === 'q' ? '资格赛 (Q)' : '正赛';
-                var altClass = idx % 2 === 0 ? ' doubles-row-alt' : '';
-                return '<tr class="doubles-team-row' + altClass + '">'
-                    + '<td class="doubles-seed-cell" rowspan="2">' + (idx + 1) + '</td>'
-                    + '<td class="doubles-player-cell">' + p1Html + '</td>'
-                    + '<td class="doubles-sum-cell" rowspan="2"><strong>' + t.rankSum + '</strong></td>'
-                    + '<td class="doubles-seed-cell" rowspan="2">' + seedHtml + '</td>'
-                    + '<td class="hide-mobile" rowspan="2">' + entryHtml + '</td>'
-                    + '</tr>'
-                    + '<tr class="doubles-team-row doubles-team-row-2' + altClass + '">'
-                    + '<td class="doubles-player-cell">' + p2Html + '</td>'
+                return '<tr class="doubles-team-row">'
+                    + '<td>' + (idx + 1) + '</td>'
+                    + '<td class="doubles-col-p1">' + p1Cell + '</td>'
+                    + p2Cell
+                    + '<td><strong>' + t.rankSum + '</strong></td>'
+                    + '<td>' + seedHtml + '</td>'
+                    + '<td class="hide-mobile">' + entryHtml + '</td>'
                     + '</tr>';
             }).join('');
         } else {
@@ -1825,7 +1826,7 @@
                     ${currentRole === 'admin' ? '<button class="btn btn-primary btn-sm" onclick="adminOpenCreateTournament()">+ 创建赛事</button>' : '<span style="font-size:0.8125rem; color:var(--gray-500);">仅显示您负责的赛事</span>'}
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
-                    <table class="data-table">
+                    <table class="data-table" id="entryDataTable">
                         <thead><tr><th class="hide-mobile">ID</th><th>赛事名称</th><th class="hide-mobile">地点</th><th>级别</th><th class="hide-mobile">场地</th><th>日期</th><th class="hide-mobile">签位</th><th class="hide-mobile">类型</th><th>状态</th><th>操作</th></tr></thead>
                         <tbody id="tournamentTable"></tbody>
                     </table>
@@ -1909,7 +1910,7 @@
                     </div>
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
-                    <table class="data-table">
+                    <table class="data-table entry-data-table">
                         <thead><tr id="entryTableHead"><th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th></tr></thead>
                         <tbody id="entryTable"><tr><td colspan="6" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
                     </table>
@@ -3250,10 +3251,15 @@
             document.getElementById('entryCount').textContent = '共 ' + count + ' 名球员 / ' + drawSize + '签' + (isDoubles ? ' / 双打' : '');
             // 根据赛事类型更新表头
             var head = document.getElementById('entryTableHead');
-            if (head) {
-                if (isDoubles) {
+            var entryTable = document.querySelector('.entry-data-table');
+            if (isDoubles) {
+                if (entryTable) entryTable.classList.add('is-doubles');
+                if (head) {
                     head.innerHTML = '<th class="doubles-seed-head" style="width:50px;">种子</th><th>球员</th><th class="doubles-rank-cell" style="width:80px;">双打排名</th><th class="doubles-sum-head" style="width:70px;">排名总和</th><th class="doubles-action-head" style="width:120px;">操作</th>';
-                } else {
+                }
+            } else {
+                if (entryTable) entryTable.classList.remove('is-doubles');
+                if (head) {
                     head.innerHTML = '<th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th>';
                 }
             }

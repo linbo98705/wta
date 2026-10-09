@@ -3716,7 +3716,7 @@ textarea.form-control {
     /* 移动端：双打报名表格优化 */
     #panel-entry .entry-data-table.is-doubles {
         width: 100%;
-        table-layout: fixed;
+        table-layout: auto;
     }
     /* 移动端隐藏球员2列，球员1列内两行显示 */
     #panel-entry .entry-data-table.is-doubles .doubles-col-p2 {
@@ -3727,8 +3727,14 @@ textarea.form-control {
         margin-top: 6px;
     }
     #panel-entry .entry-data-table.is-doubles .doubles-col-p1 {
-        width: auto;
+        min-width: 0;
     }
+
+    #panel-entry .entry-data-table.is-doubles .doubles-seed-head { width: 44px !important; }
+    #panel-entry .entry-data-table.is-doubles .doubles-sum-head { width: 52px !important; }
+    #panel-entry .entry-data-table.is-doubles .doubles-action-head { width: 48px !important; }
+    #panel-entry .entry-data-table.is-doubles .doubles-col-p1 { width: auto; }
+    #panel-entry .entry-data-table.is-doubles .doubles-col-p2 { display: none; }
     #panel-entry .entry-data-table.is-doubles .doubles-player {
         display: flex;
         flex-direction: row;

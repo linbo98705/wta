@@ -965,6 +965,18 @@ img { max-width: 100%; height: auto; }
     flex-wrap: nowrap;
 }
 
+/* 报名管理双打表格：PC端两列单行，球员信息不换行 */
+#panel-entry .entry-data-table.is-doubles .doubles-player {
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    gap: 6px;
+}
+
+#panel-entry .entry-data-table.is-doubles .doubles-col-p1,
+#panel-entry .entry-data-table.is-doubles .doubles-col-p2 {
+    min-width: 160px;
+}
+
 /* 双打：移动端才显示的球员2（在球员1单元格内） */
 .doubles-mobile-only {
     display: none;
@@ -2620,6 +2632,20 @@ img { max-width: 100%; height: auto; }
     border-bottom: none;
 }
 
+/* 赛事管理表格：赛事名称、日期显示完整不省略 */
+#panel-tournaments .data-table th:nth-child(2),
+#panel-tournaments .data-table td:nth-child(2) {
+    min-width: 180px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+#panel-tournaments .data-table th:nth-child(6),
+#panel-tournaments .data-table td:nth-child(6) {
+    min-width: 150px;
+    white-space: nowrap;
+}
+
 /* 竞猜管理表格 */
 .guess-admin-table {
     table-layout: fixed;
@@ -3689,7 +3715,7 @@ textarea.form-control {
 
     /* 移动端：双打报名表格优化 */
     #panel-entry .entry-data-table.is-doubles {
-        min-width: 280px;
+        min-width: 320px;
     }
     /* 移动端隐藏球员2列，球员1列内两行显示 */
     #panel-entry .entry-data-table.is-doubles .doubles-col-p2 {
@@ -3699,20 +3725,23 @@ textarea.form-control {
         display: flex;
         margin-top: 4px;
     }
+    #panel-entry .entry-data-table.is-doubles .doubles-col-p1 {
+        min-width: 180px;
+    }
     #panel-entry .entry-data-table.is-doubles .doubles-player {
-        gap: 4px;
+        gap: 6px;
         white-space: nowrap;
         flex-wrap: nowrap;
     }
     #panel-entry .entry-data-table.is-doubles .doubles-player strong {
-        font-size: 0.8125rem;
+        font-size: 0.875rem;
     }
     #panel-entry .entry-data-table.is-doubles .doubles-country {
-        font-size: 0.6875rem;
+        font-size: 0.75rem;
     }
     #panel-entry .entry-data-table.is-doubles .doubles-rank-inline {
         color: var(--gray-500);
-        font-size: 0.75rem;
+        font-size: 0.8125rem;
         font-weight: 500;
         margin-left: auto;
     }
@@ -4432,6 +4461,22 @@ textarea.form-control {
     #panel-tournaments .data-table td:nth-child(7),
     #panel-tournaments .data-table th:nth-child(8),
     #panel-tournaments .data-table td:nth-child(8) { display: none; }
+
+    /* 移动端：赛事管理表格 - 赛事名称和日期显示完整 */
+    #panel-tournaments .data-table th:nth-child(2),
+    #panel-tournaments .data-table td:nth-child(2) {
+        min-width: 120px;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    #panel-tournaments .data-table th:nth-child(6),
+    #panel-tournaments .data-table td:nth-child(6) {
+        min-width: 120px;
+        white-space: normal;
+        word-break: break-all;
+        font-size: 0.75rem;
+    }
 
     /* 移动端：球员管理表格 - 隐藏更多列 */
     #panel-players .data-table th:nth-child(1),

@@ -1807,6 +1807,20 @@
     <div class="admin-content">
         <!-- Tournaments Panel -->
         <div class="admin-panel active" id="panel-tournaments">
+            <div class="help-section open">
+                <div class="help-header" onclick="adminToggleHelp(this)">
+                    <div class="help-title"><span>📋</span>操作说明</div>
+                    <div class="help-toggle"><span>展开/收起</span><span class="arrow">▼</span></div>
+                </div>
+                <div class="help-body">
+                    <ul>
+                        <li><span class="step">1</span>点击「创建赛事」填写赛事信息（名称、级别、场地、日期、签位数、单打/双打类型）</li>
+                        <li><span class="step">2</span>进入「报名管理」添加参赛球员</li>
+                        <li><span class="step">3</span>进入「比赛管理」点击「生成签表」自动生成对阵</li>
+                        <li><span class="tip">💡 签位数必须为 2 的幂（如 32、64、128），系统会自动为种子选手安排轮空</li>
+                    </ul>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-header flex-between">
                     <h3>赛事管理</h3>
@@ -1823,6 +1837,21 @@
 
         <!-- Players Panel -->
         <div class="admin-panel" id="panel-players">
+            <div class="help-section">
+                <div class="help-header" onclick="adminToggleHelp(this)">
+                    <div class="help-title"><span>👥</span>操作说明</div>
+                    <div class="help-toggle"><span>展开/收起</span><span class="arrow">▼</span></div>
+                </div>
+                <div class="help-body">
+                    <ul>
+                        <li><span class="step">1</span>在「球员编辑区」手动输入或点击「导入文件」批量导入球员</li>
+                        <li><span class="step">2</span>导入格式（CSV/Excel）：<code>中文姓名,国家/地区,单打排名,双打排名</code></li>
+                        <li><span class="step">3</span>点击「同步排名」可从官方排名更新所有球员的单打/双打排名</li>
+                        <li><span class="step">4</span>填写完毕后点击「批量保存」</li>
+                        <li><span class="tip">💡 球员姓名必须唯一，报名管理将按姓名匹配球员</span></li>
+                    </ul>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-header flex-between">
                     <h3>球员管理</h3>
@@ -1873,6 +1902,22 @@
 
         <!-- Entry Panel -->
         <div class="admin-panel" id="panel-entry">
+            <div class="help-section">
+                <div class="help-header" onclick="adminToggleHelp(this)">
+                    <div class="help-title"><span>📝</span>操作说明</div>
+                    <div class="help-toggle"><span>展开/收起</span><span class="arrow">▼</span></div>
+                </div>
+                <div class="help-body">
+                    <ul>
+                        <li><span class="step">1</span>先点击赛事选择器选择要操作的赛事</li>
+                        <li><span class="step">2</span>点击「添加球员」手动添加，或「导入名单」批量添加</li>
+                        <li><span class="step">3</span>单打导入格式：<code>姓名,入围类型(main/wc/q)</code>，每行一人</li>
+                        <li><span class="step">4</span>双打导入格式：<code>球员1,球员2</code>，每行一组</li>
+                        <li><span class="step">5</span>添加完成后点击「重算种子」按排名自动分配种子号</li>
+                        <li><span class="warn">⚠️ 球员必须先在「球员管理」中存在，否则无法匹配导入</span></li>
+                    </ul>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-header flex-between">
                     <div style="display:flex; gap:8px; align-items:center;">
@@ -1907,6 +1952,22 @@
 
         <!-- Matches Panel -->
         <div class="admin-panel" id="panel-matches">
+            <div class="help-section">
+                <div class="help-header" onclick="adminToggleHelp(this)">
+                    <div class="help-title"><span>🎾</span>操作说明</div>
+                    <div class="help-toggle"><span>展开/收起</span><span class="arrow">▼</span></div>
+                </div>
+                <div class="help-body">
+                    <ul>
+                        <li><span class="step">1</span>先选择赛事，确认报名球员已添加完毕</li>
+                        <li><span class="step">2</span>点击「生成签表」自动生成所有轮次的对阵</li>
+                        <li><span class="step">3</span>点击每场比赛的「编辑」录入比分和竞猜数据</li>
+                        <li><span class="step">4</span>将状态设为「已完成」后，胜方自动晋级到下一轮</li>
+                        <li><span class="step">5</span>如需撤回比赛结果，点击「撤销」按钮重置</li>
+                        <li><span class="warn">⚠️ 生成签表后不可撤销，如需重新生成请先「清空签表」</span></li>
+                    </ul>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-header flex-between">
                     <h3>比赛管理</h3>
@@ -1937,6 +1998,21 @@
 
         <!-- Daily Guess Panel -->
         <div class="admin-panel" id="panel-dailyguess">
+            <div class="help-section">
+                <div class="help-header" onclick="adminToggleHelp(this)">
+                    <div class="help-title"><span>🎯</span>操作说明</div>
+                    <div class="help-toggle"><span>展开/收起</span><span class="arrow">▼</span></div>
+                </div>
+                <div class="help-body">
+                    <ul>
+                        <li><span class="step">1</span>先选择赛事，点击「新增竞猜」创建每日竞猜</li>
+                        <li><span class="step">2</span>填写日期、截止时间，以及 TB1~TB6 的对阵预测</li>
+                        <li><span class="step">3</span>保存后，前端用户可在截止时间前提交竞猜</li>
+                        <li><span class="step">4</span>比赛结束后，在「比赛管理」中录入比分，系统自动计算竞猜得分</li>
+                        <li><span class="tip">💡 竞猜得分规则：猜对胜负 +1 分，猜对精确比分额外 +1 分</span></li>
+                    </ul>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-header flex-between">
                     <h3>每日竞猜管理</h3>
@@ -2339,6 +2415,12 @@
         // ── Expose functions globally ──
 
         // Panel Switch
+        // 帮助说明折叠/展开
+        window.adminToggleHelp = function(el) {
+            const section = el.closest('.help-section');
+            if (section) section.classList.toggle('open');
+        };
+
         window.switchAdminPanel = function(panel, el) {
             document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'));

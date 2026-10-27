@@ -2198,6 +2198,17 @@
     </div>
 </div>
 
+<!-- Import Result Modal -->
+<div class="modal-overlay" id="importResultModal">
+    <div class="modal modal--form" style="max-width: 520px;">
+        <div class="modal-header"><h3>导入结果</h3><button class="modal-close" onclick="closeModal('importResultModal')">&times;</button></div>
+        <div class="modal-body" id="importResultBody" style="max-height:60vh; overflow-y:auto;"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-primary" onclick="closeModal('importResultModal')">知道了</button>
+        </div>
+    </div>
+</div>
+
 <!-- Export Matchup Text Modal -->
 <div class="modal-overlay" id="exportMatchupModal">
     <div class="modal modal--form" style="max-width: 640px;">
@@ -3446,9 +3457,8 @@
 
             async function doImport(result) {
                 if (result.matched.length === 0) {
-                    var msg = '未找到可导入的球员';
-                    if (result.notFound.length > 0) msg += '。未匹配: ' + result.notFound.join('、');
-                    showToast(msg, 'error'); return;
+                    showImportResult(0, 0, result.notFound, result.duplicates, isDoubles);
+                    return;
                 }
                 var importBtn = document.getElementById('btnImportEntry');
                 var total = result.matched.length;
@@ -3479,11 +3489,11 @@
                 hideProgress();
                 if (importBtn) { importBtn.disabled = false; }
                 await adminLoadEntryList();
-                var summary = '成功导入 ' + success + (isDoubles ? ' 组双打' : ' 名球员');
-                if (failed > 0) summary += '，失败 ' + failed;
-                if (result.notFound.length > 0) summary += '。未匹配: ' + result.notFound.join('、');
-                if (result.duplicates.length > 0) summary += '。已存在跳过: ' + result.duplicates.join('、');
-                showToast(summary, failed > 0 ? 'error' : 'success');
+                if (result.notFound.length > 0 || failed > 0 || result.duplicates.length > 0) {
+                    showImportResult(success, failed, result.notFound, result.duplicates, isDoubles);
+                } else {
+                    showToast('成功导入 ' + success + (isDoubles ? ' 组双打' : ' 名球员'), 'success');
+                }
             }
 
             var ext = file.name.split('.').pop().toLowerCase();
@@ -3524,6 +3534,36 @@
             } catch (err) {
                 showToast('文件解析失败: ' + err.message, 'error');
             }
+        };
+
+        // 导入结果详情弹窗：明确列出未匹配（不存在）的球员
+        window.showImportResult = function(success, failed, notFound, duplicates, isDoubles) {
+            var unit = isDoubles ? ' 组双打' : ' 名球员';
+            var html = '<div style="font-size:0.875rem; line-height:1.8;">';
+            if (success > 0) {
+                html += '<p style="margin:0 0 8px; color:var(--accent-green); font-weight:600;">✓ 成功导入 ' + success + unit + '</p>';
+            } else {
+                html += '<p style="margin:0 0 8px; color:var(--gray-500);">未导入任何' + (isDoubles ? '双打组合' : '球员') + '</p>';
+            }
+            if (failed > 0) {
+                html += '<p style="margin:0 0 8px; color:var(--accent-red); font-weight:600;">✗ ' + failed + unit + ' 导入失败（网络或权限问题，请重试）</p>';
+            }
+            if (notFound && notFound.length > 0) {
+                html += '<div style="margin:10px 0; padding:10px 12px; background:#FEF2F2; border:1px solid #FECACA; border-radius:8px;">'
+                    + '<p style="margin:0 0 6px; color:var(--accent-red); font-weight:600;">✗ 以下 ' + notFound.length + (isDoubles ? ' 组' : ' 名') + ' 在球员库中不存在，未导入：</p>'
+                    + '<p style="margin:0 0 6px; color:var(--gray-700); word-break:break-all;">' + notFound.map(function(n) { return escapeHtml(n); }).join('、') + '</p>'
+                    + '<p style="margin:0; font-size:0.75rem; color:var(--gray-500);">请先到「球员管理」添加这些球员后，再重新导入</p>'
+                    + '</div>';
+            }
+            if (duplicates && duplicates.length > 0) {
+                html += '<div style="margin:10px 0 0; padding:10px 12px; background:var(--gray-100); border-radius:8px;">'
+                    + '<p style="margin:0 0 6px; color:var(--gray-600); font-weight:600;">⊘ 以下 ' + duplicates.length + (isDoubles ? ' 组' : ' 名') + ' 已报名，自动跳过：</p>'
+                    + '<p style="margin:0; color:var(--gray-500); word-break:break-all;">' + duplicates.map(function(n) { return escapeHtml(n); }).join('、') + '</p>'
+                    + '</div>';
+            }
+            html += '</div>';
+            document.getElementById('importResultBody').innerHTML = html;
+            openModal('importResultModal');
         };
 
         window.adminOpenEntryModal = async function() {

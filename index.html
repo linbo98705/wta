@@ -562,7 +562,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg>
                     </button>
                     <select class="form-control" id="frontPlayerCountryFilter" onchange="frontFilterPlayerList()" style="width:auto;">
-                        <option value="">所有国家/地区</option>
+                        <option value="">所有协会</option>
                     </select>
                 </div>
             </div>
@@ -572,7 +572,7 @@
                         <tr>
                             <th style="width:40px;">序号</th>
                             <th style="width:180px;">球员</th>
-                            <th style="width:140px;">国家/地区</th>
+                            <th style="width:140px;">协会</th>
                             <th style="width:60px;">排名</th>
                             <th style="width:50px;">种子</th>
                         </tr>
@@ -636,7 +636,7 @@
             var countries = [];
             players.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
             countries.sort();
-            countrySel.innerHTML = '<option value="">所有国家/地区</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+            countrySel.innerHTML = '<option value="">所有协会</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
         }
 
         frontFilterPlayerList();
@@ -1840,7 +1840,7 @@
                 <div class="help-body">
                     <ul>
                         <li><span class="step">1</span>在「球员编辑区」手动输入或点击「导入文件」批量导入球员</li>
-                        <li><span class="step">2</span>导入格式（CSV/Excel）：<code>中文姓名,国家/地区,单打排名,双打排名</code></li>
+                        <li><span class="step">2</span>导入格式（CSV/Excel）：<code>中文姓名,协会,单打排名,双打排名</code></li>
                         <li><span class="step">3</span>点击「同步排名」可从官方排名更新所有球员的单打/双打排名</li>
                         <li><span class="step">4</span>填写完毕后点击「批量保存」</li>
                         <li><span class="tip">💡 球员姓名必须唯一，报名管理将按姓名匹配球员</span></li>
@@ -1859,10 +1859,10 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <p style="font-size:0.8125rem; color:var(--gray-500); margin-bottom:12px;">支持手动输入或导入 Excel/CSV 文件（格式：中文姓名,国家/地区,单打排名,双打排名）。填写完毕后点击「批量保存」。</p>
+                    <p style="font-size:0.8125rem; color:var(--gray-500); margin-bottom:12px;">支持手动输入或导入 Excel/CSV 文件（格式：中文姓名,协会,单打排名,双打排名）。填写完毕后点击「批量保存」。</p>
                     <div style="overflow-x:auto;">
                         <table class="data-table" id="playerEditTable">
-                            <thead><tr><th class="hide-mobile" style="width:30px;">#</th><th>中文姓名</th><th>国家/地区</th><th>单打排名</th><th>双打排名</th><th style="width:60px;">操作</th></tr></thead>
+                            <thead><tr><th class="hide-mobile" style="width:30px;">#</th><th>中文姓名</th><th>协会</th><th>单打排名</th><th>双打排名</th><th style="width:60px;">操作</th></tr></thead>
                             <tbody id="playerEditBody"></tbody>
                         </table>
                     </div>
@@ -1876,10 +1876,10 @@
                     </div>
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <div class="search-box">
-                            <input type="text" id="playerSearchInput" class="form-control" placeholder="搜索姓名/国家地区/排名..." oninput="adminFilterPlayerList()" style="width:220px;">
+                            <input type="text" id="playerSearchInput" class="form-control" placeholder="搜索姓名/协会/排名..." oninput="adminFilterPlayerList()" style="width:220px;">
                         </div>
                         <select class="form-control" id="playerCountryFilter" onchange="adminFilterPlayerList()" style="width:auto;">
-                            <option value="">所有国家/地区</option>
+                            <option value="">所有协会</option>
                         </select>
                         <button class="btn btn-outline btn-sm" onclick="adminToggleSelectAll()" id="selectAllBtn"><span class="ai-icon-sm">${icoCheckSquare}</span>全选</button>
                         <button class="btn btn-danger btn-sm" onclick="adminBatchDeletePlayers()" id="batchDelBtn" disabled><span class="ai-icon-sm">${icoTrash}</span>批量删除</button>
@@ -1887,7 +1887,7 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table">
-                        <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAll" onchange="adminToggleAllCheckboxes(this)"></th><th class="hide-mobile">ID</th><th>姓名</th><th>国家/地区</th><th>单打排名</th><th>双打排名</th><th>操作</th></tr></thead>
+                        <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAll" onchange="adminToggleAllCheckboxes(this)"></th><th class="hide-mobile">ID</th><th>姓名</th><th>协会</th><th>单打排名</th><th>双打排名</th><th>操作</th></tr></thead>
                         <tbody id="playerTable"></tbody>
                     </table>
                     <div id="playerPagination" style="display:flex; justify-content:center; align-items:center; gap:8px; padding:12px 0;"></div>
@@ -1927,7 +1927,7 @@
                             <span class="ts-arrow">▼</span>
                         </div>
                         <select class="form-control" id="entryCountryFilter" onchange="adminFilterEntryList()" style="width:auto;">
-                            <option value="">所有国家/地区</option>
+                            <option value="">所有协会</option>
                         </select>
                         <button class="btn btn-outline btn-sm" id="btnImportEntry" onclick="document.getElementById('entryFileInput').click()"><span class="ai-icon-sm">${icoUpload}</span>导入名单</button>
                         <input type="file" id="entryFileInput" accept=".csv,.xlsx,.xls" style="display:none;" onchange="adminImportEntryFile(this)">
@@ -1938,7 +1938,7 @@
                 </div>
                 <div class="card-body" style="overflow-x:auto;">
                     <table class="data-table entry-data-table">
-                        <thead><tr id="entryTableHead"><th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th></tr></thead>
+                        <thead><tr id="entryTableHead"><th>种子</th><th>球员</th><th>协会</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th></tr></thead>
                         <tbody id="entryTable"><tr><td colspan="6" class="text-center" style="padding:40px;">请先选择赛事</td></tr></tbody>
                     </table>
                 </div>
@@ -2045,8 +2045,8 @@
             <div class="modal-body">
                 <div class="form-group"><label>姓名 *</label><input type="text" class="form-control" id="peName" required placeholder="球员姓名"></div>
                 <div class="form-row">
-                    <div class="form-group"><label>国家/地区</label><input type="text" class="form-control" id="peCountry" placeholder="如：中国"></div>
-                    <div class="form-group"><label>国家/地区代码</label><input type="text" class="form-control" id="peCountryCode" placeholder="2位字母，如：CN" maxlength="2" style="width:120px; text-transform:uppercase;"></div>
+                    <div class="form-group"><label>协会</label><input type="text" class="form-control" id="peCountry" placeholder="如：中国"></div>
+                    <div class="form-group"><label>协会代码</label><input type="text" class="form-control" id="peCountryCode" placeholder="2位字母，如：CN" maxlength="2" style="width:120px; text-transform:uppercase;"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>单打排名</label><input type="number" class="form-control" id="peRanking" min="1" placeholder="单打排名"></div>
@@ -2123,7 +2123,7 @@
                     <label>选择球员*</label>
                     <input type="hidden" id="ePlayerId" required>
                     <div class="player-search-select" id="playerSearchSelect">
-                        <input type="text" class="form-control" id="ePlayerSearch" placeholder="搜索球员姓名/国家/地区..." autocomplete="off" oninput="adminFilterEntryPlayers()" onfocus="adminShowEntryPlayerDropdown()" onblur="setTimeout(()=>adminHideEntryPlayerDropdown(),200)">
+                        <input type="text" class="form-control" id="ePlayerSearch" placeholder="搜索球员姓名/协会..." autocomplete="off" oninput="adminFilterEntryPlayers()" onfocus="adminShowEntryPlayerDropdown()" onblur="setTimeout(()=>adminHideEntryPlayerDropdown(),200)">
                         <div class="player-search-dropdown" id="entryPlayerDropdown"></div>
                     </div>
                     <p id="ePlayerSelected" style="font-size:0.8125rem; color:var(--accent-green); margin-top:4px; display:none;">&#10003; 已选择: <span id="ePlayerSelectedName"></span></p>
@@ -2149,7 +2149,7 @@
                     <label>球员 1*</label>
                     <input type="hidden" id="dPlayer1Id" required>
                     <div class="player-search-select">
-                        <input type="text" class="form-control" id="dPlayer1Search" placeholder="搜索球员姓名/国家/地区..." autocomplete="off" oninput="adminFilterDoublesPlayers(1)" onfocus="adminShowDoublesDropdown(1)" onblur="setTimeout(()=>adminHideDoublesDropdown(1),200)">
+                        <input type="text" class="form-control" id="dPlayer1Search" placeholder="搜索球员姓名/协会..." autocomplete="off" oninput="adminFilterDoublesPlayers(1)" onfocus="adminShowDoublesDropdown(1)" onblur="setTimeout(()=>adminHideDoublesDropdown(1),200)">
                         <div class="player-search-dropdown" id="doublesPlayer1Dropdown"></div>
                     </div>
                     <p id="dPlayer1Selected" style="font-size:0.8125rem; color:var(--accent-green); margin-top:4px; display:none;">&#10003; 已选择: <span id="dPlayer1SelectedName"></span></p>
@@ -2158,7 +2158,7 @@
                     <label>球员 2*</label>
                     <input type="hidden" id="dPlayer2Id" required>
                     <div class="player-search-select">
-                        <input type="text" class="form-control" id="dPlayer2Search" placeholder="搜索球员姓名/国家/地区..." autocomplete="off" oninput="adminFilterDoublesPlayers(2)" onfocus="adminShowDoublesDropdown(2)" onblur="setTimeout(()=>adminHideDoublesDropdown(2),200)">
+                        <input type="text" class="form-control" id="dPlayer2Search" placeholder="搜索球员姓名/协会..." autocomplete="off" oninput="adminFilterDoublesPlayers(2)" onfocus="adminShowDoublesDropdown(2)" onblur="setTimeout(()=>adminHideDoublesDropdown(2),200)">
                         <div class="player-search-dropdown" id="doublesPlayer2Dropdown"></div>
                     </div>
                     <p id="dPlayer2Selected" style="font-size:0.8125rem; color:var(--accent-green); margin-top:4px; display:none;">&#10003; 已选择: <span id="dPlayer2SelectedName"></span></p>
@@ -3000,7 +3000,7 @@
                 var countries = [];
                 allPlayersCache.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
                 countries.sort();
-                countrySel.innerHTML = '<option value="">所有国家/地区</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+                countrySel.innerHTML = '<option value="">所有协会</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
             }
             if (allPlayersCache.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px;">暂无球员</td></tr>';
@@ -3293,7 +3293,7 @@
             } else {
                 if (entryTable) entryTable.classList.remove('is-doubles');
                 if (head) {
-                    head.innerHTML = '<th>种子</th><th>球员</th><th>国家/地区</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th>';
+                    head.innerHTML = '<th>种子</th><th>球员</th><th>协会</th><th>排名</th><th class="hide-mobile">入围类型</th><th>操作</th>';
                 }
             }
             var countrySel = document.getElementById('entryCountryFilter');
@@ -3301,7 +3301,7 @@
                 var countries = [];
                 allEntryPlayersCache.forEach(function(p) { if (p.country && countries.indexOf(p.country) === -1) countries.push(p.country); });
                 countries.sort();
-                countrySel.innerHTML = '<option value="">所有国家/地区</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+                countrySel.innerHTML = '<option value="">所有协会</option>' + countries.map(function(c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
             }
             adminFilterEntryList();
         };

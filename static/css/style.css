@@ -153,28 +153,22 @@ body[data-theme="hk-open"] .section-header h2 {
     color: #585858;
 }
 
-/* ── 浅色 Hero（官网明亮运动风，区别于其他赛事的深色横幅） ── */
+/* ── 深紫 Hero（官网深紫 #1B034E 整幅底 + 白字） ── */
 body[data-theme="hk-open"] .tournament-header {
-    background: var(--white);
-    color: #585858;
-    border-bottom: 1px solid var(--gray-100);
+    background: #1B034E;
+    color: rgba(255, 255, 255, 0.85);
 }
 
 body[data-theme="hk-open"] .tournament-header h1 {
-    color: #1B034E;
+    color: #FFFFFF;
     font-size: 2.75rem;
     font-weight: 700;
     letter-spacing: 0;
 }
 
 body[data-theme="hk-open"] .tournament-header-meta {
-    color: #585858;
+    color: rgba(255, 255, 255, 0.85);
     opacity: 1;
-}
-
-/* 页头内联赛制徽章：浅底深字（原半透明白底在浅色 Hero 上不可见） */
-body[data-theme="hk-open"] .tournament-header-meta span > span:not(.surface-tag) {
-    background: rgba(27, 3, 78, 0.08) !important;
 }
 
 /* ── 内容区：更大留白与区块标题（官网 40px 大标题 + 宽呼吸感） ── */
@@ -247,9 +241,9 @@ body[data-theme="hk-open"] .btn-outline:hover {
     box-shadow: none;
 }
 
-/* 页头装饰：荧光黄绿光晕（官网网球球色点缀，浅底下加强透明度） */
+/* 页头装饰：荧光黄绿光晕（深紫底上的官网球色点缀） */
 body[data-theme="hk-open"] .tournament-header::before {
-    background: radial-gradient(circle, rgba(198, 237, 53, 0.35) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(198, 237, 53, 0.15) 0%, transparent 70%);
 }
 
 /* ── 二级导航：官网简洁风（更大字号、常规书写、红色下划线激活态） ── */

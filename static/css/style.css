@@ -143,8 +143,8 @@ body[data-theme="hk-open"] {
     --purple-bg: #FFF7F8;
     --purple-rgb: 220, 31, 51;
     --hk-lime: #C6ED35;
-    background-color: #16063A;
-    background-image: linear-gradient(180deg, #220A52 0%, #16063A 100%);
+    background-color: #1E0848;
+    background-image: linear-gradient(180deg, #35127A 0%, #240B5C 55%, #1E0848 100%);
     background-attachment: fixed;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
@@ -162,9 +162,10 @@ body[data-theme="hk-open"] .section-header p {
 /* ── Hero：官网紫红渐变（左上红紫→深紫）+ 荧光绿光带 ── */
 body[data-theme="hk-open"] .tournament-header {
     background:
-        radial-gradient(ellipse 55% 45% at 72% 60%, rgba(198, 237, 53, 0.22) 0%, transparent 60%),
-        radial-gradient(ellipse 35% 25% at 55% 75%, rgba(198, 237, 53, 0.10) 0%, transparent 60%),
-        linear-gradient(135deg, #7E1140 0%, #5C0E46 32%, #20094D 70%, #140532 100%);
+        radial-gradient(ellipse 50% 42% at 75% 55%, rgba(198, 237, 53, 0.18) 0%, transparent 62%),
+        radial-gradient(ellipse 32% 22% at 55% 75%, rgba(198, 237, 53, 0.08) 0%, transparent 60%),
+        linear-gradient(115deg, #B8144A 0%, #7C1352 42%, #3D0D66 80%, #2A0860 100%);
+    border-bottom: 3px solid var(--hk-lime);
     color: rgba(255, 255, 255, 0.85);
 }
 
@@ -464,10 +465,10 @@ body[data-theme="hk-open"] .data-table tbody tr:hover td {
 
 /* ── 导出图片适配：整图同步深紫主题；Hero 改纯色（html2canvas 对多层渐变渲染不稳），标题深紫 ── */
 body[data-theme="hk-open"] .export-wrapper {
-    background: #16063A !important;
+    background: #240B5C !important;
 }
 body[data-theme="hk-open"] .export-wrapper .tournament-header {
-    background: #16063A;
+    background: #3D0D66;
 }
 body[data-theme="hk-open"] .export-wrapper .export-title {
     color: #FFFFFF;

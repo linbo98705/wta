@@ -565,7 +565,7 @@
                     </select>
                 </div>
             </div>
-            <div style="overflow-x:auto;">
+            <div class="player-table-wrap" style="overflow-x:auto;">
                 <table class="data-table" style="width:100%; margin:0 auto;">
                     <thead>
                         <tr>
@@ -588,6 +588,7 @@
                     </tbody>
                 </table>
             </div>
+            <div id="playerCardGrid" class="player-card-grid" style="display:none;"></div>
         </div>
     </div>
 </section>`;
@@ -646,6 +647,13 @@
         const isDoubles = !!window._frontIsDoubles;
         var colCount = 5;
 
+        // 香港公开赛主题：卡片式名单（其他主题保持表格）
+        var tableWrap = document.querySelector('.player-list-card .player-table-wrap');
+        var cardGrid = document.getElementById('playerCardGrid');
+        var useCards = document.body.dataset.theme === 'hk-open' && !!tableWrap && !!cardGrid;
+        if (tableWrap) tableWrap.style.display = useCards ? 'none' : '';
+        if (cardGrid) cardGrid.style.display = useCards ? '' : 'none';
+
         if (isDoubles) {
             // 双打：优先使用 partner_id 配对，无 partner_id 的按 doubles_ranking 自动配对
             var playerMap = {};
@@ -688,6 +696,25 @@
 
             document.getElementById('playerCount').textContent = '共 ' + teams.length + ' 组搭档';
 
+            if (useCards) {
+                var maxSeedsC = window._frontMaxSeeds || 8;
+                cardGrid.innerHTML = filteredTeams.length === 0
+                    ? '<div class="empty-state" style="grid-column:1/-1;"><h3>暂无球员</h3><p>没有找到匹配的球员</p></div>'
+                    : filteredTeams.map(function(t, idx) {
+                        var calcSeed = idx < maxSeedsC ? idx + 1 : 0;
+                        var initials = escapeHtml((t.p1.name || '?').charAt(0) + (t.p2 ? (t.p2.name || '').charAt(0) : ''));
+                        var flags = countryFlag(t.p1.country_code || '', t.p1.country) + (t.p2 ? countryFlag(t.p2.country_code || '', t.p2.country) : '');
+                        return '<div class="player-card">'
+                            + '<div class="player-card-avatar">' + initials + '</div>'
+                            + '<div class="player-card-info">'
+                            + '<div class="player-card-name">' + escapeHtml(t.p1.name) + ' / ' + escapeHtml(t.p2 ? t.p2.name : '—')
+                            + (calcSeed > 0 ? ' <span class="seed-badge">' + calcSeed + '</span>' : '') + '</div>'
+                            + '<div class="player-card-meta">' + flags + ' 排名总和 ' + t.rankSum + '</div>'
+                            + '</div></div>';
+                    }).join('');
+                return;
+            }
+
             if (filteredTeams.length === 0) {
                 document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="' + colCount + '"><div class="empty-state"><h3>暂无球员</h3><p>没有找到匹配的球员</p></div></td></tr>';
                 return;
@@ -719,6 +746,23 @@
                 filtered = filtered.filter(function(p) { return (p.country || '') === countryFilter; });
             }
             document.getElementById('playerCount').textContent = '共 ' + players.length + ' 名球员';
+
+            if (useCards) {
+                cardGrid.innerHTML = filtered.length === 0
+                    ? '<div class="empty-state" style="grid-column:1/-1;"><h3>暂无球员</h3><p>没有找到匹配的球员</p></div>'
+                    : filtered.map(function(p) {
+                        var seedHtml = p.t_seed > 0
+                            ? ' <span class="seed-badge' + (p.t_seed <= 8 ? ' seed-top' : '') + '">' + p.t_seed + '</span>'
+                            : '';
+                        return '<div class="player-card">'
+                            + '<div class="player-card-avatar">' + escapeHtml((p.name || '?').charAt(0)) + '</div>'
+                            + '<div class="player-card-info">'
+                            + '<div class="player-card-name">' + escapeHtml(p.name) + seedHtml + '</div>'
+                            + '<div class="player-card-meta">' + countryFlag(p.country_code || '', p.country) + ' ' + escapeHtml(p.country) + ' · ' + (p.ranking < 999 ? '#' + p.ranking : '排名 -') + '</div>'
+                            + '</div></div>';
+                    }).join('');
+                return;
+            }
 
             if (filtered.length === 0) {
                 document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="' + colCount + '"><div class="empty-state"><h3>暂无球员</h3><p>没有找到匹配的球员</p></div></td></tr>';

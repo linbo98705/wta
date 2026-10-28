@@ -543,7 +543,6 @@
         <div class="tournament-header-content">
             <div class="tournament-category" id="tCat">加载中...</div>
             <h1 id="tName">加载中...</h1>
-            <div class="tournament-banner-subtitle" id="tTourName">参赛名单</div>
             <div class="tournament-header-meta" id="tMeta"></div>
         </div>
     </div>
@@ -598,7 +597,6 @@
             renderTournamentLogo(t);
             document.getElementById('tCat').textContent = t.category;
             document.getElementById('tName').textContent = t.name_cn || t.name;
-            document.getElementById('tTourName').textContent = '参赛名单';
             document.getElementById('tMeta').innerHTML = `
                 <span>${FI.pin}${escapeHtml(t.location)}</span>
                 <span><span class="surface-tag ${surfaceClass(t.surface)}">${surfaceLabel(t.surface)}</span></span>

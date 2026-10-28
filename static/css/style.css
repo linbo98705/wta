@@ -282,14 +282,16 @@ body[data-theme="hk-open"] .card-body {
     padding: 28px;
 }
 
-/* ── 参赛名单表格：深紫表头白字 + 更疏朗行距 ── */
+/* ── 参赛名单表格：深紫表头白字 + 荧光绿底线（官网标志性配色） ── */
 body[data-theme="hk-open"] .data-table th {
     background: #1B034E;
     color: #FFFFFF;
     font-size: 0.8125rem;
+    font-weight: 600;
     letter-spacing: 0.04em;
+    text-transform: uppercase;
     padding: 14px 16px;
-    border-bottom: none;
+    border-bottom: 3px solid var(--hk-lime);
 }
 body[data-theme="hk-open"] .data-table td {
     padding: 16px;
@@ -329,11 +331,11 @@ body[data-theme="hk-open"] .match-card {
     border-radius: 16px;
 }
 
-/* ── 竞猜表格：表头与名单表格统一为深紫白字 ── */
+/* ── 竞猜表格：表头与名单表格统一为深紫白字 + 荧光绿底线 ── */
 body[data-theme="hk-open"] .dg-table th {
     background: #1B034E;
     color: #FFFFFF;
-    border-bottom: none;
+    border-bottom: 3px solid var(--hk-lime);
     letter-spacing: 0.03em;
 }
 
@@ -348,7 +350,16 @@ body[data-theme="hk-open"] .data-table tbody tr:nth-child(even) {
     background: rgba(27, 3, 78, 0.03);
 }
 body[data-theme="hk-open"] .data-table tbody tr:hover {
-    background: #FBE9EB;
+    background: rgba(198, 237, 53, 0.10);
+}
+
+/* ── 比赛内 TB 竞猜表格：表头统一深紫 + 荧光绿底线 ── */
+body[data-theme="hk-open"] .gt-table th {
+    background: #1B034E;
+    border-bottom: 3px solid var(--hk-lime);
+}
+body[data-theme="hk-open"] .gt-th-label {
+    background: #0E0230;
 }
 
 /* ── 导出图片适配：Hero 改纯色（html2canvas 对多层渐变渲染不稳），标题深紫 ── */

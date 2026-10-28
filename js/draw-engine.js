@@ -99,9 +99,10 @@ function renderMatch(m, playerMap, round, champPoints) {
  * @param {Object} playerMap - 球员映射 { id: { t_seed, name, ... } }
  *   可从 getTournamentPlayers() 的结果构建
  * @param {string|null} startRound - 从哪个轮次开始渲染（如 'R16'），null 表示从第一轮开始
+ * @param {string|null} category - 赛事级别（如 'WTA250'），用于决定是否显示各轮积分
  * @returns {string} 完整的签表 HTML 字符串
  */
-function buildBracket(matches, playerMap, startRound) {
+function buildBracket(matches, playerMap, startRound, category) {
     // 所有轮次的顺序（用于过滤和排序）
     const roundOrderAll = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 
@@ -131,9 +132,9 @@ function buildBracket(matches, playerMap, startRound) {
     const sectionColW = showSections ? SECTION_COL_WIDTH : 0;
     const seqOffset = sectionColW + SEQ_COL_WIDTH + SEQ_COL_GAP; // 区标签列+序号列偏移量
     const totalW = seqOffset + numCols * (COL_WIDTH + COL_GAP) - COL_GAP;
-    // 32签各轮积分（WTA250级别：R32=1 R16=30 QF=60 SF=98 亚军=163 冠军=250，冠军在奖杯旁单独标注）
-    const POINTS_32 = { R32: 1, R16: 30, QF: 60, SF: 98, F: 163 };
-    const showPoints = firstCount === 16;
+    // WTA250级别32签各轮积分（R32=1 R16=30 QF=60 SF=98 亚军=163 冠军=250，冠军在奖杯旁单独标注）
+    const POINTS_WTA250_32 = { R32: 1, R16: 30, QF: 60, SF: 98, F: 163 };
+    const showPoints = firstCount === 16 && String(category || '').toUpperCase().replace(/\s+/g, '') === 'WTA250';
 
     // ── 构建 SVG 连线 + 比分 ──
     const svgParts = [];
@@ -260,8 +261,8 @@ function buildBracket(matches, playerMap, startRound) {
         if (ri > 0) html += '<div style="width:' + COL_GAP + 'px; flex-shrink:0;"></div>';
         html += '<div class="bracket-round-header" style="width:' + COL_WIDTH + 'px; flex-shrink:0;">'
             + (roundLabels[roundOrder[ri]] || roundOrder[ri])
-            + (showPoints && POINTS_32[roundOrder[ri]] != null
-                ? '<div style="font-size:0.625rem; font-weight:600; color:var(--gray-400); line-height:1.3;">' + POINTS_32[roundOrder[ri]] + '分</div>'
+            + (showPoints && POINTS_WTA250_32[roundOrder[ri]] != null
+                ? '<div style="font-size:0.625rem; font-weight:600; color:var(--gray-400); line-height:1.3;">' + POINTS_WTA250_32[roundOrder[ri]] + '分</div>'
                 : '')
             + '</div>';
     }
@@ -407,11 +408,11 @@ async function initDrawView(tid, containerId, options = {}) {
         if (view === 'compact') {
             const titleEl = document.getElementById(titleId);
             if (titleEl) titleEl.textContent = '对阵签表（16强起）';
-            container.innerHTML = buildBracket(allMatches, playerMap, compactStartRound);
+            container.innerHTML = buildBracket(allMatches, playerMap, compactStartRound, tournament && tournament.category);
         } else {
             const titleEl = document.getElementById(titleId);
             if (titleEl) titleEl.textContent = '对阵签表';
-            container.innerHTML = buildBracket(allMatches, playerMap, null);
+            container.innerHTML = buildBracket(allMatches, playerMap, null, tournament && tournament.category);
         }
 
         // 统计信息

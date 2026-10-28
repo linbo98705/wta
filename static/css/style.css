@@ -252,6 +252,79 @@ body[data-theme="hk-open"] .tournament-header::before {
     background: radial-gradient(circle, rgba(198, 237, 53, 0.35) 0%, transparent 70%);
 }
 
+/* ── 二级导航：官网简洁风（更大字号、常规书写、红色下划线激活态） ── */
+body[data-theme="hk-open"] .tournament-subnav a {
+    padding: 14px 22px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+}
+body[data-theme="hk-open"] .tournament-subnav a.active {
+    font-weight: 700;
+    background: transparent;
+}
+
+/* ── 卡片骨架：更大内边距（官网宽呼吸感） ── */
+body[data-theme="hk-open"] .card-header {
+    padding: 20px 28px;
+}
+body[data-theme="hk-open"] .card-body {
+    padding: 28px;
+}
+
+/* ── 参赛名单表格：深紫表头白字 + 更疏朗行距 ── */
+body[data-theme="hk-open"] .data-table th {
+    background: #1B034E;
+    color: #FFFFFF;
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    padding: 14px 16px;
+    border-bottom: none;
+}
+body[data-theme="hk-open"] .data-table td {
+    padding: 16px;
+    font-size: 0.9375rem;
+}
+body[data-theme="hk-open"] .data-table tbody tr:hover {
+    background: #FFF7F8;
+}
+
+/* ── 种子徽章：官网荧光绿胶囊 + 深紫字 ── */
+body[data-theme="hk-open"] .seed-badge,
+body[data-theme="hk-open"] .seed-badge.seed-top {
+    background: var(--hk-lime);
+    color: #1B034E;
+    border-radius: 9999px;
+    box-shadow: none;
+}
+
+/* ── 签表：晋级色从紫改保诚红 ── */
+body[data-theme="hk-open"] .bracket-match {
+    border-radius: 12px;
+}
+body[data-theme="hk-open"] .bracket-player.winner {
+    background: linear-gradient(90deg, rgba(220, 31, 51, 0.07) 0%, transparent 100%);
+}
+body[data-theme="hk-open"] .bracket-player.winner .bracket-player-score {
+    color: #DC1F33;
+}
+
+/* ── 赛程赛果：场地列头深紫加粗 ── */
+body[data-theme="hk-open"] .court-column-header {
+    color: #1B034E;
+    font-size: 1rem;
+    border-bottom: 2px solid #1B034E;
+}
+body[data-theme="hk-open"] .match-card {
+    border-radius: 16px;
+}
+
+/* ── 竞猜表格：表头加深紫字色对比 ── */
+body[data-theme="hk-open"] .dg-table th {
+    letter-spacing: 0.03em;
+}
+
 
 /* ── Reset & Base ──────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

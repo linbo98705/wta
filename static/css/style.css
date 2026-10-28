@@ -208,34 +208,34 @@ body[data-theme="hk-open"] .section-header h2 {
     }
 }
 
-/* ── 卡片：深紫近黑面板（压过亮紫页面底，与表头同色系锚定）+ 官网标志性荧光绿边框 ── */
+/* ── 卡片：淡黄色面板（荧光绿同族浅黄，与亮紫页面底形成明暗反差） ── */
 body[data-theme="hk-open"] .card {
-    background: #1B0642;
-    border-color: rgba(198, 237, 53, 0.30);
-    color: rgba(255, 255, 255, 0.88);
+    background: #F6FAD4;
+    border-color: rgba(27, 6, 66, 0.12);
+    color: #241040;
 }
 body[data-theme="hk-open"] .card:hover {
-    border-color: rgba(198, 237, 53, 0.55);
+    border-color: var(--hk-lime);
 }
 body[data-theme="hk-open"] .card-header {
     background: transparent;
-    border-bottom-color: rgba(255, 255, 255, 0.12);
+    border-bottom-color: rgba(27, 6, 66, 0.12);
 }
 body[data-theme="hk-open"] .card-header h2,
 body[data-theme="hk-open"] .card-header h3 {
-    color: #FFFFFF;
+    color: #1B0642;
     font-weight: 600;
 }
 body[data-theme="hk-open"] .card-header p,
 body[data-theme="hk-open"] .card-header span {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(36, 16, 64, 0.6);
 }
 /* 快捷入口标题/描述为内联灰色样式，需 !important 覆盖 */
 body[data-theme="hk-open"] .quick-link-card h3 {
-    color: #FFFFFF !important;
+    color: #1B0642 !important;
 }
 body[data-theme="hk-open"] .quick-link-card p {
-    color: rgba(255, 255, 255, 0.6) !important;
+    color: rgba(36, 16, 64, 0.6) !important;
 }
 body[data-theme="hk-open"] .quick-link-card:hover {
     border-color: var(--hk-lime);
@@ -319,7 +319,7 @@ body[data-theme="hk-open"] .card-body {
     padding: 28px;
 }
 
-/* ── 参赛名单表格：表头用页面深紫、行面带微光，与深紫卡片融合 ── */
+/* ── 参赛名单表格：深紫表头锚定 + 浅黄行面 ── */
 body[data-theme="hk-open"] .data-table th {
     background: #16063A;
     color: #FFFFFF;
@@ -333,14 +333,14 @@ body[data-theme="hk-open"] .data-table th {
 body[data-theme="hk-open"] .data-table td {
     padding: 16px;
     font-size: 0.9375rem;
-    color: rgba(255, 255, 255, 0.85);
-    border-bottom-color: rgba(255, 255, 255, 0.10);
+    color: rgba(36, 16, 64, 0.88);
+    border-bottom-color: rgba(27, 6, 66, 0.10);
 }
 body[data-theme="hk-open"] .data-table tbody tr {
-    background: rgba(255, 255, 255, 0.03);
+    background: transparent;
 }
 body[data-theme="hk-open"] .player-row strong {
-    color: #FFFFFF;
+    color: #1B0642;
 }
 
 /* ── 种子徽章：官网荧光绿胶囊 + 深紫字 ── */
@@ -352,40 +352,43 @@ body[data-theme="hk-open"] .seed-badge.seed-top {
     box-shadow: none;
 }
 
-/* ── 签表：暗夜卡片化，晋级色改亮红（深底可读） ── */
+/* ── 签表：白色小卡浮于浅黄面板，晋级色保诚红 ── */
 body[data-theme="hk-open"] .bracket-match {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: #FFFFFF;
+    border-color: rgba(27, 6, 66, 0.15);
     border-radius: 12px;
 }
 body[data-theme="hk-open"] .bracket-player {
-    color: rgba(255, 255, 255, 0.88);
+    color: rgba(36, 16, 64, 0.88);
 }
 body[data-theme="hk-open"] .bracket-player.winner {
-    background: linear-gradient(90deg, rgba(220, 31, 51, 0.25) 0%, transparent 100%);
+    background: linear-gradient(90deg, rgba(220, 31, 51, 0.12) 0%, transparent 100%);
 }
 body[data-theme="hk-open"] .bracket-player.winner .bracket-player-score {
-    color: #FF5C6E;
+    color: #DC1F33;
 }
 
-/* ── 赛程赛果：比赛卡浮于卡片之上，场地列头反白 ── */
+/* ── 赛程赛果：比赛卡与内容卡同为浅黄面板，场地列头反白 ── */
 body[data-theme="hk-open"] .court-column-header {
     color: #FFFFFF;
     font-size: 1rem;
     border-bottom: 2px solid var(--hk-lime);
 }
 body[data-theme="hk-open"] .match-card {
-    background: #1B0642;
-    border-color: rgba(198, 237, 53, 0.25);
+    background: #F6FAD4;
+    border-color: rgba(27, 6, 66, 0.12);
     border-radius: 16px;
-    color: rgba(255, 255, 255, 0.88);
+    color: #241040;
 }
 
-/* ── 深底文字兜底：覆盖组件硬编码灰/深色与模板内联灰色 ── */
+/* ── 深底文字兜底：页面直排的内联灰色文字提亮 ── */
 body[data-theme="hk-open"] .section [style*="color:var(--gray-300)"],
 body[data-theme="hk-open"] .section [style*="color:var(--gray-400)"],
 body[data-theme="hk-open"] .section [style*="color:var(--gray-500)"],
-body[data-theme="hk-open"] .section [style*="color:var(--gray-600)"],
+body[data-theme="hk-open"] .section [style*="color:var(--gray-600)"] {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+/* ── 浅黄面板内：内联灰色文字改深紫（置后，同优先级覆盖上条） ── */
 body[data-theme="hk-open"] .card [style*="color:var(--gray-300)"],
 body[data-theme="hk-open"] .card [style*="color:var(--gray-400)"],
 body[data-theme="hk-open"] .card [style*="color:var(--gray-500)"],
@@ -393,30 +396,36 @@ body[data-theme="hk-open"] .card [style*="color:var(--gray-600)"],
 body[data-theme="hk-open"] .card [style*="color:var(--gray-700)"],
 body[data-theme="hk-open"] .card [style*="color:var(--gray-800)"],
 body[data-theme="hk-open"] .card [style*="color:var(--gray-900)"],
-body[data-theme="hk-open"] .card [style*="color:#737373"] {
-    color: rgba(255, 255, 255, 0.65) !important;
+body[data-theme="hk-open"] .card [style*="color:#737373"],
+body[data-theme="hk-open"] .match-card [style*="color:var(--gray-300)"],
+body[data-theme="hk-open"] .match-card [style*="color:var(--gray-400)"],
+body[data-theme="hk-open"] .match-card [style*="color:var(--gray-500)"],
+body[data-theme="hk-open"] .match-card [style*="color:var(--gray-600)"],
+body[data-theme="hk-open"] .match-card [style*="color:var(--gray-700)"],
+body[data-theme="hk-open"] .match-card [style*="color:#737373"] {
+    color: rgba(36, 16, 64, 0.65) !important;
 }
 body[data-theme="hk-open"] .empty-state {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(36, 16, 64, 0.5);
 }
 body[data-theme="hk-open"] .empty-state h3 {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(36, 16, 64, 0.8);
 }
 body[data-theme="hk-open"] .doubles-player strong {
-    color: #FFFFFF;
+    color: #1B0642;
 }
 body[data-theme="hk-open"] .doubles-rank-inline,
 body[data-theme="hk-open"] .dg-deadline {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(36, 16, 64, 0.6);
 }
 body[data-theme="hk-open"] .dg-tb {
-    color: var(--hk-lime);
+    color: #1B0642;
 }
 body[data-theme="hk-open"] .mc-quick-score {
-    color: #FFFFFF;
+    color: #1B0642;
 }
 body[data-theme="hk-open"] .bracket-round-header {
-    color: var(--hk-lime);
+    color: #1B0642;
 }
 
 /* ── 竞猜表格：表头与名单表格统一为深紫白字 + 荧光绿底线 ── */
@@ -427,8 +436,8 @@ body[data-theme="hk-open"] .dg-table th {
     letter-spacing: 0.03em;
 }
 body[data-theme="hk-open"] .dg-table td {
-    color: rgba(255, 255, 255, 0.85);
-    border-bottom-color: rgba(255, 255, 255, 0.10);
+    color: rgba(36, 16, 64, 0.88);
+    border-bottom-color: rgba(27, 6, 66, 0.10);
 }
 
 /* ── 表格细化：圆角表头 + 斑马纹（官网数据表风格） ── */
@@ -439,13 +448,13 @@ body[data-theme="hk-open"] .data-table thead th:last-child {
     border-top-right-radius: 12px;
 }
 body[data-theme="hk-open"] .data-table tbody tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(198, 237, 53, 0.12);
 }
 body[data-theme="hk-open"] .data-table tbody tr:hover {
-    background: rgba(198, 237, 53, 0.10);
+    background: rgba(198, 237, 53, 0.30);
 }
 
-/* ── 比赛内 TB 竞猜表格：深紫表头 + 反白文字 ── */
+/* ── 比赛内 TB 竞猜表格：深紫表头 + 深紫文字 ── */
 body[data-theme="hk-open"] .gt-table th {
     background: #16063A;
     border-bottom: 3px solid var(--hk-lime);
@@ -454,13 +463,13 @@ body[data-theme="hk-open"] .gt-th-label {
     background: #10042A;
 }
 body[data-theme="hk-open"] .gt-table td {
-    color: rgba(255, 255, 255, 0.85);
-    border-bottom-color: rgba(255, 255, 255, 0.10);
+    color: rgba(36, 16, 64, 0.88);
+    border-bottom-color: rgba(27, 6, 66, 0.10);
 }
 
-/* 基础样式在悬停时把 td 刷成近白色，深底下会盖掉行底色导致文字不可读，此处压掉 */
+/* 基础样式在悬停时把 td 刷成近白色，会盖掉行底色，此处压掉 */
 body[data-theme="hk-open"] .data-table tbody tr:hover td {
-    background: rgba(198, 237, 53, 0.10);
+    background: rgba(198, 237, 53, 0.30);
 }
 
 /* ── 导出图片适配：整图同步深紫主题；Hero 改纯色（html2canvas 对多层渐变渲染不稳），标题深紫 ── */

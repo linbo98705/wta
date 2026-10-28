@@ -473,6 +473,19 @@ body[data-theme="hk-open"] .export-wrapper .tournament-header {
 body[data-theme="hk-open"] .export-wrapper .export-title {
     color: #1B0642;
 }
+/* 导出图片：表格线框加深加粗，PNG 缩放后仍清晰；末行去掉底线避免与卡片边框叠线 */
+body[data-theme="hk-open"] .export-wrapper .data-table td {
+    border-bottom: 1.5px solid rgba(27, 6, 66, 0.28);
+}
+body[data-theme="hk-open"] .export-wrapper .data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+body[data-theme="hk-open"] .export-wrapper .gt-table th {
+    border-bottom: 3px solid var(--hk-lime);
+}
+body[data-theme="hk-open"] .export-wrapper .gt-table td {
+    border-bottom: 1px solid rgba(27, 6, 66, 0.22);
+}
 
 /* ── 移动端适配：收紧卡片/表格/导航留白 ── */
 @media (max-width: 768px) {

@@ -703,7 +703,7 @@
                 var p2Cell = t.p2 ? '<td class="doubles-col-p2"><div class="doubles-player">' + countryFlag(t.p2.country_code || '', t.p2.country) + '<strong>' + escapeHtml(t.p2.name) + '</strong> <span class="doubles-rank-inline">#' + (r2 < 999 ? r2 : '-') + '</span></div></td>' : '<td class="doubles-col-p2"><span style="color:var(--gray-400);">—</span></td>';
                 var maxSeeds = window._frontMaxSeeds || 8;
                 var calcSeed = idx < maxSeeds ? idx + 1 : 0;
-                var seedHtml = calcSeed > 0 ? '<span class="seed-badge">' + calcSeed + '</span>' : '<span class="seed-badge empty">-</span>';
+                var seedHtml = calcSeed > 0 ? '<span class="seed-badge">' + calcSeed + '</span>' : '';
                 return '<tr class="doubles-team-row">'
                     + '<td>' + (idx + 1) + '</td>'
                     + '<td class="doubles-col-p1">' + p1Cell + '</td>'
@@ -738,7 +738,7 @@
                     <td>
                         ${p.t_seed > 0
                             ? '<span class="seed-badge' + (p.t_seed <= 8 ? ' seed-top' : '') + '">' + p.t_seed + '</span>'
-                            : '<span class="seed-badge empty">-</span>'}
+                            : ''}
                     </td>
                 </tr>
             `).join('');

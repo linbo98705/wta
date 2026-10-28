@@ -206,6 +206,7 @@ body[data-theme="hk-open"] .card {
     color: rgba(255, 255, 255, 0.88);
 }
 body[data-theme="hk-open"] .card-header {
+    background: transparent;
     border-bottom-color: rgba(255, 255, 255, 0.12);
 }
 body[data-theme="hk-open"] .card-header h2,
@@ -306,9 +307,9 @@ body[data-theme="hk-open"] .card-body {
     padding: 28px;
 }
 
-/* ── 参赛名单表格：深紫表头白字 + 荧光绿底线（官网标志性配色） ── */
+/* ── 参赛名单表格：表头用页面深紫、行面带微光，与深紫卡片融合 ── */
 body[data-theme="hk-open"] .data-table th {
-    background: #0E0230;
+    background: #1B034E;
     color: #FFFFFF;
     font-size: 0.8125rem;
     font-weight: 600;
@@ -323,8 +324,8 @@ body[data-theme="hk-open"] .data-table td {
     color: rgba(255, 255, 255, 0.85);
     border-bottom-color: rgba(255, 255, 255, 0.10);
 }
-body[data-theme="hk-open"] .data-table tbody tr:hover {
-    background: rgba(198, 237, 53, 0.08);
+body[data-theme="hk-open"] .data-table tbody tr {
+    background: rgba(255, 255, 255, 0.03);
 }
 body[data-theme="hk-open"] .player-row strong {
     color: #FFFFFF;
@@ -408,7 +409,7 @@ body[data-theme="hk-open"] .bracket-round-header {
 
 /* ── 竞猜表格：表头与名单表格统一为深紫白字 + 荧光绿底线 ── */
 body[data-theme="hk-open"] .dg-table th {
-    background: #0E0230;
+    background: #1B034E;
     color: #FFFFFF;
     border-bottom: 3px solid var(--hk-lime);
     letter-spacing: 0.03em;
@@ -426,7 +427,7 @@ body[data-theme="hk-open"] .data-table thead th:last-child {
     border-top-right-radius: 12px;
 }
 body[data-theme="hk-open"] .data-table tbody tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.06);
 }
 body[data-theme="hk-open"] .data-table tbody tr:hover {
     background: rgba(198, 237, 53, 0.10);
@@ -434,11 +435,11 @@ body[data-theme="hk-open"] .data-table tbody tr:hover {
 
 /* ── 比赛内 TB 竞猜表格：深紫表头 + 反白文字 ── */
 body[data-theme="hk-open"] .gt-table th {
-    background: #0E0230;
+    background: #1B034E;
     border-bottom: 3px solid var(--hk-lime);
 }
 body[data-theme="hk-open"] .gt-th-label {
-    background: #060018;
+    background: #0E0230;
 }
 body[data-theme="hk-open"] .gt-table td {
     color: rgba(255, 255, 255, 0.85);

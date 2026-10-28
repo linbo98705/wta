@@ -132,9 +132,14 @@ function buildBracket(matches, playerMap, startRound, category) {
     const sectionColW = showSections ? SECTION_COL_WIDTH : 0;
     const seqOffset = sectionColW + SEQ_COL_WIDTH + SEQ_COL_GAP; // 区标签列+序号列偏移量
     const totalW = seqOffset + numCols * (COL_WIDTH + COL_GAP) - COL_GAP;
-    // WTA250级别32签各轮积分（R32=1 R16=30 QF=60 SF=98 亚军=163 冠军=250，冠军在奖杯旁单独标注）
-    const POINTS_WTA250_32 = { R32: 1, R16: 30, QF: 60, SF: 98, F: 163 };
-    const showPoints = firstCount === 16 && String(category || '').toUpperCase().replace(/\s+/g, '') === 'WTA250';
+    // 32签各轮积分表（按赛事级别区分；冠军积分在决赛奖杯旁单独标注）
+    const ROUND_POINTS_32 = {
+        WTA250: { rounds: { R32: 1, R16: 30, QF: 60, SF: 98, F: 163 }, champion: 250 },
+        WTA500: { rounds: { R32: 1, R16: 60, QF: 108, SF: 195, F: 325 }, champion: 500 },
+    };
+    const categoryKey = String(category || '').toUpperCase().replace(/\s+/g, '');
+    const pointsConf = firstCount === 16 ? (ROUND_POINTS_32[categoryKey] || null) : null;
+    const showPoints = !!pointsConf;
 
     // ── 构建 SVG 连线 + 比分 ──
     const svgParts = [];
@@ -261,8 +266,8 @@ function buildBracket(matches, playerMap, startRound, category) {
         if (ri > 0) html += '<div style="width:' + COL_GAP + 'px; flex-shrink:0;"></div>';
         html += '<div class="bracket-round-header" style="width:' + COL_WIDTH + 'px; flex-shrink:0;">'
             + (roundLabels[roundOrder[ri]] || roundOrder[ri])
-            + (showPoints && POINTS_WTA250_32[roundOrder[ri]] != null
-                ? '<div style="font-size:0.625rem; font-weight:600; color:var(--gray-400); line-height:1.3;">' + POINTS_WTA250_32[roundOrder[ri]] + '分</div>'
+            + (showPoints && pointsConf.rounds[roundOrder[ri]] != null
+                ? '<div style="font-size:0.625rem; font-weight:600; color:var(--gray-400); line-height:1.3;">' + pointsConf.rounds[roundOrder[ri]] + '分</div>'
                 : '')
             + '</div>';
     }
@@ -318,7 +323,7 @@ function buildBracket(matches, playerMap, startRound, category) {
             html += '<div class="bracket-match-wrapper" style="position:absolute; left:' + colX
                 + 'px; top:' + mTop + 'px; width:' + COL_WIDTH + 'px; height:' + MATCH_HEIGHT
                 + 'px; z-index:3;">';
-            html += '<div class="bracket-match" style="height:100%;">' + renderMatch(m, playerMap, roundOrder[ci], showPoints ? 250 : null) + '</div>';
+            html += '<div class="bracket-match" style="height:100%;">' + renderMatch(m, playerMap, roundOrder[ci], pointsConf ? pointsConf.champion : null) + '</div>';
             html += '</div>';
         }
     }

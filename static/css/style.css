@@ -143,20 +143,18 @@ body[data-theme="hk-open"] {
     --purple-bg: #FFF7F8;
     --purple-rgb: 220, 31, 51;
     --hk-lime: #C6ED35;
-    background-color: #1E0848;
-    background-image: linear-gradient(180deg, #35127A 0%, #240B5C 55%, #1E0848 100%);
-    background-attachment: fixed;
+    background-color: #FFFFFF;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* 香港赛 VI：区块主标题荧光绿（官网 TOURNAMENT NEWS 风格） */
+/* 香港赛 VI：区块主标题深紫（白底可读） */
 body[data-theme="hk-open"] .section-header h2 {
     font-weight: 600;
     letter-spacing: 0;
-    color: var(--hk-lime);
+    color: #1B0642;
 }
 body[data-theme="hk-open"] .section-header p {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(36, 16, 64, 0.6);
 }
 
 /* ── Hero：官网紫红渐变（左上红紫→深紫）+ 荧光绿光带 ── */
@@ -208,9 +206,9 @@ body[data-theme="hk-open"] .section-header h2 {
     }
 }
 
-/* ── 卡片：淡黄色面板（荧光绿同族浅黄，与亮紫页面底形成明暗反差） ── */
+/* ── 卡片：白色面板（与亮紫页面底形成明暗反差，荧光绿悬停描边） ── */
 body[data-theme="hk-open"] .card {
-    background: #F6FAD4;
+    background: #FFFFFF;
     border-color: rgba(27, 6, 66, 0.12);
     color: #241040;
 }
@@ -247,13 +245,13 @@ body[data-theme="hk-open"] .tournament-category {
     color: #1B034E;
 }
 
-/* 卡片：官网扁平风（无阴影，16px 大圆角） */
+/* 卡片：白底白页面用柔和投影勾勒边界，16px 大圆角 */
 body[data-theme="hk-open"] .card {
-    box-shadow: none;
+    box-shadow: 0 2px 14px rgba(27, 6, 66, 0.10);
     border-radius: 16px;
 }
 body[data-theme="hk-open"] .card:hover {
-    box-shadow: none;
+    box-shadow: 0 4px 20px rgba(27, 6, 66, 0.14);
 }
 
 body[data-theme="hk-open"] .btn {
@@ -352,9 +350,9 @@ body[data-theme="hk-open"] .seed-badge.seed-top {
     box-shadow: none;
 }
 
-/* ── 签表：白色小卡浮于浅黄面板，晋级色保诚红 ── */
+/* ── 签表：浅黄小卡浮于白色面板，晋级色保诚红 ── */
 body[data-theme="hk-open"] .bracket-match {
-    background: #FFFFFF;
+    background: #F6FAD4;
     border-color: rgba(27, 6, 66, 0.15);
     border-radius: 12px;
 }
@@ -368,27 +366,20 @@ body[data-theme="hk-open"] .bracket-player.winner .bracket-player-score {
     color: #DC1F33;
 }
 
-/* ── 赛程赛果：比赛卡与内容卡同为浅黄面板，场地列头反白 ── */
+/* ── 赛程赛果：比赛卡与内容卡同为白色面板，场地列头深紫 ── */
 body[data-theme="hk-open"] .court-column-header {
-    color: #FFFFFF;
+    color: #1B0642;
     font-size: 1rem;
     border-bottom: 2px solid var(--hk-lime);
 }
 body[data-theme="hk-open"] .match-card {
-    background: #F6FAD4;
+    background: #FFFFFF;
     border-color: rgba(27, 6, 66, 0.12);
     border-radius: 16px;
     color: #241040;
 }
 
-/* ── 深底文字兜底：页面直排的内联灰色文字提亮 ── */
-body[data-theme="hk-open"] .section [style*="color:var(--gray-300)"],
-body[data-theme="hk-open"] .section [style*="color:var(--gray-400)"],
-body[data-theme="hk-open"] .section [style*="color:var(--gray-500)"],
-body[data-theme="hk-open"] .section [style*="color:var(--gray-600)"] {
-    color: rgba(255, 255, 255, 0.65) !important;
-}
-/* ── 浅黄面板内：内联灰色文字改深紫（置后，同优先级覆盖上条） ── */
+/* ── 卡片/比赛卡内：内联灰色文字统一深紫 ── */
 body[data-theme="hk-open"] .card [style*="color:var(--gray-300)"],
 body[data-theme="hk-open"] .card [style*="color:var(--gray-400)"],
 body[data-theme="hk-open"] .card [style*="color:var(--gray-500)"],
@@ -472,15 +463,15 @@ body[data-theme="hk-open"] .data-table tbody tr:hover td {
     background: rgba(198, 237, 53, 0.30);
 }
 
-/* ── 导出图片适配：整图同步深紫主题；Hero 改纯色（html2canvas 对多层渐变渲染不稳），标题深紫 ── */
+/* ── 导出图片适配：整图白底同步页面；Hero 改纯色（html2canvas 对多层渐变渲染不稳） ── */
 body[data-theme="hk-open"] .export-wrapper {
-    background: #240B5C !important;
+    background: #FFFFFF !important;
 }
 body[data-theme="hk-open"] .export-wrapper .tournament-header {
     background: #3D0D66;
 }
 body[data-theme="hk-open"] .export-wrapper .export-title {
-    color: #FFFFFF;
+    color: #1B0642;
 }
 
 /* ── 移动端适配：收紧卡片/表格/导航留白 ── */

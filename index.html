@@ -5128,9 +5128,13 @@
         // Scroll to top on navigation
         window.scrollTo(0, 0);
 
-        // Reset to default theme; tournament pages will apply their own theme via renderTournamentLogo
-        document.body.dataset.theme = 'purple';
         document.body.classList.remove('admin-page');
+
+        // 赛事路由保持当前 theme 不变，等 renderXXX 拿到 tournament 数据后再 applyTournamentTheme
+        // 只有非赛事页面才重置为 purple 默认主题
+        if (!hash.startsWith('tournament/')) {
+            document.body.dataset.theme = 'purple';
+        }
 
         if (!hash || hash === '/') {
             renderHome();

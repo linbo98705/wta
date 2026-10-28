@@ -147,22 +147,22 @@ body[data-theme="hk-open"] {
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* 香港赛 VI：标题不大写（官网标题常规写法），按钮大写 */
+/* 香港赛 VI：区块主标题荧光绿（官网 TOURNAMENT NEWS 风格） */
 body[data-theme="hk-open"] .section-header h2 {
     font-weight: 600;
     letter-spacing: 0;
-    color: #FFFFFF;
+    color: var(--hk-lime);
 }
 body[data-theme="hk-open"] .section-header p {
     color: rgba(255, 255, 255, 0.6);
 }
 
-/* ── Hero：深紫渐变底 + 官网标志性荧光绿光带 ── */
+/* ── Hero：官网紫红渐变（左上红紫→深紫）+ 荧光绿光带 ── */
 body[data-theme="hk-open"] .tournament-header {
     background:
         radial-gradient(ellipse 55% 45% at 72% 60%, rgba(198, 237, 53, 0.22) 0%, transparent 60%),
         radial-gradient(ellipse 35% 25% at 55% 75%, rgba(198, 237, 53, 0.10) 0%, transparent 60%),
-        linear-gradient(120deg, #36127A 0%, #20094D 55%, #140532 100%);
+        linear-gradient(135deg, #7E1140 0%, #5C0E46 32%, #20094D 70%, #140532 100%);
     color: rgba(255, 255, 255, 0.85);
 }
 
@@ -171,6 +171,12 @@ body[data-theme="hk-open"] .tournament-header h1 {
     font-size: 2.75rem;
     font-weight: 700;
     letter-spacing: 0;
+}
+
+/* 页头 meta：日期等标签荧光绿（官网日期标签风格） */
+body[data-theme="hk-open"] .tournament-header-meta strong,
+body[data-theme="hk-open"] .tournament-header-meta time {
+    color: var(--hk-lime);
 }
 
 body[data-theme="hk-open"] .tournament-header-meta {
@@ -199,11 +205,14 @@ body[data-theme="hk-open"] .section-header h2 {
     }
 }
 
-/* ── 卡片：深紫浅卡暗夜风（官网深紫底 + 稍浅紫卡片） ── */
+/* ── 卡片：半透明深紫底 + 官网标志性荧光绿边框 ── */
 body[data-theme="hk-open"] .card {
-    background: #2F0E66;
-    border-color: rgba(255, 255, 255, 0.10);
+    background: rgba(47, 14, 102, 0.55);
+    border-color: rgba(198, 237, 53, 0.30);
     color: rgba(255, 255, 255, 0.88);
+}
+body[data-theme="hk-open"] .card:hover {
+    border-color: rgba(198, 237, 53, 0.55);
 }
 body[data-theme="hk-open"] .card-header {
     background: transparent;
@@ -364,7 +373,7 @@ body[data-theme="hk-open"] .court-column-header {
 }
 body[data-theme="hk-open"] .match-card {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.10);
+    border-color: rgba(198, 237, 53, 0.25);
     border-radius: 16px;
     color: rgba(255, 255, 255, 0.88);
 }

@@ -146,13 +146,36 @@ body[data-theme="hk-open"] {
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* 香港赛 VI：标题大写 */
-body[data-theme="hk-open"] .tournament-header h1,
-body[data-theme="hk-open"] .section-title,
+/* 香港赛 VI：标题不大写（官网标题常规写法），按钮大写 */
+body[data-theme="hk-open"] .tournament-header h1 {
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+body[data-theme="hk-open"] .section-header h2 {
+    font-weight: 600;
+    letter-spacing: 0;
+    color: #585858;
+}
+
 body[data-theme="hk-open"] .card-header h2,
 body[data-theme="hk-open"] .card-header h3 {
-    text-transform: uppercase;
-    letter-spacing: 0.01em;
+    font-weight: 600;
+}
+
+/* 赛事级别徽章：官网荧光黄绿胶囊 + 深紫字 */
+body[data-theme="hk-open"] .tournament-category {
+    background: var(--hk-lime);
+    color: #1B034E;
+}
+
+/* 卡片：官网扁平风（无阴影，16px 大圆角） */
+body[data-theme="hk-open"] .card {
+    box-shadow: none;
+    border-radius: 16px;
+}
+body[data-theme="hk-open"] .card:hover {
+    box-shadow: none;
 }
 
 body[data-theme="hk-open"] .btn {
@@ -170,6 +193,18 @@ body[data-theme="hk-open"] .btn-primary {
 body[data-theme="hk-open"] .btn-primary:hover {
     background: #B81528;
     box-shadow: 0 8px 16px -4px rgba(220, 31, 51, 0.35);
+}
+
+/* 官网次要按钮：白底灰边、小圆角 */
+body[data-theme="hk-open"] .btn-outline {
+    border-radius: 6px;
+    box-shadow: none;
+}
+body[data-theme="hk-open"] .btn-outline:hover {
+    background: #FFF7F8;
+    color: #DC1F33;
+    border-color: #DC1F33;
+    box-shadow: none;
 }
 
 /* 页头装饰：荧光黄绿光晕（官网网球球色点缀） */

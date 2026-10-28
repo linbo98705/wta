@@ -486,6 +486,14 @@ body[data-theme="hk-open"] .export-wrapper .gt-table th {
 body[data-theme="hk-open"] .export-wrapper .gt-table td {
     border-bottom: 1px solid rgba(27, 6, 66, 0.22);
 }
+/* 导出图片：html2canvas 忽略投影，卡片补实线边框形成整体外框；表格恢复满宽与卡头对齐（JS 克隆时会设 width:auto） */
+body[data-theme="hk-open"] .export-wrapper .card {
+    border: 1px solid rgba(27, 6, 66, 0.18);
+    box-shadow: none;
+}
+body[data-theme="hk-open"] .export-wrapper .data-table {
+    width: 100% !important;
+}
 
 /* ── 移动端适配：收紧卡片/表格/导航留白 ── */
 @media (max-width: 768px) {

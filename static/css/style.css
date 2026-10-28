@@ -143,7 +143,7 @@ body[data-theme="hk-open"] {
     --purple-bg: #FFF7F8;
     --purple-rgb: 220, 31, 51;
     --hk-lime: #C6ED35;
-    background-color: #1B034E;
+    background-color: #20094D;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -162,7 +162,7 @@ body[data-theme="hk-open"] .tournament-header {
     background:
         radial-gradient(ellipse 55% 45% at 72% 60%, rgba(198, 237, 53, 0.22) 0%, transparent 60%),
         radial-gradient(ellipse 35% 25% at 55% 75%, rgba(198, 237, 53, 0.10) 0%, transparent 60%),
-        linear-gradient(120deg, #2A0A5E 0%, #1B034E 55%, #0E0230 100%);
+        linear-gradient(120deg, #36127A 0%, #20094D 55%, #140532 100%);
     color: rgba(255, 255, 255, 0.85);
 }
 
@@ -201,7 +201,7 @@ body[data-theme="hk-open"] .section-header h2 {
 
 /* ── 卡片：深紫浅卡暗夜风（官网深紫底 + 稍浅紫卡片） ── */
 body[data-theme="hk-open"] .card {
-    background: #2A0A5E;
+    background: #2F0E66;
     border-color: rgba(255, 255, 255, 0.10);
     color: rgba(255, 255, 255, 0.88);
 }
@@ -277,7 +277,7 @@ body[data-theme="hk-open"] .btn-outline:hover {
 
 /* ── 二级导航：官网顶部紫→红渐变 + 白字 ── */
 body[data-theme="hk-open"] .tournament-subnav {
-    background: linear-gradient(90deg, #1B034E 0%, #5C0E46 55%, #DC1F33 100%);
+    background: linear-gradient(90deg, #20094D 0%, #5C0E46 55%, #DC1F33 100%);
     border-bottom: none;
 }
 body[data-theme="hk-open"] .tournament-subnav a {
@@ -309,7 +309,7 @@ body[data-theme="hk-open"] .card-body {
 
 /* ── 参赛名单表格：表头用页面深紫、行面带微光，与深紫卡片融合 ── */
 body[data-theme="hk-open"] .data-table th {
-    background: #1B034E;
+    background: #20094D;
     color: #FFFFFF;
     font-size: 0.8125rem;
     font-weight: 600;
@@ -409,7 +409,7 @@ body[data-theme="hk-open"] .bracket-round-header {
 
 /* ── 竞猜表格：表头与名单表格统一为深紫白字 + 荧光绿底线 ── */
 body[data-theme="hk-open"] .dg-table th {
-    background: #1B034E;
+    background: #20094D;
     color: #FFFFFF;
     border-bottom: 3px solid var(--hk-lime);
     letter-spacing: 0.03em;
@@ -435,23 +435,28 @@ body[data-theme="hk-open"] .data-table tbody tr:hover {
 
 /* ── 比赛内 TB 竞猜表格：深紫表头 + 反白文字 ── */
 body[data-theme="hk-open"] .gt-table th {
-    background: #1B034E;
+    background: #20094D;
     border-bottom: 3px solid var(--hk-lime);
 }
 body[data-theme="hk-open"] .gt-th-label {
-    background: #0E0230;
+    background: #140532;
 }
 body[data-theme="hk-open"] .gt-table td {
     color: rgba(255, 255, 255, 0.85);
     border-bottom-color: rgba(255, 255, 255, 0.10);
 }
 
+/* 基础样式在悬停时把 td 刷成近白色，深底下会盖掉行底色导致文字不可读，此处压掉 */
+body[data-theme="hk-open"] .data-table tbody tr:hover td {
+    background: rgba(198, 237, 53, 0.10);
+}
+
 /* ── 导出图片适配：整图同步深紫主题；Hero 改纯色（html2canvas 对多层渐变渲染不稳），标题深紫 ── */
 body[data-theme="hk-open"] .export-wrapper {
-    background: #1B034E !important;
+    background: #20094D !important;
 }
 body[data-theme="hk-open"] .export-wrapper .tournament-header {
-    background: #1B034E;
+    background: #20094D;
 }
 body[data-theme="hk-open"] .export-wrapper .export-title {
     color: #FFFFFF;

@@ -39,7 +39,7 @@ const compactStartRound = 'R16';
  * @param {string} round - 轮次（如 'F' 表示决赛）
  * @returns {string} 两行 bracket-player 的 HTML
  */
-function renderMatch(m, playerMap, round) {
+function renderMatch(m, playerMap, round, champPoints) {
     const p1Seed = (playerMap && playerMap[m.player1_id]) ? (playerMap[m.player1_id].t_seed || 0) : 0;
     const p2Seed = (playerMap && playerMap[m.player2_id]) ? (playerMap[m.player2_id].t_seed || 0) : 0;
 
@@ -65,12 +65,13 @@ function renderMatch(m, playerMap, round) {
         return topHtml + bottomHtml;
     }
 
-    // 正常比赛：胜/败方样式
-    const p1Class = m.winner_id === m.player1_id ? 'winner' : (m.winner_id && m.winner_id !== m.player1_id ? 'loser' : '');
-    const p2Class = m.winner_id === m.player2_id ? 'winner' : (m.winner_id && m.winner_id !== m.player2_id ? 'loser' : '');
+    // 正常比赛：胜/败方样式（winner_id 为 null 时不得误判，避免未赛决赛双方都显示 winner/奖杯）
+    const p1Class = m.winner_id && m.winner_id === m.player1_id ? 'winner' : (m.winner_id && m.winner_id !== m.player1_id ? 'loser' : '');
+    const p2Class = m.winner_id && m.winner_id === m.player2_id ? 'winner' : (m.winner_id && m.winner_id !== m.player2_id ? 'loser' : '');
     const isFinal = round === 'F';
-    const p1Trophy = (isFinal && p1Class === 'winner') ? '<span class="bracket-trophy" title="冠军">🏆</span>' : '';
-    const p2Trophy = (isFinal && p2Class === 'winner') ? '<span class="bracket-trophy" title="冠军">🏆</span>' : '';
+    const champTag = (isFinal && champPoints) ? '<span style="font-size:0.625rem; font-weight:700; color:var(--purple); margin-left:3px;" title="冠军积分">' + champPoints + '分</span>' : '';
+    const p1Trophy = (isFinal && p1Class === 'winner') ? '<span class="bracket-trophy" title="冠军">🏆</span>' + champTag : '';
+    const p2Trophy = (isFinal && p2Class === 'winner') ? '<span class="bracket-trophy" title="冠军">🏆</span>' + champTag : '';
 
     const p1Full = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : '\u2014';
     const p2Full = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : '\u2014';
@@ -126,8 +127,13 @@ function buildBracket(matches, playerMap, startRound) {
     const numCols = roundData.length;
     const firstCount = roundData[0].length;
     const totalH = firstCount * MATCH_HEIGHT;
-    const seqOffset = SECTION_COL_WIDTH + SEQ_COL_WIDTH + SEQ_COL_GAP; // 区标签列+序号列偏移量
+    const showSections = firstCount >= 32; // 仅64签及以上显示1/8区标签，32签及以下隐藏
+    const sectionColW = showSections ? SECTION_COL_WIDTH : 0;
+    const seqOffset = sectionColW + SEQ_COL_WIDTH + SEQ_COL_GAP; // 区标签列+序号列偏移量
     const totalW = seqOffset + numCols * (COL_WIDTH + COL_GAP) - COL_GAP;
+    // 32签各轮积分（WTA250级别：R32=1 R16=30 QF=60 SF=98 亚军=163 冠军=250，冠军在奖杯旁单独标注）
+    const POINTS_32 = { R32: 1, R16: 30, QF: 60, SF: 98, F: 163 };
+    const showPoints = firstCount === 16;
 
     // ── 构建 SVG 连线 + 比分 ──
     const svgParts = [];
@@ -245,13 +251,18 @@ function buildBracket(matches, playerMap, startRound) {
     // 轮次标题行（含区标签列+序号列）
     html += '<div class="bracket-headers" style="display:flex; margin-bottom:6px;">';
     // 区标签列标题
-    html += '<div class="bracket-round-header" style="width:' + SECTION_COL_WIDTH + 'px; flex-shrink:0; font-size:0.625rem;">区</div>';
+    if (showSections) {
+        html += '<div class="bracket-round-header" style="width:' + SECTION_COL_WIDTH + 'px; flex-shrink:0; font-size:0.625rem;">区</div>';
+    }
     // 序号列标题
     html += '<div class="bracket-round-header" style="width:' + SEQ_COL_WIDTH + 'px; flex-shrink:0; margin-right:' + SEQ_COL_GAP + 'px;">序号</div>';
     for (let ri = 0; ri < roundOrder.length; ri++) {
         if (ri > 0) html += '<div style="width:' + COL_GAP + 'px; flex-shrink:0;"></div>';
         html += '<div class="bracket-round-header" style="width:' + COL_WIDTH + 'px; flex-shrink:0;">'
             + (roundLabels[roundOrder[ri]] || roundOrder[ri])
+            + (showPoints && POINTS_32[roundOrder[ri]] != null
+                ? '<div style="font-size:0.625rem; font-weight:600; color:var(--gray-400); line-height:1.3;">' + POINTS_32[roundOrder[ri]] + '分</div>'
+                : '')
             + '</div>';
     }
     html += '</div>';
@@ -260,6 +271,7 @@ function buildBracket(matches, playerMap, startRound) {
     html += '<div class="bracket-body" style="position:relative; width:' + totalW + 'px; height:' + totalH + 'px;">';
 
     // 1/8 区背景色带（交替背景色）+ 区标签
+    if (showSections) {
     for (let si = 0; si < sectionCount; si++) {
         const sTop = si * sectionH;
         const bgColor = si % 2 === 0 ? 'rgba(91,45,142,0.02)' : 'rgba(91,45,142,0.06)';
@@ -272,6 +284,7 @@ function buildBracket(matches, playerMap, startRound) {
         html += '<div style="position:absolute; left:0; top:' + labelTop + 'px; width:' + SECTION_COL_WIDTH
             + 'px; height:14px; line-height:14px; text-align:center; font-size:0.625rem; font-weight:700; '
             + 'color:var(--purple); z-index:3;">' + (si + 1) + '/' + sectionCount + '</div>';
+    }
     }
 
     // SVG 连线层
@@ -286,7 +299,7 @@ function buildBracket(matches, playerMap, startRound) {
     const slotH = totalH / slotCount;
     for (let si = 0; si < slotCount; si++) {
         const sTop = si * slotH + (slotH - 16) / 2;
-        html += '<div style="position:absolute; left:' + SECTION_COL_WIDTH + 'px; top:' + sTop + 'px; width:' + SEQ_COL_WIDTH
+        html += '<div style="position:absolute; left:' + sectionColW + 'px; top:' + sTop + 'px; width:' + SEQ_COL_WIDTH
             + 'px; height:16px; line-height:16px; text-align:center; font-size:0.6875rem; font-weight:600; color:var(--gray-500); z-index:3;">'
             + (si + 1) + '</div>';
     }
@@ -304,7 +317,7 @@ function buildBracket(matches, playerMap, startRound) {
             html += '<div class="bracket-match-wrapper" style="position:absolute; left:' + colX
                 + 'px; top:' + mTop + 'px; width:' + COL_WIDTH + 'px; height:' + MATCH_HEIGHT
                 + 'px; z-index:3;">';
-            html += '<div class="bracket-match" style="height:100%;">' + renderMatch(m, playerMap, roundOrder[ci]) + '</div>';
+            html += '<div class="bracket-match" style="height:100%;">' + renderMatch(m, playerMap, roundOrder[ci], showPoints ? 250 : null) + '</div>';
             html += '</div>';
         }
     }

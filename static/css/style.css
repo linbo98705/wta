@@ -379,69 +379,6 @@ body[data-theme="hk-open"] .match-card {
     color: #241040;
 }
 
-/* ── 球员名单：横向条卡列表（排名大字在左，姓名+国旗居中，种子徽章靠右） ── */
-body[data-theme="hk-open"] .player-card-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 2px 0;
-}
-body[data-theme="hk-open"] .player-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: #FFFFFF;
-    border: 1px solid rgba(27, 6, 66, 0.10);
-    border-radius: 12px;
-    padding: 12px 20px;
-    transition: border-color 0.2s, background 0.2s;
-}
-body[data-theme="hk-open"] .player-card:hover {
-    border-color: var(--hk-lime);
-    background: rgba(198, 237, 53, 0.06);
-}
-body[data-theme="hk-open"] .player-card-rank {
-    min-width: 64px;
-    font-family: 'Poppins', -apple-system, sans-serif;
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: #1B0642;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-}
-body[data-theme="hk-open"] .player-card-info {
-    min-width: 0;
-    flex: 1;
-}
-body[data-theme="hk-open"] .player-card-name {
-    color: #1B0642;
-    font-weight: 600;
-    font-size: 0.9375rem;
-}
-body[data-theme="hk-open"] .player-card-meta {
-    color: rgba(36, 16, 64, 0.6);
-    font-size: 0.8125rem;
-    margin-top: 2px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex-wrap: wrap;
-}
-body[data-theme="hk-open"] .player-card-seed {
-    margin-left: auto;
-    flex-shrink: 0;
-}
-@media (max-width: 480px) {
-    body[data-theme="hk-open"] .player-card {
-        padding: 10px 14px;
-        gap: 12px;
-    }
-    body[data-theme="hk-open"] .player-card-rank {
-        min-width: 48px;
-        font-size: 1.125rem;
-    }
-}
-
 /* ── 卡片/比赛卡内：内联灰色文字统一深紫 ── */
 body[data-theme="hk-open"] .card [style*="color:var(--gray-300)"],
 body[data-theme="hk-open"] .card [style*="color:var(--gray-400)"],

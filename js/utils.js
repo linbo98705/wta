@@ -252,7 +252,7 @@ function countryCodeToEmoji(cc) {
     return String.fromCodePoint(A + (cc.charCodeAt(0) - a), A + (cc.charCodeAt(1) - a));
 }
 
-// 使用 flagcdn.com 提供 PNG 国旗图片（需要小写国家代码）
+// 旗帜加载：本地 SVG（static/flags/，矢量高清）优先，缺失时回退 flagcdn CDN，最终回退 emoji
 function countryFlag(code, name) {
     var cc = (code || '').trim().toLowerCase();
     if (!cc && name) {
@@ -260,7 +260,7 @@ function countryFlag(code, name) {
     }
     if (!cc) return '';
     var emoji = countryCodeToEmoji(cc);
-    return `<img src="https://flagcdn.com/20x15/${cc}.png" alt="${escapeHtml(name || code)}" title="${escapeHtml(name || code)}" style="width:20px;height:15px;vertical-align:middle;margin-right:4px;border:1px solid var(--gray-200);border-radius:2px;" loading="lazy" onerror="this.onerror=null;this.outerHTML='<span style=&quot;font-size:14px;vertical-align:middle;margin-right:4px;&quot;>${emoji}</span>';">`;
+    return `<img src="static/flags/${cc}.svg" alt="${escapeHtml(name || code)}" title="${escapeHtml(name || code)}" style="width:20px;height:15px;vertical-align:middle;margin-right:4px;border:1px solid var(--gray-200);border-radius:2px;" loading="lazy" onerror="if(!this.dataset.f){this.dataset.f='1';this.src='https://flagcdn.com/${cc}.svg';}else{this.onerror=null;this.outerHTML='<span style=&quot;font-size:14px;vertical-align:middle;margin-right:4px;&quot;>${emoji}</span>';}">`;
 }
 
 // ── HTML 转义 ───────────────────────────────

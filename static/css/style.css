@@ -329,9 +329,56 @@ body[data-theme="hk-open"] .match-card {
     border-radius: 16px;
 }
 
-/* ── 竞猜表格：表头加深紫字色对比 ── */
+/* ── 竞猜表格：表头与名单表格统一为深紫白字 ── */
 body[data-theme="hk-open"] .dg-table th {
+    background: #1B034E;
+    color: #FFFFFF;
+    border-bottom: none;
     letter-spacing: 0.03em;
+}
+
+/* ── 表格细化：圆角表头 + 斑马纹（官网数据表风格） ── */
+body[data-theme="hk-open"] .data-table thead th:first-child {
+    border-top-left-radius: 12px;
+}
+body[data-theme="hk-open"] .data-table thead th:last-child {
+    border-top-right-radius: 12px;
+}
+body[data-theme="hk-open"] .data-table tbody tr:nth-child(even) {
+    background: rgba(27, 3, 78, 0.03);
+}
+body[data-theme="hk-open"] .data-table tbody tr:hover {
+    background: #FBE9EB;
+}
+
+/* ── 导出图片适配：Hero 改纯色（html2canvas 对多层渐变渲染不稳），标题深紫 ── */
+body[data-theme="hk-open"] .export-wrapper .tournament-header {
+    background: #1B034E;
+}
+body[data-theme="hk-open"] .export-wrapper .export-title {
+    color: #1B034E;
+}
+
+/* ── 移动端适配：收紧卡片/表格/导航留白 ── */
+@media (max-width: 768px) {
+    body[data-theme="hk-open"] .card-header {
+        padding: 16px 20px;
+    }
+    body[data-theme="hk-open"] .card-body {
+        padding: 16px;
+    }
+    body[data-theme="hk-open"] .data-table th {
+        padding: 10px 12px;
+        font-size: 0.75rem;
+    }
+    body[data-theme="hk-open"] .data-table td {
+        padding: 12px;
+        font-size: 0.875rem;
+    }
+    body[data-theme="hk-open"] .tournament-subnav a {
+        padding: 12px 14px;
+        font-size: 0.8125rem;
+    }
 }
 
 

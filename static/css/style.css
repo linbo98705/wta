@@ -143,7 +143,9 @@ body[data-theme="hk-open"] {
     --purple-bg: #FFF7F8;
     --purple-rgb: 220, 31, 51;
     --hk-lime: #C6ED35;
-    background-color: #20094D;
+    background-color: #16063A;
+    background-image: linear-gradient(180deg, #220A52 0%, #16063A 100%);
+    background-attachment: fixed;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -205,9 +207,9 @@ body[data-theme="hk-open"] .section-header h2 {
     }
 }
 
-/* ── 卡片：半透明深紫底 + 官网标志性荧光绿边框 ── */
+/* ── 卡片：通透紫玻璃底 + 官网标志性荧光绿边框 ── */
 body[data-theme="hk-open"] .card {
-    background: rgba(47, 14, 102, 0.55);
+    background: rgba(64, 24, 122, 0.42);
     border-color: rgba(198, 237, 53, 0.30);
     color: rgba(255, 255, 255, 0.88);
 }
@@ -318,7 +320,7 @@ body[data-theme="hk-open"] .card-body {
 
 /* ── 参赛名单表格：表头用页面深紫、行面带微光，与深紫卡片融合 ── */
 body[data-theme="hk-open"] .data-table th {
-    background: #20094D;
+    background: #16063A;
     color: #FFFFFF;
     font-size: 0.8125rem;
     font-weight: 600;
@@ -418,7 +420,7 @@ body[data-theme="hk-open"] .bracket-round-header {
 
 /* ── 竞猜表格：表头与名单表格统一为深紫白字 + 荧光绿底线 ── */
 body[data-theme="hk-open"] .dg-table th {
-    background: #20094D;
+    background: #16063A;
     color: #FFFFFF;
     border-bottom: 3px solid var(--hk-lime);
     letter-spacing: 0.03em;
@@ -444,11 +446,11 @@ body[data-theme="hk-open"] .data-table tbody tr:hover {
 
 /* ── 比赛内 TB 竞猜表格：深紫表头 + 反白文字 ── */
 body[data-theme="hk-open"] .gt-table th {
-    background: #20094D;
+    background: #16063A;
     border-bottom: 3px solid var(--hk-lime);
 }
 body[data-theme="hk-open"] .gt-th-label {
-    background: #140532;
+    background: #10042A;
 }
 body[data-theme="hk-open"] .gt-table td {
     color: rgba(255, 255, 255, 0.85);
@@ -462,10 +464,10 @@ body[data-theme="hk-open"] .data-table tbody tr:hover td {
 
 /* ── 导出图片适配：整图同步深紫主题；Hero 改纯色（html2canvas 对多层渐变渲染不稳），标题深紫 ── */
 body[data-theme="hk-open"] .export-wrapper {
-    background: #20094D !important;
+    background: #16063A !important;
 }
 body[data-theme="hk-open"] .export-wrapper .tournament-header {
-    background: #20094D;
+    background: #16063A;
 }
 body[data-theme="hk-open"] .export-wrapper .export-title {
     color: #FFFFFF;

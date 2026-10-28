@@ -871,6 +871,8 @@
             // 临时隐藏导出按钮和视图切换
             const exportBtn = cardSection.querySelector('button[onclick="exportDrawToImage()"]');
             const viewToggle = cardSection.querySelector('#viewToggle');
+            const prevExportBtnDisplay = exportBtn ? exportBtn.style.display : '';
+            const prevViewToggleDisplay = viewToggle ? viewToggle.style.display : '';
             if (exportBtn) exportBtn.style.display = 'none';
             if (viewToggle) viewToggle.style.display = 'none';
 
@@ -893,8 +895,8 @@
             wrapper.appendChild(cardSection.cloneNode(true));
 
             // 恢复原页面显示
-            if (exportBtn) exportBtn.style.display = '';
-            if (viewToggle) viewToggle.style.display = '';
+            if (exportBtn) exportBtn.style.display = prevExportBtnDisplay;
+            if (viewToggle) viewToggle.style.display = prevViewToggleDisplay;
 
             // 克隆后移除 overflow 限制，确保 html2canvas 能截取完整内容
             const cloneDrawCard = wrapper.querySelector('.draw-card');

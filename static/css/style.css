@@ -208,9 +208,9 @@ body[data-theme="hk-open"] .section-header h2 {
     }
 }
 
-/* ── 卡片：通透紫玻璃底 + 官网标志性荧光绿边框 ── */
+/* ── 卡片：深紫近黑面板（压过亮紫页面底，与表头同色系锚定）+ 官网标志性荧光绿边框 ── */
 body[data-theme="hk-open"] .card {
-    background: rgba(64, 24, 122, 0.42);
+    background: #1B0642;
     border-color: rgba(198, 237, 53, 0.30);
     color: rgba(255, 255, 255, 0.88);
 }
@@ -375,7 +375,7 @@ body[data-theme="hk-open"] .court-column-header {
     border-bottom: 2px solid var(--hk-lime);
 }
 body[data-theme="hk-open"] .match-card {
-    background: rgba(255, 255, 255, 0.06);
+    background: #1B0642;
     border-color: rgba(198, 237, 53, 0.25);
     border-radius: 16px;
     color: rgba(255, 255, 255, 0.88);

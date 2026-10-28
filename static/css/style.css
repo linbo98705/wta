@@ -362,12 +362,15 @@ body[data-theme="hk-open"] .gt-th-label {
     background: #0E0230;
 }
 
-/* ── 导出图片适配：Hero 改纯色（html2canvas 对多层渐变渲染不稳），标题深紫 ── */
+/* ── 导出图片适配：整图同步深紫主题；Hero 改纯色（html2canvas 对多层渐变渲染不稳），标题深紫 ── */
+body[data-theme="hk-open"] .export-wrapper {
+    background: #1B034E !important;
+}
 body[data-theme="hk-open"] .export-wrapper .tournament-header {
     background: #1B034E;
 }
 body[data-theme="hk-open"] .export-wrapper .export-title {
-    color: #1B034E;
+    color: #FFFFFF;
 }
 
 /* ── 移动端适配：收紧卡片/表格/导航留白 ── */

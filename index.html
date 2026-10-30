@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css?v=69">
+    <link rel="stylesheet" href="static/css/style.css?v=70">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -745,23 +745,13 @@
         }
     };
 
-    // ── 导出长图时同步页面底色 ────────────────
-    // html2canvas 不绘制截图容器自身的背景，所以把底色直接画到 canvas 最底层（destination-over），
-    // 半透明的卡片/表格自然透出底色，效果与页面一致
+    // ── 导出长图时同步页面底色（当前所有主题底色均为白） ────────────────
+    // html2canvas 不绘制截图容器自身的背景，所以把白底直接画到 canvas 最底层（destination-over）
     function fillExportBackground(canvas) {
         const ctx = canvas.getContext('2d');
         ctx.save();
         ctx.globalCompositeOperation = 'destination-over';
-        if (document.body.dataset.theme === 'hk-open') {
-            const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            g.addColorStop(0, '#B8144A');
-            g.addColorStop(0.38, '#7C1352');
-            g.addColorStop(0.76, '#3D0D66');
-            g.addColorStop(1, '#1B034E');
-            ctx.fillStyle = g;
-        } else {
-            ctx.fillStyle = '#FFFFFF';
-        }
+        ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
     }

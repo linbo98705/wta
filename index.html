@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <!-- Archivo 仅美网主题用，改为非阻塞加载，避免外网字体拖慢首屏 -->
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="static/css/style.css?v=76">
+    <link rel="stylesheet" href="static/css/style.css?v=77">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -760,58 +760,53 @@
         }
     };
 
-    // ── 导出长图底色合成 ────────────────
-    // html2canvas 以 backgroundColor:null 截图，产物是全透明底；
-    // 这里先整图铺不透明白底（保证导出的 PNG 永不透明），再把夜景图按 cover 铺进 hero 区域
-    // 并叠加与页面一致的紫红渐变蒙版，最后把截图内容叠上去，hero 区白字就落在夜景图上。
-    function fillExportBackground(canvas, heroImg, heroHeightCss) {
-        const W = canvas.width;
-        const H = canvas.height;
+    // ── 导出长图底色 ────────────────
+    // 用 destination-over 在截图最底层补白：内容不会被遮挡，产物也一定不透明
+    function fillExportBackground(canvas) {
         const ctx = canvas.getContext('2d');
-        const isHk = document.body.dataset.theme === 'hk-open';
-        // hero 高度测量失败时按 320px 兜底，避免 hero 区域丢失
-        const heroH = isHk ? Math.min(Math.round((heroHeightCss > 0 ? heroHeightCss : 320) * 2), H) : 0; // scale:2
-        const tmp = document.createElement('canvas');
-        tmp.width = W;
-        tmp.height = H;
-        const tctx = tmp.getContext('2d');
-        // 0. 全图先铺不透明白底
-        tctx.fillStyle = '#FFFFFF';
-        tctx.fillRect(0, 0, W, H);
-        if (heroH > 0) {
-            // 1. 夜景图按 cover 铺满 hero 区域（等效 background-size:cover + position:center 35%）
-            if (heroImg && heroImg.naturalWidth) {
-                const s = Math.max(W / heroImg.naturalWidth, heroH / heroImg.naturalHeight);
-                const dw = heroImg.naturalWidth * s;
-                const dh = heroImg.naturalHeight * s;
-                tctx.drawImage(heroImg, (W - dw) / 2, (heroH - dh) * 0.35, dw, dh);
-            } else {
-                tctx.fillStyle = '#3D0D66';
-                tctx.fillRect(0, 0, W, heroH);
-            }
-            // 2. 渐变蒙版：复刻页面 .tournament-header::before 的 115deg 紫红渐变
-            const rad = 115 * Math.PI / 180;
-            const dx = Math.sin(rad);
-            const dy = -Math.cos(rad);
-            const len = Math.abs(W * dx) + Math.abs(heroH * dy);
-            const cx = W / 2;
-            const cy = heroH / 2;
-            const lg = tctx.createLinearGradient(cx - dx * len / 2, cy - dy * len / 2, cx + dx * len / 2, cy + dy * len / 2);
-            lg.addColorStop(0, 'rgba(184, 20, 74, 0.20)');
-            lg.addColorStop(0.42, 'rgba(124, 19, 82, 0.28)');
-            lg.addColorStop(0.8, 'rgba(61, 13, 102, 0.40)');
-            lg.addColorStop(1, 'rgba(42, 8, 96, 0.52)');
-            tctx.fillStyle = lg;
-            tctx.fillRect(0, 0, W, heroH);
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+    }
+
+    // 把「夜景照片 + 页面同款 115deg 紫红渐变蒙版」烘焙成一张按 header 实际尺寸的位图
+    function bakeHeroBackground(heroImg, cssW, cssH) {
+        const ratio = 2;
+        const cvs = document.createElement('canvas');
+        cvs.width = Math.max(1, Math.round(cssW * ratio));
+        cvs.height = Math.max(1, Math.round(cssH * ratio));
+        const W = cvs.width;
+        const H = cvs.height;
+        const c = cvs.getContext('2d');
+        c.fillStyle = '#3D0D66';
+        c.fillRect(0, 0, W, H);
+        if (heroImg && heroImg.naturalWidth) {
+            // 等效 background-size: cover + background-position: center 35%
+            const s = Math.max(W / heroImg.naturalWidth, H / heroImg.naturalHeight);
+            const dw = heroImg.naturalWidth * s;
+            const dh = heroImg.naturalHeight * s;
+            c.drawImage(heroImg, (W - dw) / 2, (H - dh) * 0.35, dw, dh);
         }
-        // 3. 叠回 html2canvas 内容（透明底，hero 区白字落在夜景图上）
-        tctx.drawImage(canvas, 0, 0);
-        ctx.clearRect(0, 0, W, H);
-        ctx.drawImage(tmp, 0, 0);
+        // 复刻页面 .tournament-header::before 的 115deg 渐变
+        const rad = 115 * Math.PI / 180;
+        const dx = Math.sin(rad);
+        const dy = -Math.cos(rad);
+        const len = Math.abs(W * dx) + Math.abs(H * dy);
+        const cx = W / 2;
+        const cy = H / 2;
+        const lg = c.createLinearGradient(cx - dx * len / 2, cy - dy * len / 2, cx + dx * len / 2, cy + dy * len / 2);
+        lg.addColorStop(0, 'rgba(184, 20, 74, 0.20)');
+        lg.addColorStop(0.42, 'rgba(124, 19, 82, 0.28)');
+        lg.addColorStop(0.8, 'rgba(61, 13, 102, 0.40)');
+        lg.addColorStop(1, 'rgba(42, 8, 96, 0.52)');
+        c.fillStyle = lg;
+        c.fillRect(0, 0, W, H);
+        return cvs.toDataURL('image/jpeg', 0.92);
     }
 
     // 导出的样式保障：不依赖外部样式表是否已更新（避免旧缓存 CSS 把容器刷成白底）
-    // 强制容器与 hero 透明、隐藏 hero 渐变蒙版伪元素，夜景图完全由 canvas 合成
     function prepareExportWrapper(wrapper) {
         wrapper.style.setProperty('background', 'transparent', 'important');
         if (document.getElementById('export-guard-style')) return;
@@ -819,19 +814,30 @@
         st.id = 'export-guard-style';
         st.textContent =
             '.export-wrapper { background: transparent !important; }' +
-            '.export-wrapper .tournament-header { background: transparent !important; position: relative; overflow: hidden; }' +
             '.export-wrapper .tournament-header::before { display: none !important; }';
         document.head.appendChild(st);
     }
 
-    // html2canvas 对图片/背景渲染不稳定，hero 夜景改为导出后直接绘制到 canvas 上
-    // （见 fillExportBackground 的 heroImg 分支）；此处只克隆 header，并清空背景让 hero 区域透明
+    // 导出 hero：克隆 header，并把夜景图烘焙成 header 自身的背景图
+    // 这样 hero 由 html2canvas 直接绘制，不再依赖「截图透明底」这个前提
     async function appendExportHero(wrapper, headerSection) {
         prepareExportWrapper(wrapper);
         if (!headerSection) return;
         const header = headerSection.cloneNode(true);
         header.style.setProperty('background', 'transparent', 'important');
         wrapper.appendChild(header);
+        if (document.body.dataset.theme !== 'hk-open') return;
+        const heroImg = await loadHeroImage();
+        // 等一帧，确保克隆的 header 已完成布局，能取到准确宽高
+        await new Promise(function(r) { requestAnimationFrame(function() { r(); }); });
+        const w = header.offsetWidth;
+        const h = header.offsetHeight;
+        if (!w || !h) return;
+        const url = bakeHeroBackground(heroImg, w, h);
+        header.style.setProperty('background-image', 'url("' + url + '")', 'important');
+        header.style.setProperty('background-size', '100% 100%', 'important');
+        header.style.setProperty('background-position', '0 0', 'important');
+        header.style.setProperty('background-repeat', 'no-repeat', 'important');
     }
 
     // 加载香港赛 hero 夜景图（导出后直接绘制到 canvas）
@@ -935,11 +941,8 @@
 
             // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
             await prepareImagesForExport(wrapper);
-            const heroImg = await loadHeroImage();
-            const heroHeaderEl = wrapper.querySelector('.tournament-header');
-            const heroHeightCss = heroHeaderEl ? heroHeaderEl.offsetHeight : 0;
             const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
-            fillExportBackground(canvas, heroImg, heroHeightCss);
+            fillExportBackground(canvas);
             document.body.removeChild(wrapper);
 
             // 下载为 PNG 长图
@@ -1057,11 +1060,8 @@
             // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
             await prepareImagesForExport(wrapper);
 
-            const heroImg = await loadHeroImage();
-            const heroHeaderEl = wrapper.querySelector('.tournament-header');
-            const heroHeightCss = heroHeaderEl ? heroHeaderEl.offsetHeight : 0;
             const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true, width: exportWidth, windowWidth: exportWidth });
-            fillExportBackground(canvas, heroImg, heroHeightCss);
+            fillExportBackground(canvas);
             document.body.removeChild(wrapper);
 
             // 下载为 PNG
@@ -1575,11 +1575,8 @@
                 // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
                 await prepareImagesForExport(wrapper);
 
-                const heroImg = await loadHeroImage();
-                const heroHeaderEl = wrapper.querySelector('.tournament-header');
-                const heroHeightCss = heroHeaderEl ? heroHeaderEl.offsetHeight : 0;
                 const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
-                fillExportBackground(canvas, heroImg, heroHeightCss);
+                fillExportBackground(canvas);
                 document.body.removeChild(wrapper);
 
                 // 构建文件名：赛事名 + 日期

@@ -481,19 +481,18 @@ body[data-theme="hk-open"] .data-table tbody tr:hover td {
     background: rgba(198, 237, 53, 0.30);
 }
 
-/* ── 导出图片适配：导出容器必须透明底 ──
-   html2canvas 会把容器自身背景画进 canvas；容器若是白底，会整片盖住
-   JS 之后合成到最底层的夜景图（这正是导出图里 hero 夜景图“消失”的原因）。
-   白底改由 fillExportBackground 在 canvas 上补，hero 区域留给夜景图。 */
+/* ── 导出图片适配：导出容器透明底 ──
+   白底由 fillExportBackground 在 canvas 最底层补（destination-over），不会遮挡内容。
+   hero 夜景图不走 CSS：导出时由 JS 烘焙成 header 自己的 background-image（精确尺寸 dataURL），
+   这样 hero 直接由 html2canvas 绘制，不依赖截图透明底。 */
 body[data-theme="hk-open"] .export-wrapper {
     background: transparent !important;
 }
 body[data-theme="hk-open"] .export-wrapper .tournament-header {
     position: relative;
     overflow: hidden;
-    background: transparent !important;
 }
-/* 导出时隐藏 Hero 渐变蒙版伪元素：该层不透明度很高（0.74~0.9），会盖住导出后合成到 canvas 上的夜景图 */
+/* 导出时隐藏 Hero 渐变蒙版伪元素（渐变已烘焙进 JS 生成的背景图里） */
 body[data-theme="hk-open"] .export-wrapper .tournament-header::before {
     display: none !important;
 }

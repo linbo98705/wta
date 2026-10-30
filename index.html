@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css?v=66">
+    <link rel="stylesheet" href="static/css/style.css?v=67">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -747,14 +747,43 @@
 
     // ── 导出长图时同步页面背景 ────────────────
     // body 上的背景图不会随内容元素一起被 html2canvas 截图，需直接铺到导出容器上；
-    // 香港赛主题（hk-open）铺整页球场底图 + 白色柔化层，其他主题保持纯白
-    function applyExportThemeBackground(el) {
+    // 香港赛主题（hk-open）铺整页球场底图，其他主题保持纯白。
+    // html2canvas 对多重背景图层支持不好，因此把白色柔化层烘焙进图片，只用单层 dataURL 背景
+    let _exportBgDataUrl = null;
+    async function getExportBgDataUrl() {
+        if (_exportBgDataUrl) return _exportBgDataUrl;
+        const img = await new Promise((resolve, reject) => {
+            const im = new Image();
+            im.onload = () => resolve(im);
+            im.onerror = () => reject(new Error('背景图加载失败'));
+            im.src = 'static/images/hk/bg-court.jpg';
+        });
+        const w = 800;
+        const h = Math.round(img.naturalHeight * w / img.naturalWidth);
+        const cvs = document.createElement('canvas');
+        cvs.width = w;
+        cvs.height = h;
+        const ctx = cvs.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        // 白色柔化层：保证导出图里的文字仍然清晰
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.fillRect(0, 0, w, h);
+        _exportBgDataUrl = cvs.toDataURL('image/jpeg', 0.88);
+        return _exportBgDataUrl;
+    }
+
+    async function applyExportThemeBackground(el) {
         el.style.backgroundColor = '#ffffff';
         if (document.body.dataset.theme !== 'hk-open') return;
-        el.style.backgroundImage = 'linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.42) 55%, rgba(255, 255, 255, 0.52) 100%), url("static/images/hk/bg-court-light.jpg")';
-        el.style.backgroundSize = '100% auto, 100% auto';
-        el.style.backgroundPosition = 'center top, center top';
-        el.style.backgroundRepeat = 'no-repeat, repeat-y';
+        try {
+            const bg = await getExportBgDataUrl();
+            el.style.backgroundImage = 'url("' + bg + '")';
+            el.style.backgroundSize = '100% auto';
+            el.style.backgroundPosition = 'center top';
+            el.style.backgroundRepeat = 'repeat-y';
+        } catch (e) {
+            console.warn('导出背景图加载失败，使用纯白背景:', e);
+        }
     }
 
     // ── 导出参赛名单为长图（按网页原样） ──────────────
@@ -786,7 +815,7 @@
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
             wrapper.style.width = '800px';
-            applyExportThemeBackground(wrapper);
+            await applyExportThemeBackground(wrapper);
             document.body.appendChild(wrapper);
 
             if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
@@ -900,7 +929,7 @@
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
             wrapper.style.width = exportWidth + 'px';
-            applyExportThemeBackground(wrapper);
+            await applyExportThemeBackground(wrapper);
             document.body.appendChild(wrapper);
 
             if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
@@ -1408,7 +1437,7 @@
                 const courtCount = cardSection.querySelectorAll('.court-column').length;
                 const exportWidth = courtCount <= 1 ? 800 : 1600;
                 wrapper.style.width = exportWidth + 'px';
-                applyExportThemeBackground(wrapper);
+                await applyExportThemeBackground(wrapper);
                 document.body.appendChild(wrapper);
 
                 if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));

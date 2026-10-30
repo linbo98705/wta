@@ -143,11 +143,11 @@ body[data-theme="hk-open"] {
     --purple-bg: #FFF7F8;
     --purple-rgb: 220, 31, 51;
     --hk-lime: #C6ED35;
-    /* 页面底：球场俯视轻调背景图，叠薄白柔化层保证正文可读 */
+    /* 页面底：球场俯视背景图，叠白色柔化层保证正文可读 */
     background-color: #FFFFFF;
     background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.42) 55%, rgba(255, 255, 255, 0.52) 100%),
-        url('../images/hk/bg-court-light.jpg');
+        linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.60) 55%, rgba(255, 255, 255, 0.66) 100%),
+        url('../images/hk/bg-court.jpg');
     background-size: cover, cover;
     background-position: center top, center center;
     background-repeat: no-repeat, no-repeat;

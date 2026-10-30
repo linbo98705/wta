@@ -163,19 +163,28 @@ body[data-theme="hk-open"] .section-header p {
     color: rgba(255, 255, 255, 0.78);
 }
 
-/* ── Hero：官网主视觉球场夜景图 + 紫红渐变蒙版 + 荧光绿光带 ── */
+/* ── Hero：球场夜景图 + 单独一层紫红渐变蒙版（拆成两层，导出长图时 html2canvas 才能完整绘制） ── */
 body[data-theme="hk-open"] .tournament-header {
-    background-image:
-        radial-gradient(ellipse 50% 42% at 75% 55%, rgba(198, 237, 53, 0.18) 0%, transparent 62%),
-        radial-gradient(ellipse 32% 22% at 55% 75%, rgba(198, 237, 53, 0.08) 0%, transparent 60%),
-        linear-gradient(115deg, rgba(184, 20, 74, 0.72) 0%, rgba(124, 19, 82, 0.74) 42%, rgba(61, 13, 102, 0.82) 80%, rgba(42, 8, 96, 0.88) 100%),
-        url('../images/hk/hero-court.jpg');
-    background-size: auto, auto, cover, cover;
-    background-position: center, center, center, center 35%;
+    background-image: url('../images/hk/hero-court.jpg');
+    background-size: cover;
+    background-position: center 35%;
     background-repeat: no-repeat;
-    background-color: #1B034E;
+    background-color: #3D0D66;
     border-bottom: 3px solid var(--hk-lime);
     color: rgba(255, 255, 255, 0.85);
+}
+
+body[data-theme="hk-open"] .tournament-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    background: linear-gradient(115deg, rgba(184, 20, 74, 0.74) 0%, rgba(124, 19, 82, 0.76) 42%, rgba(61, 13, 102, 0.84) 80%, rgba(42, 8, 96, 0.90) 100%);
 }
 
 body[data-theme="hk-open"] .tournament-header h1 {

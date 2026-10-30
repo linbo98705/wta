@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css?v=68">
+    <link rel="stylesheet" href="static/css/style.css?v=69">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -745,18 +745,25 @@
         }
     };
 
-    // ── 导出长图时同步页面背景 ────────────────
-    // body 上的背景不会随内容元素一起被 html2canvas 截图，需直接铺到导出容器上；
-    // 香港赛主题（hk-open）铺紫红渐变底，卡片/表格半透明白让渐变透出，其他主题保持纯白
-    function applyExportThemeBackground(el) {
-        el.style.backgroundColor = '#ffffff';
-        el.style.backgroundImage = 'none';
-        if (document.body.dataset.theme !== 'hk-open') return;
-        el.style.backgroundColor = '#1B034E';
-        el.style.backgroundImage = 'linear-gradient(160deg, #B8144A 0%, #7C1352 38%, #3D0D66 76%, #1B034E 100%)';
-        el.style.backgroundSize = 'cover';
-        el.style.backgroundPosition = 'center top';
-        el.style.backgroundRepeat = 'no-repeat';
+    // ── 导出长图时同步页面底色 ────────────────
+    // html2canvas 不绘制截图容器自身的背景，所以把底色直接画到 canvas 最底层（destination-over），
+    // 半透明的卡片/表格自然透出底色，效果与页面一致
+    function fillExportBackground(canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-over';
+        if (document.body.dataset.theme === 'hk-open') {
+            const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            g.addColorStop(0, '#B8144A');
+            g.addColorStop(0.38, '#7C1352');
+            g.addColorStop(0.76, '#3D0D66');
+            g.addColorStop(1, '#1B034E');
+            ctx.fillStyle = g;
+        } else {
+            ctx.fillStyle = '#FFFFFF';
+        }
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
     }
 
     // ── 导出参赛名单为长图（按网页原样） ──────────────
@@ -788,7 +795,6 @@
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
             wrapper.style.width = '800px';
-            applyExportThemeBackground(wrapper);
             document.body.appendChild(wrapper);
 
             if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
@@ -805,7 +811,8 @@
             if (exportBtn) exportBtn.style.display = '';
             if (countryFilterEl) countryFilterEl.style.display = '';
 
-            const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+            const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
+            fillExportBackground(canvas);
             document.body.removeChild(wrapper);
 
             // 下载为 PNG 长图
@@ -902,7 +909,6 @@
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
             wrapper.style.width = exportWidth + 'px';
-            applyExportThemeBackground(wrapper);
             document.body.appendChild(wrapper);
 
             if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
@@ -955,7 +961,8 @@
                 await new Promise(r => { img.onload = r; img.onerror = r; });
             }));
 
-            const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true, width: exportWidth, windowWidth: exportWidth });
+            const canvas = await html2canvas(clone, { scale: 2, backgroundColor: null, logging: false, useCORS: true, width: exportWidth, windowWidth: exportWidth });
+            fillExportBackground(canvas);
             document.body.removeChild(wrapper);
 
             // 下载为 PNG
@@ -1410,7 +1417,6 @@
                 const courtCount = cardSection.querySelectorAll('.court-column').length;
                 const exportWidth = courtCount <= 1 ? 800 : 1600;
                 wrapper.style.width = exportWidth + 'px';
-                applyExportThemeBackground(wrapper);
                 document.body.appendChild(wrapper);
 
                 if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
@@ -1474,7 +1480,8 @@
                     return new Promise(r => { img.onload = r; img.onerror = r; });
                 }));
 
-                const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+                const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
+                fillExportBackground(canvas);
                 document.body.removeChild(wrapper);
 
                 // 构建文件名：赛事名 + 日期

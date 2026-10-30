@@ -143,26 +143,24 @@ body[data-theme="hk-open"] {
     --purple-bg: #FFF7F8;
     --purple-rgb: 220, 31, 51;
     --hk-lime: #C6ED35;
-    /* 页面底：球场俯视背景图，叠白色柔化层保证正文可读 */
-    background-color: #FFFFFF;
-    background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.60) 55%, rgba(255, 255, 255, 0.66) 100%),
-        url('../images/hk/bg-court.jpg');
-    background-size: cover, cover;
-    background-position: center top, center center;
-    background-repeat: no-repeat, no-repeat;
-    background-attachment: fixed, fixed;
+    /* 页面底：香港赛紫红渐变（不用图片），卡片/表格半透明白让渐变透出 */
+    background-color: #1B034E;
+    background-image: linear-gradient(160deg, #B8144A 0%, #7C1352 38%, #3D0D66 76%, #1B034E 100%);
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* 香港赛 VI：区块主标题深紫（白底可读） */
+/* 香港赛 VI：区块主标题白色（深紫渐变底上可读） */
 body[data-theme="hk-open"] .section-header h2 {
     font-weight: 600;
     letter-spacing: 0;
-    color: #1B0642;
+    color: #FFFFFF;
 }
 body[data-theme="hk-open"] .section-header p {
-    color: rgba(36, 16, 64, 0.6);
+    color: rgba(255, 255, 255, 0.78);
 }
 
 /* ── Hero：官网主视觉球场夜景图 + 紫红渐变蒙版 + 荧光绿光带 ── */
@@ -210,8 +208,7 @@ body[data-theme="hk-open"] .section-header h2 {
 @media (max-width: 768px) {
     /* 移动端 iOS 对 fixed 背景支持差，改为随页面滚动 */
     body[data-theme="hk-open"] {
-        background-attachment: scroll, scroll;
-        background-position: center, center top;
+        background-attachment: scroll;
     }
     body[data-theme="hk-open"] .tournament-header h1 {
         font-size: 2rem;
@@ -224,10 +221,10 @@ body[data-theme="hk-open"] .section-header h2 {
     }
 }
 
-/* ── 卡片：白色面板（与亮紫页面底形成明暗反差，荧光绿悬停描边） ── */
+/* ── 卡片：半透明白面板（让紫红渐变透出，荧光绿悬停描边） ── */
 body[data-theme="hk-open"] .card {
-    background: #FFFFFF;
-    border-color: rgba(27, 6, 66, 0.12);
+    background: rgba(255, 255, 255, 0.78);
+    border-color: rgba(255, 255, 255, 0.32);
     color: #241040;
 }
 body[data-theme="hk-open"] .card:hover {

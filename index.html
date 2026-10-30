@@ -780,10 +780,10 @@
             const cx = W / 2;
             const cy = heroH / 2;
             const lg = tctx.createLinearGradient(cx - dx * len / 2, cy - dy * len / 2, cx + dx * len / 2, cy + dy * len / 2);
-            lg.addColorStop(0, 'rgba(184, 20, 74, 0.45)');
-            lg.addColorStop(0.42, 'rgba(124, 19, 82, 0.52)');
-            lg.addColorStop(0.8, 'rgba(61, 13, 102, 0.66)');
-            lg.addColorStop(1, 'rgba(42, 8, 96, 0.74)');
+            lg.addColorStop(0, 'rgba(184, 20, 74, 0.20)');
+            lg.addColorStop(0.42, 'rgba(124, 19, 82, 0.28)');
+            lg.addColorStop(0.8, 'rgba(61, 13, 102, 0.40)');
+            lg.addColorStop(1, 'rgba(42, 8, 96, 0.52)');
             tctx.fillStyle = lg;
             tctx.fillRect(0, 0, W, heroH);
             // 3. hero 以下铺白

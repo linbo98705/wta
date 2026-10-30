@@ -181,7 +181,7 @@ body[data-theme="hk-open"] .tournament-header::before {
     width: auto;
     height: auto;
     border-radius: 0;
-    background: linear-gradient(115deg, rgba(184, 20, 74, 0.45) 0%, rgba(124, 19, 82, 0.52) 42%, rgba(61, 13, 102, 0.66) 80%, rgba(42, 8, 96, 0.74) 100%);
+    background: linear-gradient(115deg, rgba(184, 20, 74, 0.20) 0%, rgba(124, 19, 82, 0.28) 42%, rgba(61, 13, 102, 0.40) 80%, rgba(42, 8, 96, 0.52) 100%);
 }
 
 body[data-theme="hk-open"] .tournament-header h1 {

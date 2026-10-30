@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css?v=71">
+    <link rel="stylesheet" href="static/css/style.css?v=72">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -756,6 +756,25 @@
         ctx.restore();
     }
 
+    // html2canvas 对 CSS background-image 渲染不稳定，hero 夜景改用真实 <img> 背景层，
+    // 由 html2canvas 按 <img> 方式绘制（对 jpg 等比缩放支持良好），确保导出长图能看到夜景
+    async function appendExportHero(wrapper, headerSection) {
+        if (!headerSection) return;
+        const header = headerSection.cloneNode(true);
+        if (document.body.dataset.theme === 'hk-open') {
+            header.style.background = 'transparent';
+            header.style.backgroundColor = '#3D0D66';
+            const bg = document.createElement('img');
+            bg.className = 'export-hero-bg';
+            bg.alt = '';
+            bg.src = 'static/images/hk/hero-court-baked.jpg';
+            bg.removeAttribute('loading');
+            header.appendChild(bg);
+            await new Promise(function(r) { bg.onload = r; bg.onerror = r; });
+        }
+        wrapper.appendChild(header);
+    }
+
     // ── 导出参赛名单为长图（按网页原样） ──────────────
     window.exportPlayersToPDF = async function() {
         const players = window._frontPlayersCache || [];
@@ -787,7 +806,7 @@
             wrapper.style.width = '800px';
             document.body.appendChild(wrapper);
 
-            if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
+            await appendExportHero(wrapper, headerSection);
             wrapper.appendChild(tableSection.cloneNode(true));
 
             // 让克隆的表格按内容宽度自适应，避免过宽
@@ -901,7 +920,7 @@
             wrapper.style.width = exportWidth + 'px';
             document.body.appendChild(wrapper);
 
-            if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
+            await appendExportHero(wrapper, headerSection);
             wrapper.appendChild(cardSection.cloneNode(true));
 
             // 恢复原页面显示
@@ -1409,7 +1428,7 @@
                 wrapper.style.width = exportWidth + 'px';
                 document.body.appendChild(wrapper);
 
-                if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
+                await appendExportHero(wrapper, headerSection);
                 const clonedCard = cardSection.cloneNode(true);
                 wrapper.appendChild(clonedCard);
 

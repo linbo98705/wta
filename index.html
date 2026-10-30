@@ -299,7 +299,7 @@
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=12"></script>
     <script src="js/api.js?v=24"></script>
-    <script src="js/draw-engine.js?v=17"></script>
+    <script src="js/draw-engine.js?v=18"></script>
 
     <script>
     // ══════════════════════════════════════════════════════════════
@@ -907,12 +907,38 @@
                 cloneBracketContainer.scrollLeft = 0;
             }
 
-            // 等待图片加载
+            // 图片预处理：把旗帜等图片栅格化成 PNG dataURL 再截图
+            // html2canvas 直接光栅化 SVG 图片时容易裁切不全，导致导出图里部分旗帜显示不完整
             const clone = wrapper;
-            const imgs = clone.querySelectorAll('img');
-            await Promise.all([...imgs].map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise(r => { img.onload = r; img.onerror = r; });
+            const imgs = [...clone.querySelectorAll('img')];
+            await Promise.all(imgs.map(async (img) => {
+                img.removeAttribute('loading');
+                const src = img.getAttribute('src') || '';
+                if (src && !src.startsWith('data:')) {
+                    try {
+                        const resp = await fetch(src, { cache: 'force-cache' });
+                        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                        const blob = await resp.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        const raster = await new Promise((resolve, reject) => {
+                            const im = new Image();
+                            im.onload = () => resolve(im);
+                            im.onerror = () => reject(new Error('raster failed'));
+                            im.src = blobUrl;
+                        });
+                        // 80x60 供 scale:2 导出使用，保证边框清晰
+                        const cvs = document.createElement('canvas');
+                        cvs.width = 80;
+                        cvs.height = 60;
+                        cvs.getContext('2d').drawImage(raster, 0, 0, 80, 60);
+                        URL.revokeObjectURL(blobUrl);
+                        img.setAttribute('src', cvs.toDataURL('image/png'));
+                    } catch (e) {
+                        // 取不到本地图片时保持原地址，下面仍等待其加载
+                    }
+                }
+                if (img.complete && img.naturalWidth > 0) return;
+                await new Promise(r => { img.onload = r; img.onerror = r; });
             }));
 
             const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true, width: exportWidth, windowWidth: exportWidth });

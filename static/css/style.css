@@ -478,23 +478,18 @@ body[data-theme="hk-open"] .data-table tbody tr:hover td {
     background: rgba(198, 237, 53, 0.30);
 }
 
-/* ── 导出图片适配：整图白底；Hero 用真实 <img> 背景层渲染夜景（html2canvas 对 CSS 背景图渲染不稳，改用 <img>） ── */
+/* ── 导出图片适配：整图白底；Hero 背景强制透明，夜景图由 JS 导出后直接合成到 canvas ── */
 body[data-theme="hk-open"] .export-wrapper {
     background: #FFFFFF !important;
 }
 body[data-theme="hk-open"] .export-wrapper .tournament-header {
     position: relative;
     overflow: hidden;
-    background: #3D0D66;
+    background: transparent !important;
 }
-body[data-theme="hk-open"] .export-wrapper .export-hero-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: auto;
-    display: block;
-    z-index: 0;
+/* 导出时隐藏 Hero 渐变蒙版伪元素：该层不透明度很高（0.74~0.9），会盖住导出后合成到 canvas 上的夜景图 */
+body[data-theme="hk-open"] .export-wrapper .tournament-header::before {
+    display: none !important;
 }
 body[data-theme="hk-open"] .export-wrapper .export-title {
     color: #1B0642;

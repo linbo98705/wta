@@ -143,11 +143,11 @@ body[data-theme="hk-open"] {
     --purple-bg: #FFF7F8;
     --purple-rgb: 220, 31, 51;
     --hk-lime: #C6ED35;
-    /* 页面底：官网主视觉（球场线稿 + 荧光网球）铺底，叠白色柔化层保证正文可读 */
+    /* 页面底：球场俯视轻调背景图，叠薄白柔化层保证正文可读 */
     background-color: #FFFFFF;
     background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.72) 55%, rgba(255, 255, 255, 0.82) 100%),
-        url('../images/hk/bg-landing.jpg');
+        linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.42) 55%, rgba(255, 255, 255, 0.52) 100%),
+        url('../images/hk/bg-court-light.jpg');
     background-size: cover, cover;
     background-position: center top, center center;
     background-repeat: no-repeat, no-repeat;
@@ -165,12 +165,17 @@ body[data-theme="hk-open"] .section-header p {
     color: rgba(36, 16, 64, 0.6);
 }
 
-/* ── Hero：官网紫红渐变（左上红紫→深紫）+ 荧光绿光带 ── */
+/* ── Hero：官网主视觉球场夜景图 + 紫红渐变蒙版 + 荧光绿光带 ── */
 body[data-theme="hk-open"] .tournament-header {
-    background:
+    background-image:
         radial-gradient(ellipse 50% 42% at 75% 55%, rgba(198, 237, 53, 0.18) 0%, transparent 62%),
         radial-gradient(ellipse 32% 22% at 55% 75%, rgba(198, 237, 53, 0.08) 0%, transparent 60%),
-        linear-gradient(115deg, #B8144A 0%, #7C1352 42%, #3D0D66 80%, #2A0860 100%);
+        linear-gradient(115deg, rgba(184, 20, 74, 0.72) 0%, rgba(124, 19, 82, 0.74) 42%, rgba(61, 13, 102, 0.82) 80%, rgba(42, 8, 96, 0.88) 100%),
+        url('../images/hk/hero-court.jpg');
+    background-size: auto, auto, cover, cover;
+    background-position: center, center, center, center 35%;
+    background-repeat: no-repeat;
+    background-color: #1B034E;
     border-bottom: 3px solid var(--hk-lime);
     color: rgba(255, 255, 255, 0.85);
 }

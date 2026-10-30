@@ -10,7 +10,9 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <!-- Archivo 仅美网主题用，改为非阻塞加载，避免外网字体拖慢首屏 -->
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="static/css/style.css?v=76">
     <style>
     /* ── Daily Guess Table Styles ── */
@@ -291,8 +293,6 @@
 
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- SheetJS (Excel 解析) -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- html2canvas (HTML 转 Canvas) - 本地引用避免 CDN 不可用 -->
     <script src="static/js/html2canvas.min.js"></script>
     <!-- App Scripts -->
@@ -307,6 +307,21 @@
     // ══════════════════════════════════════════════════════════════
 
     const app = document.getElementById('app');
+
+    // SheetJS 只在导入 Excel 时用到（约 900KB），改为按需加载，避免拖慢首屏
+    let _xlsxLoading = null;
+    function ensureXLSX() {
+        if (window.XLSX) return Promise.resolve();
+        if (_xlsxLoading) return _xlsxLoading;
+        _xlsxLoading = new Promise(function(resolve, reject) {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+            s.onload = function() { resolve(); };
+            s.onerror = function() { _xlsxLoading = null; reject(new Error('SheetJS 加载失败')); };
+            document.head.appendChild(s);
+        });
+        return _xlsxLoading;
+    }
 
     // ── Frontend SVG Icons (Lucide style) ──
     const FI = {
@@ -801,14 +816,27 @@
         ctx.drawImage(tmp, 0, 0);
     }
 
+    // 导出的样式保障：不依赖外部样式表是否已更新（避免旧缓存 CSS 把容器刷成白底）
+    // 强制容器与 hero 透明、隐藏 hero 渐变蒙版伪元素，夜景图完全由 canvas 合成
+    function prepareExportWrapper(wrapper) {
+        wrapper.style.setProperty('background', 'transparent', 'important');
+        if (document.getElementById('export-guard-style')) return;
+        const st = document.createElement('style');
+        st.id = 'export-guard-style';
+        st.textContent =
+            '.export-wrapper { background: transparent !important; }' +
+            '.export-wrapper .tournament-header { background: transparent !important; position: relative; overflow: hidden; }' +
+            '.export-wrapper .tournament-header::before { display: none !important; }';
+        document.head.appendChild(st);
+    }
+
     // html2canvas 对图片/背景渲染不稳定，hero 夜景改为导出后直接绘制到 canvas 上
     // （见 fillExportBackground 的 heroImg 分支）；此处只克隆 header，并清空背景让 hero 区域透明
     async function appendExportHero(wrapper, headerSection) {
+        prepareExportWrapper(wrapper);
         if (!headerSection) return;
         const header = headerSection.cloneNode(true);
-        if (document.body.dataset.theme === 'hk-open') {
-            header.style.background = 'transparent';
-        }
+        header.style.setProperty('background', 'transparent', 'important');
         wrapper.appendChild(header);
     }
 
@@ -3275,12 +3303,17 @@
             try {
                 if (ext === 'xlsx' || ext === 'xls') {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-                        addRows(rows);
+                    reader.onload = async function(e) {
+                        try {
+                            await ensureXLSX();
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                            addRows(rows);
+                        } catch (err) {
+                            showToast('Excel 解析组件加载失败，请检查网络后重试', 'error');
+                        }
                     };
                     reader.readAsArrayBuffer(file);
                 } else {
@@ -3613,13 +3646,18 @@
             try {
                 if (ext === 'xlsx' || ext === 'xls') {
                     var reader = new FileReader();
-                    reader.onload = function(e) {
-                        var data = new Uint8Array(e.target.result);
-                        var workbook = XLSX.read(data, { type: 'array' });
-                        var sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-                        var result = processRows(rows);
-                        doImport(result);
+                    reader.onload = async function(e) {
+                        try {
+                            await ensureXLSX();
+                            var data = new Uint8Array(e.target.result);
+                            var workbook = XLSX.read(data, { type: 'array' });
+                            var sheet = workbook.Sheets[workbook.SheetNames[0]];
+                            var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                            var result = processRows(rows);
+                            doImport(result);
+                        } catch (err) {
+                            showToast('Excel 解析组件加载失败，请检查网络后重试', 'error');
+                        }
                     };
                     reader.readAsArrayBuffer(file);
                 } else {

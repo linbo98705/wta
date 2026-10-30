@@ -761,21 +761,23 @@
     };
 
     // ── 导出长图底色合成 ────────────────
-    // html2canvas 无法可靠绘制 hero 背景图，所以在导出后直接补底：
-    // 先把夜景图按 cover 方式铺进 hero 区域，再叠上与页面完全一致的紫红渐变蒙版，
-    // hero 以下铺白，最后把截图内容（透明底）叠上去，hero 区白字就落在夜景图上。
-    // 图片取不到时仍用同一套渐变兜底，保证导出图不会变成一片白。
+    // html2canvas 以 backgroundColor:null 截图，产物是全透明底；
+    // 这里先整图铺不透明白底（保证导出的 PNG 永不透明），再把夜景图按 cover 铺进 hero 区域
+    // 并叠加与页面一致的紫红渐变蒙版，最后把截图内容叠上去，hero 区白字就落在夜景图上。
     function fillExportBackground(canvas, heroImg, heroHeightCss) {
         const W = canvas.width;
         const H = canvas.height;
         const ctx = canvas.getContext('2d');
         const isHk = document.body.dataset.theme === 'hk-open';
-        // hero 高度测量失败时按 320px 兜底，避免整张图退化成纯白
+        // hero 高度测量失败时按 320px 兜底，避免 hero 区域丢失
         const heroH = isHk ? Math.min(Math.round((heroHeightCss > 0 ? heroHeightCss : 320) * 2), H) : 0; // scale:2
         const tmp = document.createElement('canvas');
         tmp.width = W;
         tmp.height = H;
         const tctx = tmp.getContext('2d');
+        // 0. 全图先铺不透明白底
+        tctx.fillStyle = '#FFFFFF';
+        tctx.fillRect(0, 0, W, H);
         if (heroH > 0) {
             // 1. 夜景图按 cover 铺满 hero 区域（等效 background-size:cover + position:center 35%）
             if (heroImg && heroImg.naturalWidth) {
@@ -801,16 +803,8 @@
             lg.addColorStop(1, 'rgba(42, 8, 96, 0.52)');
             tctx.fillStyle = lg;
             tctx.fillRect(0, 0, W, heroH);
-            // 3. hero 以下铺白
-            if (heroH < H) {
-                tctx.fillStyle = '#FFFFFF';
-                tctx.fillRect(0, heroH, W, H - heroH);
-            }
-        } else {
-            tctx.fillStyle = '#FFFFFF';
-            tctx.fillRect(0, 0, W, H);
         }
-        // 4. 叠回 html2canvas 内容（透明底，hero 区白字落在夜景图上）
+        // 3. 叠回 html2canvas 内容（透明底，hero 区白字落在夜景图上）
         tctx.drawImage(canvas, 0, 0);
         ctx.clearRect(0, 0, W, H);
         ctx.drawImage(tmp, 0, 0);

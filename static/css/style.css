@@ -143,7 +143,15 @@ body[data-theme="hk-open"] {
     --purple-bg: #FFF7F8;
     --purple-rgb: 220, 31, 51;
     --hk-lime: #C6ED35;
+    /* 页面底：官网主视觉（球场线稿 + 荧光网球）铺底，叠白色柔化层保证正文可读 */
     background-color: #FFFFFF;
+    background-image:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.72) 55%, rgba(255, 255, 255, 0.82) 100%),
+        url('../images/hk/bg-landing.jpg');
+    background-size: cover, cover;
+    background-position: center top, center center;
+    background-repeat: no-repeat, no-repeat;
+    background-attachment: fixed, fixed;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -195,6 +203,11 @@ body[data-theme="hk-open"] .section-header h2 {
 }
 
 @media (max-width: 768px) {
+    /* 移动端 iOS 对 fixed 背景支持差，改为随页面滚动 */
+    body[data-theme="hk-open"] {
+        background-attachment: scroll, scroll;
+        background-position: center, center top;
+    }
     body[data-theme="hk-open"] .tournament-header h1 {
         font-size: 2rem;
     }

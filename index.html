@@ -856,17 +856,16 @@
         }
     }
 
-    // 图片预处理：把旗帜等 SVG 图片栅格化成 PNG dataURL 再截图
+    // 图片预处理：只把旗帜类 SVG 栅格化成 PNG dataURL 再截图
     // html2canvas 直接光栅化 SVG 图片时容易裁切不全，导致导出图里部分旗帜显示不完整；
-    // 排除 .export-hero-bg（夜景背景图是普通 jpg，且需要按容器宽铺满，不能缩成 80x60）
+    // 其它图片（logo 等）保持原样，否则会被统一缩成 80x60 而横向压缩变形
     async function prepareImagesForExport(root) {
-        const imgs = [...root.querySelectorAll('img')].filter(function(img) {
-            return !img.classList.contains('export-hero-bg');
-        });
+        const imgs = [...root.querySelectorAll('img')];
         await Promise.all(imgs.map(async function(img) {
             img.removeAttribute('loading');
             const src = img.getAttribute('src') || '';
-            if (src && !src.startsWith('data:')) {
+            const isFlag = src.indexOf('static/flags/') !== -1;
+            if (isFlag && !src.startsWith('data:')) {
                 try {
                     const resp = await fetch(src, { cache: 'force-cache' });
                     if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -878,7 +877,7 @@
                         im.onerror = function() { reject(new Error('raster failed')); };
                         im.src = blobUrl;
                     });
-                    // 80x60 供 scale:2 导出使用，保证边框清晰
+                    // 80x60（4:3）与旗帜原始比例一致，供 scale:2 导出使用保证边框清晰
                     const cvs = document.createElement('canvas');
                     cvs.width = 80;
                     cvs.height = 60;

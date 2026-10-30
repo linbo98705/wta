@@ -478,12 +478,16 @@ body[data-theme="hk-open"] .data-table tbody tr:hover td {
     background: rgba(198, 237, 53, 0.30);
 }
 
-/* ── 导出图片适配：整图白底同步页面；Hero 用同款线性渐变（去掉径向光带，html2canvas 对多层径向渐变渲染不稳） ── */
+/* ── 导出图片适配：整图白底；Hero 用烘培好的球场夜景主视觉（html2canvas 不支持 ::before 蒙版，故把渐变蒙版预合成进图） ── */
 body[data-theme="hk-open"] .export-wrapper {
     background: #FFFFFF !important;
 }
 body[data-theme="hk-open"] .export-wrapper .tournament-header {
-    background: linear-gradient(115deg, #B8144A 0%, #7C1352 42%, #3D0D66 80%, #2A0860 100%);
+    background-image: url('../images/hk/hero-court-baked.jpg');
+    background-size: cover;
+    background-position: center 35%;
+    background-repeat: no-repeat;
+    background-color: #3D0D66;
 }
 body[data-theme="hk-open"] .export-wrapper .export-title {
     color: #1B0642;

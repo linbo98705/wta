@@ -33,7 +33,7 @@ const SEQ_COL_GAP = 8;     // 序号列与签表的间距（px）
 const compactStartRound = 'R16';
 
 // 无国籍/无国旗球员的兜底旗帜（奥运旗帜）
-const OLYMPIC_FLAG_HTML = '<img src="static/flags/_olympic.svg" alt="无国旗" title="无国旗" style="width:20px;height:15px;vertical-align:middle;margin-right:4px;border:1px solid var(--gray-200);border-radius:2px;" loading="lazy">';
+const OLYMPIC_FLAG_HTML = '<img src="static/flags/olympic.svg" alt="无国旗" title="无国旗" style="width:20px;height:15px;vertical-align:middle;margin-right:4px;border:1px solid var(--gray-200);border-radius:2px;" loading="lazy" onerror="this.onerror=null;this.outerHTML=\'<span style=&quot;font-size:14px;vertical-align:middle;margin-right:4px;&quot;>🏳️</span>\';">';
 
 /**
  * 构建单场比赛的 HTML

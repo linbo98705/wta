@@ -745,6 +745,18 @@
         }
     };
 
+    // ── 导出长图时同步页面背景 ────────────────
+    // body 上的背景图不会随内容元素一起被 html2canvas 截图，需直接铺到导出容器上；
+    // 香港赛主题（hk-open）铺整页球场底图 + 白色柔化层，其他主题保持纯白
+    function applyExportThemeBackground(el) {
+        el.style.backgroundColor = '#ffffff';
+        if (document.body.dataset.theme !== 'hk-open') return;
+        el.style.backgroundImage = 'linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.42) 55%, rgba(255, 255, 255, 0.52) 100%), url("static/images/hk/bg-court-light.jpg")';
+        el.style.backgroundSize = '100% auto, 100% auto';
+        el.style.backgroundPosition = 'center top, center top';
+        el.style.backgroundRepeat = 'no-repeat, repeat-y';
+    }
+
     // ── 导出参赛名单为长图（按网页原样） ──────────────
     window.exportPlayersToPDF = async function() {
         const players = window._frontPlayersCache || [];
@@ -774,7 +786,7 @@
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
             wrapper.style.width = '800px';
-            wrapper.style.background = '#fff';
+            applyExportThemeBackground(wrapper);
             document.body.appendChild(wrapper);
 
             if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
@@ -888,7 +900,7 @@
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
             wrapper.style.width = exportWidth + 'px';
-            wrapper.style.background = '#fff';
+            applyExportThemeBackground(wrapper);
             document.body.appendChild(wrapper);
 
             if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));
@@ -1396,7 +1408,7 @@
                 const courtCount = cardSection.querySelectorAll('.court-column').length;
                 const exportWidth = courtCount <= 1 ? 800 : 1600;
                 wrapper.style.width = exportWidth + 'px';
-                wrapper.style.background = '#fff';
+                applyExportThemeBackground(wrapper);
                 document.body.appendChild(wrapper);
 
                 if (headerSection) wrapper.appendChild(headerSection.cloneNode(true));

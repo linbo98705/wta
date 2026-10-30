@@ -745,34 +745,68 @@
         }
     };
 
-    // ── 导出长图时同步页面底色（当前所有主题底色均为白） ────────────────
-    // html2canvas 不绘制截图容器自身的背景，所以把白底直接画到 canvas 最底层（destination-over）
-    function fillExportBackground(canvas) {
+    // ── 导出长图底色合成 ────────────────
+    // html2canvas 不绘制截图容器自身背景，也无法可靠绘制 hero 背景图，
+    // 所以在导出后直接补底：有 heroImg 时把夜景图画进 hero 区域、其余铺白；否则整图铺白
+    function fillExportBackground(canvas, heroImg, heroHeightCss) {
+        const W = canvas.width;
+        const H = canvas.height;
         const ctx = canvas.getContext('2d');
-        ctx.save();
-        ctx.globalCompositeOperation = 'destination-over';
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.restore();
+        if (heroImg && heroHeightCss > 0) {
+            const heroH = Math.min(Math.round(heroHeightCss * 2), H); // scale:2
+            const tmp = document.createElement('canvas');
+            tmp.width = W;
+            tmp.height = H;
+            const tctx = tmp.getContext('2d');
+            // 1. 夜景图铺 hero 区域（按宽度等比、顶部对齐，超出部分裁切）
+            const imgH = W * (heroImg.naturalHeight / heroImg.naturalWidth);
+            tctx.drawImage(heroImg, 0, 0, W, imgH);
+            if (imgH < heroH) {
+                tctx.fillStyle = '#3D0D66';
+                tctx.fillRect(0, imgH, W, heroH - imgH);
+            }
+            // 2. hero 以下铺白
+            if (heroH < H) {
+                tctx.fillStyle = '#FFFFFF';
+                tctx.fillRect(0, heroH, W, H - heroH);
+            }
+            // 3. 叠回 html2canvas 内容（透明底，hero 区白字落在夜景图上）
+            tctx.drawImage(canvas, 0, 0);
+            ctx.clearRect(0, 0, W, H);
+            ctx.drawImage(tmp, 0, 0);
+        } else {
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, W, H);
+            ctx.restore();
+        }
     }
 
-    // html2canvas 对 CSS background-image 渲染不稳定，hero 夜景改用真实 <img> 背景层，
-    // 由 html2canvas 按 <img> 方式绘制（对 jpg 等比缩放支持良好），确保导出长图能看到夜景
+    // html2canvas 对图片/背景渲染不稳定，hero 夜景改为导出后直接绘制到 canvas 上
+    // （见 fillExportBackground 的 heroImg 分支）；此处只克隆 header，并清空背景让 hero 区域透明
     async function appendExportHero(wrapper, headerSection) {
         if (!headerSection) return;
         const header = headerSection.cloneNode(true);
         if (document.body.dataset.theme === 'hk-open') {
             header.style.background = 'transparent';
-            header.style.backgroundColor = '#3D0D66';
-            const bg = document.createElement('img');
-            bg.className = 'export-hero-bg';
-            bg.alt = '';
-            bg.src = 'static/images/hk/hero-court-baked.jpg';
-            bg.removeAttribute('loading');
-            header.appendChild(bg);
-            await new Promise(function(r) { bg.onload = r; bg.onerror = r; });
         }
         wrapper.appendChild(header);
+    }
+
+    // 加载香港赛 hero 夜景图（导出后直接绘制到 canvas）
+    async function loadHeroImage() {
+        if (document.body.dataset.theme !== 'hk-open') return null;
+        try {
+            return await new Promise(function(resolve, reject) {
+                const im = new Image();
+                im.onload = function() { resolve(im); };
+                im.onerror = function() { reject(new Error('hero load failed')); };
+                im.src = 'static/images/hk/hero-court-baked.jpg';
+            });
+        } catch (e) {
+            return null;
+        }
     }
 
     // 图片预处理：把旗帜等 SVG 图片栅格化成 PNG dataURL 再截图
@@ -860,8 +894,11 @@
 
             // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
             await prepareImagesForExport(wrapper);
+            const heroImg = await loadHeroImage();
+            const heroHeaderEl = wrapper.querySelector('.tournament-header');
+            const heroHeightCss = heroHeaderEl ? heroHeaderEl.offsetHeight : 0;
             const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
-            fillExportBackground(canvas);
+            fillExportBackground(canvas, heroImg, heroHeightCss);
             document.body.removeChild(wrapper);
 
             // 下载为 PNG 长图
@@ -979,8 +1016,11 @@
             // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
             await prepareImagesForExport(wrapper);
 
+            const heroImg = await loadHeroImage();
+            const heroHeaderEl = wrapper.querySelector('.tournament-header');
+            const heroHeightCss = heroHeaderEl ? heroHeaderEl.offsetHeight : 0;
             const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true, width: exportWidth, windowWidth: exportWidth });
-            fillExportBackground(canvas);
+            fillExportBackground(canvas, heroImg, heroHeightCss);
             document.body.removeChild(wrapper);
 
             // 下载为 PNG
@@ -1494,8 +1534,11 @@
                 // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
                 await prepareImagesForExport(wrapper);
 
+                const heroImg = await loadHeroImage();
+                const heroHeaderEl = wrapper.querySelector('.tournament-header');
+                const heroHeightCss = heroHeaderEl ? heroHeaderEl.offsetHeight : 0;
                 const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
-                fillExportBackground(canvas);
+                fillExportBackground(canvas, heroImg, heroHeightCss);
                 document.body.removeChild(wrapper);
 
                 // 构建文件名：赛事名 + 日期

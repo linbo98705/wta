@@ -32,6 +32,9 @@ const SEQ_COL_GAP = 8;     // 序号列与签表的间距（px）
 // ── 简写别名 ────────────────────────────────
 const compactStartRound = 'R16';
 
+// 无国籍/无国旗球员的兜底旗帜（奥运旗帜）
+const OLYMPIC_FLAG_HTML = '<img src="static/flags/_olympic.svg" alt="无国旗" title="无国旗" style="width:20px;height:15px;vertical-align:middle;margin-right:4px;border:1px solid var(--gray-200);border-radius:2px;" loading="lazy">';
+
 /**
  * 构建单场比赛的 HTML
  * @param {Object} m - 比赛对象（需含 player1_id, player2_id, winner_id, status, p1_name, p2_name）
@@ -43,11 +46,12 @@ function renderMatch(m, playerMap, round, champPoints) {
     const p1Seed = (playerMap && playerMap[m.player1_id]) ? (playerMap[m.player1_id].t_seed || 0) : 0;
     const p2Seed = (playerMap && playerMap[m.player2_id]) ? (playerMap[m.player2_id].t_seed || 0) : 0;
 
-    // 获取球员国旗 HTML
+    // 获取球员国旗 HTML（无国旗时用奥运旗帜兜底）
     function playerFlag(pid) {
         if (!playerMap || !playerMap[pid]) return '';
         const p = playerMap[pid];
-        return typeof countryFlag === 'function' ? countryFlag(p.country_code || '', p.country || '') : '';
+        const html = typeof countryFlag === 'function' ? countryFlag(p.country_code || '', p.country || '') : '';
+        return html || OLYMPIC_FLAG_HTML;
     }
 
     // 行首旗帜（放在种子编号/姓名之前）

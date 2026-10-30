@@ -169,6 +169,8 @@ body[data-theme="hk-open"] .tournament-header {
     color: rgba(255, 255, 255, 0.85);
 }
 
+/* 蒙版浓度需足够透，否则会把夜景照片盖成纯色块（0.74~0.90 时照片几乎不可见）
+   导出时 canvas 上复刻的是同一套色值，改动请同步 index.html 的 fillExportBackground */
 body[data-theme="hk-open"] .tournament-header::before {
     content: '';
     position: absolute;
@@ -179,7 +181,7 @@ body[data-theme="hk-open"] .tournament-header::before {
     width: auto;
     height: auto;
     border-radius: 0;
-    background: linear-gradient(115deg, rgba(184, 20, 74, 0.74) 0%, rgba(124, 19, 82, 0.76) 42%, rgba(61, 13, 102, 0.84) 80%, rgba(42, 8, 96, 0.90) 100%);
+    background: linear-gradient(115deg, rgba(184, 20, 74, 0.45) 0%, rgba(124, 19, 82, 0.52) 42%, rgba(61, 13, 102, 0.66) 80%, rgba(42, 8, 96, 0.74) 100%);
 }
 
 body[data-theme="hk-open"] .tournament-header h1 {
@@ -187,6 +189,7 @@ body[data-theme="hk-open"] .tournament-header h1 {
     font-size: 2.75rem;
     font-weight: 700;
     letter-spacing: 0;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
 }
 
 /* 页头 meta：日期等标签荧光绿（官网日期标签风格） */

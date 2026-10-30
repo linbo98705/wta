@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="static/css/style.css?v=74">
+    <link rel="stylesheet" href="static/css/style.css?v=75">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -747,24 +747,46 @@
 
     // ── 导出长图底色合成 ────────────────
     // html2canvas 无法可靠绘制 hero 背景图，所以在导出后直接补底：
-    // 先把夜景图按 cover 方式铺进 hero 区域，hero 以下铺白，再把截图内容（透明底）叠上去，
-    // hero 区的白字就会落在夜景图上，其余区域保持白底。
+    // 先把夜景图按 cover 方式铺进 hero 区域，再叠上与页面完全一致的紫红渐变蒙版，
+    // hero 以下铺白，最后把截图内容（透明底）叠上去，hero 区白字就落在夜景图上。
+    // 图片取不到时仍用同一套渐变兜底，保证导出图不会变成一片白。
     function fillExportBackground(canvas, heroImg, heroHeightCss) {
         const W = canvas.width;
         const H = canvas.height;
         const ctx = canvas.getContext('2d');
-        const heroH = (heroImg && heroHeightCss > 0) ? Math.min(Math.round(heroHeightCss * 2), H) : 0; // scale:2
+        const isHk = document.body.dataset.theme === 'hk-open';
+        // hero 高度测量失败时按 320px 兜底，避免整张图退化成纯白
+        const heroH = isHk ? Math.min(Math.round((heroHeightCss > 0 ? heroHeightCss : 320) * 2), H) : 0; // scale:2
         const tmp = document.createElement('canvas');
         tmp.width = W;
         tmp.height = H;
         const tctx = tmp.getContext('2d');
         if (heroH > 0) {
             // 1. 夜景图按 cover 铺满 hero 区域（等效 background-size:cover + position:center 35%）
-            const s = Math.max(W / heroImg.naturalWidth, heroH / heroImg.naturalHeight);
-            const dw = heroImg.naturalWidth * s;
-            const dh = heroImg.naturalHeight * s;
-            tctx.drawImage(heroImg, (W - dw) / 2, (heroH - dh) * 0.35, dw, dh);
-            // 2. hero 以下铺白
+            if (heroImg && heroImg.naturalWidth) {
+                const s = Math.max(W / heroImg.naturalWidth, heroH / heroImg.naturalHeight);
+                const dw = heroImg.naturalWidth * s;
+                const dh = heroImg.naturalHeight * s;
+                tctx.drawImage(heroImg, (W - dw) / 2, (heroH - dh) * 0.35, dw, dh);
+            } else {
+                tctx.fillStyle = '#3D0D66';
+                tctx.fillRect(0, 0, W, heroH);
+            }
+            // 2. 渐变蒙版：复刻页面 .tournament-header::before 的 115deg 紫红渐变
+            const rad = 115 * Math.PI / 180;
+            const dx = Math.sin(rad);
+            const dy = -Math.cos(rad);
+            const len = Math.abs(W * dx) + Math.abs(heroH * dy);
+            const cx = W / 2;
+            const cy = heroH / 2;
+            const lg = tctx.createLinearGradient(cx - dx * len / 2, cy - dy * len / 2, cx + dx * len / 2, cy + dy * len / 2);
+            lg.addColorStop(0, 'rgba(184, 20, 74, 0.45)');
+            lg.addColorStop(0.42, 'rgba(124, 19, 82, 0.52)');
+            lg.addColorStop(0.8, 'rgba(61, 13, 102, 0.66)');
+            lg.addColorStop(1, 'rgba(42, 8, 96, 0.74)');
+            tctx.fillStyle = lg;
+            tctx.fillRect(0, 0, W, heroH);
+            // 3. hero 以下铺白
             if (heroH < H) {
                 tctx.fillStyle = '#FFFFFF';
                 tctx.fillRect(0, heroH, W, H - heroH);
@@ -773,7 +795,7 @@
             tctx.fillStyle = '#FFFFFF';
             tctx.fillRect(0, 0, W, H);
         }
-        // 3. 叠回 html2canvas 内容（透明底，hero 区白字落在夜景图上）
+        // 4. 叠回 html2canvas 内容（透明底，hero 区白字落在夜景图上）
         tctx.drawImage(canvas, 0, 0);
         ctx.clearRect(0, 0, W, H);
         ctx.drawImage(tmp, 0, 0);
@@ -791,6 +813,7 @@
     }
 
     // 加载香港赛 hero 夜景图（导出后直接绘制到 canvas）
+    // 用页面同一张图（static/images/hk/hero-court.jpg），渐变蒙版由 fillExportBackground 绘制
     async function loadHeroImage() {
         if (document.body.dataset.theme !== 'hk-open') return null;
         try {
@@ -798,7 +821,7 @@
                 const im = new Image();
                 im.onload = function() { resolve(im); };
                 im.onerror = function() { reject(new Error('hero load failed')); };
-                im.src = 'static/images/hk/hero-court-baked.jpg';
+                im.src = 'static/images/hk/hero-court.jpg';
             });
         } catch (e) {
             return null;

@@ -760,6 +760,13 @@
         }
     };
 
+    // 赛程/赛果球员旗帜：无国籍或无国旗时回退奥运旗帜（与签表保持一致）
+    function matchPlayerFlag(code, name) {
+        const html = countryFlag(code || '', name || '');
+        if (html) return html;
+        return typeof OLYMPIC_FLAG_HTML !== 'undefined' ? OLYMPIC_FLAG_HTML : '';
+    }
+
     // ── 导出长图底色 ────────────────
     // 用 destination-over 在截图最底层补白：内容不会被遮挡，产物也一定不透明
     function fillExportBackground(canvas) {
@@ -1426,10 +1433,10 @@
                     const initIcon = isScheduled ? '\u25B8' : '\u25BE';
                     const isTopScore = topScoreMatchIds.has(m.id);
                     const topScoreClass = isTopScore ? ' match-card-top-score' : '';
-                    const p1Display = escapeHtml(m.p1_name || 'TBD') + countryFlag(m.p1_country_code || '', m.p1_country || '')
-                        + (m.p3_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + escapeHtml(m.p3_name) + countryFlag(m.p3_country_code || '', m.p3_country || '') : '');
-                    const p2Display = escapeHtml(m.p2_name || 'TBD') + countryFlag(m.p2_country_code || '', m.p2_country || '')
-                        + (m.p4_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + escapeHtml(m.p4_name) + countryFlag(m.p4_country_code || '', m.p4_country || '') : '');
+                    const p1Display = escapeHtml(m.p1_name || 'TBD') + matchPlayerFlag(m.p1_country_code, m.p1_country)
+                        + (m.p3_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + escapeHtml(m.p3_name) + matchPlayerFlag(m.p3_country_code, m.p3_country) : '');
+                    const p2Display = escapeHtml(m.p2_name || 'TBD') + matchPlayerFlag(m.p2_country_code, m.p2_country)
+                        + (m.p4_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + escapeHtml(m.p4_name) + matchPlayerFlag(m.p4_country_code, m.p4_country) : '');
                     const topScoreBadge = isTopScore ? '<span class="top-score-badge" title="当日最高分"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>当日最高分</span>' : '';
 
                     html += '<div class="match-card' + collapsedClass + topScoreClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + topScoreBadge + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p1Display + '</strong>' : p1Display) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-flex;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p2Display + '</strong>' : p2Display) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-flex;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + (m.status === 'scheduled' ? '' : renderGuessSchedule(m)) + '</div></div>';

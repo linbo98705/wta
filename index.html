@@ -1363,12 +1363,10 @@
                 // 情况2: 盘数不同
                 if (aSets.length !== bSets.length) return 'diff-set';
                 if (aSets.length === 0) return 'diff-score';
-                // 情况4: 完全一样
-                var allMatch = true;
-                for (var k = 0; k < aSets.length; k++) {
-                    if (aSets[k] !== bSets[k]) { allMatch = false; break; }
-                }
-                if (allMatch) return 'perfect';
+                // 情况4: 完全一样（盘序不影响，如 6-3 6-4 与 6-4 6-3 视为同一组比分）
+                var aSorted = aSets.slice().sort();
+                var bSorted = bSets.slice().sort();
+                if (aSorted.join('|') === bSorted.join('|')) return 'perfect';
                 return 'diff-score';
             }
 

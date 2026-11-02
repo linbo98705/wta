@@ -1310,52 +1310,54 @@
             // 文本归一化：去空格/中英文标点，全角→半角，便于比较
             function normalizeText(s) {
                 if (!s) return '';
-                return s.replace(/[\s\u3000]+/g, '')              // 空格（含全角）
-                        .replace(/[\uFF01-\uFF60\uFFE0-\uFFE6]/g, function(ch) {
-                            // 全角标点 → 半角：数字、字母、常用标点
-                            var code = ch.charCodeAt(0);
-                            if (code >= 0xFF10 && code <= 0xFF19) return String.fromCharCode(code - 0xFEE0); // 全角数字
-                            if (code >= 0xFF21 && code <= 0xFF3A) return String.fromCharCode(code - 0xFEE0); // 全角大写
-                            if (code >= 0xFF41 && code <= 0xFF5A) return String.fromCharCode(code - 0xFEE0); // 全角小写
-                            if (code === 0xFF0D) return '-';  // 全角减号
-                            if (code === 0xFF1A) return ':';  // 全角冒号
-                            if (code === 0xFF0C) return ',';  // 全角逗号
-                            return '';                          // 其他全角标点丢弃
-                        })
-                        .replace(/[，。！？、；：""''（）《》【】｛｝]/g, '') // 中文标点丢弃
-                        .toLowerCase();                            // 统一小写
-            }
-            // 分数串归一化：保留数字和分隔符(-:)，丢弃其他
-            function normalizeScoreSet(s) {
-                if (!s) return '';
                 return s.replace(/[\s\u3000]+/g, '')
-                        .replace(/[，。！？、；：""''（）《》【】｛｝]/g, '')
                         .replace(/[\uFF01-\uFF60\uFFE0-\uFFE6]/g, function(ch) {
                             var code = ch.charCodeAt(0);
                             if (code >= 0xFF10 && code <= 0xFF19) return String.fromCharCode(code - 0xFEE0);
-                            if (code === 0xFF0D) return '-';
-                            if (code === 0xFF1A) return ':';
+                            if (code >= 0xFF21 && code <= 0xFF3A) return String.fromCharCode(code - 0xFEE0);
+                            if (code >= 0xFF41 && code <= 0xFF5A) return String.fromCharCode(code - 0xFEE0);
                             return '';
                         })
-                        .replace(/[^0-9\-:]/g, ''); // 只留数字、-、:
+                        .replace(/[，。！？、；：""''（）《》【】｛｝·]/g, '')
+                        .toLowerCase();
+            }
+            // 比分串 → 盘数组：先按空格/逗号拆片段，每片段内提取数字并配对
+            // "6-3 6-2" → ["6-3","6-2"]  |  "63 62" → ["6-3","6-2"]  |  "6362" → ["6-3","6-2"]
+            function parseSets(s) {
+                if (!s) return [];
+                // 全角数字 → 半角
+                s = s.replace(/[\uFF10-\uFF19]/g, function(ch) {
+                    return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0);
+                });
+                // 按真正的分隔符拆分（空格、逗号、顿号、分号），- 和 : 是比分连接符不能拆
+                var segments = s.split(/[\s,，、；;]+/).filter(function(x) { return x; });
+                var pairs = [];
+                segments.forEach(function(seg) {
+                    var nums = seg.match(/\d+/g) || [];
+                    if (nums.length === 2) {
+                        // 标准写法 "6-3" 或 "6:3"
+                        pairs.push(nums[0] + '-' + nums[1]);
+                    } else if (nums.length === 1) {
+                        // 纯数字串 "63" 或 "6362"：按两两拆成单数字
+                        var num = nums[0];
+                        if (num.length >= 2) {
+                            for (var i = 0; i + 1 < num.length; i += 2) {
+                                pairs.push(num[i] + '-' + num[i+1]);
+                            }
+                        }
+                    }
+                    // nums.length >= 3（如抢七 7-6(4)）忽略多余
+                });
+                return pairs;
             }
             // 判断两边猜测的匹配情况
-            // 返回: 'diff-player'(选手不同) | 'diff-set'(盘数不同) | 'diff-score'(分数细节不同) | 'perfect'(完全一样) | ''(单边无数据)
             function guessMatchStatus(aName, aScore, bName, bScore) {
                 if (!aName && !aScore && !bName && !bScore) return '';
-                // 单边无数据不做匹配判断
                 var aHas = !!(aName || aScore);
                 var bHas = !!(bName || bScore);
                 if (!aHas || !bHas) return '';
-                // 情况1: 选手不一样（归一化后比较）
+                // 情况1: 选手不一样
                 if (normalizeText(aName) !== normalizeText(bName)) return 'diff-player';
-                // 选手相同，解析分数（归一化后按分隔符拆分）
-                function parseSets(s) {
-                    if (!s) return [];
-                    var norm = s.replace(/[\s\u3000,，]+/g, '-').replace(/[，。！？、；：]+/g, '-');
-                    var list = norm.split(/[\s,-]+/).filter(function(x) { return x.trim(); });
-                    return list.map(normalizeScoreSet).filter(function(x) { return x; });
-                }
                 var aSets = parseSets(aScore);
                 var bSets = parseSets(bScore);
                 // 情况2: 盘数不同
@@ -1367,7 +1369,6 @@
                     if (aSets[k] !== bSets[k]) { allMatch = false; break; }
                 }
                 if (allMatch) return 'perfect';
-                // 情况3: 分数不同
                 return 'diff-score';
             }
 

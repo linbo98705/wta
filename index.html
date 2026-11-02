@@ -1307,6 +1307,38 @@
                 return '<span class="gc-b-score">' + (parseInt(val) || 0) + '</span>';
             }
 
+            // 文本归一化：去空格/中英文标点，全角→半角，便于比较
+            function normalizeText(s) {
+                if (!s) return '';
+                return s.replace(/[\s\u3000]+/g, '')              // 空格（含全角）
+                        .replace(/[\uFF01-\uFF60\uFFE0-\uFFE6]/g, function(ch) {
+                            // 全角标点 → 半角：数字、字母、常用标点
+                            var code = ch.charCodeAt(0);
+                            if (code >= 0xFF10 && code <= 0xFF19) return String.fromCharCode(code - 0xFEE0); // 全角数字
+                            if (code >= 0xFF21 && code <= 0xFF3A) return String.fromCharCode(code - 0xFEE0); // 全角大写
+                            if (code >= 0xFF41 && code <= 0xFF5A) return String.fromCharCode(code - 0xFEE0); // 全角小写
+                            if (code === 0xFF0D) return '-';  // 全角减号
+                            if (code === 0xFF1A) return ':';  // 全角冒号
+                            if (code === 0xFF0C) return ',';  // 全角逗号
+                            return '';                          // 其他全角标点丢弃
+                        })
+                        .replace(/[，。！？、；：""''（）《》【】｛｝]/g, '') // 中文标点丢弃
+                        .toLowerCase();                            // 统一小写
+            }
+            // 分数串归一化：保留数字和分隔符(-:)，丢弃其他
+            function normalizeScoreSet(s) {
+                if (!s) return '';
+                return s.replace(/[\s\u3000]+/g, '')
+                        .replace(/[，。！？、；：""''（）《》【】｛｝]/g, '')
+                        .replace(/[\uFF01-\uFF60\uFFE0-\uFFE6]/g, function(ch) {
+                            var code = ch.charCodeAt(0);
+                            if (code >= 0xFF10 && code <= 0xFF19) return String.fromCharCode(code - 0xFEE0);
+                            if (code === 0xFF0D) return '-';
+                            if (code === 0xFF1A) return ':';
+                            return '';
+                        })
+                        .replace(/[^0-9\-:]/g, ''); // 只留数字、-、:
+            }
             // 判断两边猜测的匹配情况
             // 返回: 'diff-player'(选手不同) | 'diff-set'(盘数不同) | 'diff-score'(分数细节不同) | 'perfect'(完全一样) | ''(单边无数据)
             function guessMatchStatus(aName, aScore, bName, bScore) {
@@ -1315,18 +1347,19 @@
                 var aHas = !!(aName || aScore);
                 var bHas = !!(bName || bScore);
                 if (!aHas || !bHas) return '';
-                // 情况1: 选手不一样
-                if (aName !== bName) return 'diff-player';
-                // 选手相同，解析分数
+                // 情况1: 选手不一样（归一化后比较）
+                if (normalizeText(aName) !== normalizeText(bName)) return 'diff-player';
+                // 选手相同，解析分数（归一化后按分隔符拆分）
                 function parseSets(s) {
                     if (!s) return [];
-                    return s.split(/[\s,]+/).filter(function(x) { return x.trim(); });
+                    var norm = s.replace(/[\s\u3000,，]+/g, '-').replace(/[，。！？、；：]+/g, '-');
+                    var list = norm.split(/[\s,-]+/).filter(function(x) { return x.trim(); });
+                    return list.map(normalizeScoreSet).filter(function(x) { return x; });
                 }
                 var aSets = parseSets(aScore);
                 var bSets = parseSets(bScore);
                 // 情况2: 盘数不同
                 if (aSets.length !== bSets.length) return 'diff-set';
-                // 无分数数据则只算选手相同（单边有分？不可能走到这里，因为aHas且bHas）
                 if (aSets.length === 0) return 'diff-score';
                 // 情况4: 完全一样
                 var allMatch = true;

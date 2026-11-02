@@ -2090,34 +2090,34 @@ img { max-width: 100%; height: auto; }
     font-size: 0.75rem;
 }
 
-/* ── TB 行匹配度背景色 ── */
-/* 情况1: 两边猜测选手完全不一样 */
+/* ── TB 行匹配度背景色（4种明显区分） ── */
+/* 情况1: 两边猜测选手完全不一样 — 红（错误） */
 .gt-row-diff-player td {
-    background: rgba(220, 53, 69, 0.08);
+    background: #FFE5E9 !important;
 }
 .gt-row-diff-player:hover td {
-    background: rgba(220, 53, 69, 0.14) !important;
+    background: #FFCCD2 !important;
 }
-/* 情况2: 选手相同但盘数不同 (一个2盘一个3盘) */
+/* 情况2: 选手相同但盘数不同 — 橙（部分偏） */
 .gt-row-diff-set td {
-    background: rgba(255, 152, 0, 0.10);
+    background: #FFF3E0 !important;
 }
 .gt-row-diff-set:hover td {
-    background: rgba(255, 152, 0, 0.18) !important;
+    background: #FFE4B5 !important;
 }
-/* 情况3: 选手相同、盘数相同但分数细节不同 (2盘分数不一样/3盘盘序不一样) */
+/* 情况3: 选手相同、盘数相同但分数细节不同 — 蓝（接近） */
 .gt-row-diff-score td {
-    background: rgba(33, 150, 243, 0.08);
+    background: #E3F2FD !important;
 }
 .gt-row-diff-score:hover td {
-    background: rgba(33, 150, 243, 0.14) !important;
+    background: #BBDEFB !important;
 }
-/* 情况4: 完全一样 (2盘分数一样/3盘盘序一样) */
+/* 情况4: 完全一样 — 绿（完全命中） */
 .gt-row-perfect td {
-    background: rgba(76, 175, 80, 0.10);
+    background: #E8F5E9 !important;
 }
 .gt-row-perfect:hover td {
-    background: rgba(76, 175, 80, 0.18) !important;
+    background: #C8E6C9 !important;
 }
 
 .gt-total-row {

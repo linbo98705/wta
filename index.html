@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <!-- Archivo 仅美网主题用，改为非阻塞加载，避免外网字体拖慢首屏 -->
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="static/css/style.css?v=77">
+    <link rel="stylesheet" href="static/css/style.css?v=78">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -1520,7 +1520,8 @@
                 wrapper.style.top = '0';
                 // 根据场地数量决定宽度：单场地用半宽，多场地用全宽
                 const courtCount = cardSection.querySelectorAll('.court-column').length;
-                const exportWidth = courtCount <= 1 ? 800 : 1600;
+                // 宽度收窄，避免文字相对图片过小（导出后无需放大即可阅读）
+                const exportWidth = courtCount <= 1 ? 800 : 1320;
                 wrapper.style.width = exportWidth + 'px';
                 document.body.appendChild(wrapper);
 

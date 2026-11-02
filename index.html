@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <!-- Archivo 仅美网主题用，改为非阻塞加载，避免外网字体拖慢首屏 -->
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="static/css/style.css?v=78">
+    <link rel="stylesheet" href="static/css/style.css?v=79">
     <style>
     /* ── Daily Guess Table Styles ── */
     .dg-card { margin-bottom: 20px; }
@@ -1307,6 +1307,37 @@
                 return '<span class="gc-b-score">' + (parseInt(val) || 0) + '</span>';
             }
 
+            // 判断两边猜测的匹配情况
+            // 返回: 'diff-player'(选手不同) | 'diff-set'(盘数不同) | 'diff-score'(分数细节不同) | 'perfect'(完全一样) | ''(单边无数据)
+            function guessMatchStatus(aName, aScore, bName, bScore) {
+                if (!aName && !aScore && !bName && !bScore) return '';
+                // 单边无数据不做匹配判断
+                var aHas = !!(aName || aScore);
+                var bHas = !!(bName || bScore);
+                if (!aHas || !bHas) return '';
+                // 情况1: 选手不一样
+                if (aName !== bName) return 'diff-player';
+                // 选手相同，解析分数
+                function parseSets(s) {
+                    if (!s) return [];
+                    return s.split(/[\s,]+/).filter(function(x) { return x.trim(); });
+                }
+                var aSets = parseSets(aScore);
+                var bSets = parseSets(bScore);
+                // 情况2: 盘数不同
+                if (aSets.length !== bSets.length) return 'diff-set';
+                // 无分数数据则只算选手相同（单边有分？不可能走到这里，因为aHas且bHas）
+                if (aSets.length === 0) return 'diff-score';
+                // 情况4: 完全一样
+                var allMatch = true;
+                for (var k = 0; k < aSets.length; k++) {
+                    if (aSets[k] !== bSets[k]) { allMatch = false; break; }
+                }
+                if (allMatch) return 'perfect';
+                // 情况3: 分数不同
+                return 'diff-score';
+            }
+
             let rows = '';
             for (let i = 0; i < 6; i++) {
                 const aName = aNames[i] ? aNames[i].trim() : '';
@@ -1316,10 +1347,13 @@
                 const aSc = aScores[i] ? aScores[i].trim() : '';
                 const bSc = bScores[i] ? bScores[i].trim() : '';
                 if (!aName && !bName && !aScoreTxt && !bScoreTxt && !aSc && !bSc) continue;
+                // 计算匹配状态 class
+                var rowStatus = guessMatchStatus(aName, aScoreTxt, bName, bScoreTxt);
+                var rowClass = rowStatus ? (' gt-row-' + rowStatus) : '';
                 if (isDoubles) {
-                    rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a"><span>' + predACell(aNames[i], aScoreTexts[i]) + '</span> / <span>' + predACell(a2Names[i], a2ScoreTexts[i]) + '</span></td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b"><span>' + predBCell(bNames[i], bScoreTexts[i]) + '</span> / <span>' + predBCell(b2Names[i], b2ScoreTexts[i]) + '</span></td></tr>';
+                    rows += '<tr class="' + rowClass + '"><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a"><span>' + predACell(aNames[i], aScoreTexts[i]) + '</span> / <span>' + predACell(a2Names[i], a2ScoreTexts[i]) + '</span></td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b"><span>' + predBCell(bNames[i], bScoreTexts[i]) + '</span> / <span>' + predBCell(b2Names[i], b2ScoreTexts[i]) + '</span></td></tr>';
                 } else {
-                    rows += '<tr><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
+                    rows += '<tr class="' + rowClass + '"><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
                 }
             }
 

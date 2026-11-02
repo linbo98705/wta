@@ -2090,6 +2090,36 @@ img { max-width: 100%; height: auto; }
     font-size: 0.75rem;
 }
 
+/* ── TB 行匹配度背景色 ── */
+/* 情况1: 两边猜测选手完全不一样 */
+.gt-row-diff-player td {
+    background: rgba(220, 53, 69, 0.08);
+}
+.gt-row-diff-player:hover td {
+    background: rgba(220, 53, 69, 0.14) !important;
+}
+/* 情况2: 选手相同但盘数不同 (一个2盘一个3盘) */
+.gt-row-diff-set td {
+    background: rgba(255, 152, 0, 0.10);
+}
+.gt-row-diff-set:hover td {
+    background: rgba(255, 152, 0, 0.18) !important;
+}
+/* 情况3: 选手相同、盘数相同但分数细节不同 (2盘分数不一样/3盘盘序不一样) */
+.gt-row-diff-score td {
+    background: rgba(33, 150, 243, 0.08);
+}
+.gt-row-diff-score:hover td {
+    background: rgba(33, 150, 243, 0.14) !important;
+}
+/* 情况4: 完全一样 (2盘分数一样/3盘盘序一样) */
+.gt-row-perfect td {
+    background: rgba(76, 175, 80, 0.10);
+}
+.gt-row-perfect:hover td {
+    background: rgba(76, 175, 80, 0.18) !important;
+}
+
 .gt-total-row {
     border-top: 2px solid var(--purple);
 }

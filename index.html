@@ -4685,6 +4685,122 @@
             showToast(msg, winnerName ? 'success' : 'warning');
         };
 
+        // ══════════════════════════════════════════════════════════
+        // 自动算分（批量处理当天所有单打比赛，由竞猜保存触发）
+        // ══════════════════════════════════════════════════════════
+        async function autoScoreSinglesForDay(tid, date, guessData) {
+            if (!tid || !date) return;
+            const dayKey = String(date || '').slice(0, 10);
+            if (!dayKey) return;
+
+            let guess = guessData;
+            if (!guess) {
+                const guesses = await getDailyGuesses(tid);
+                if (!Array.isArray(guesses) || guesses.length === 0) return;
+                guess = guesses.find(function(g) { return String(g.guess_date || '').slice(0, 10) === dayKey; });
+                if (!guess && guesses.length === 1) guess = guesses[0];
+            }
+            if (!guess) return;
+
+            // 解析赛果
+            const actuals = [];
+            for (let i = 1; i <= 6; i++) {
+                actuals.push(_scParseActual(guess['tb' + i + '_result'] || ''));
+            }
+            const allActualsValid = actuals.every(function(a) { return a.valid; });
+
+            // 获取当天单打比赛
+            const matches = await getMatches(tid);
+            if (!Array.isArray(matches) || matches.length === 0) return;
+            const targetMatches = matches.filter(function(m) {
+                if (!m || !m.id) return false;
+                if (m.match_type && m.match_type !== 'singles') return false;
+                const md = String(m.match_date || '').slice(0, 10);
+                if (!md) return false;
+                return md === dayKey;
+            });
+
+            for (let idx = 0; idx < targetMatches.length; idx++) {
+                const m = targetMatches[idx];
+                const aRaw = (m.guess_a_tb || '').split(',');
+                const bRaw = (m.guess_b_tb || '').split(',');
+
+                const aPreds = [], bPreds = [];
+                for (let i = 0; i < 6; i++) {
+                    aPreds.push(_scParseEntry((aRaw[i] || '').trim()));
+                    bPreds.push(_scParseEntry((bRaw[i] || '').trim()));
+                }
+
+                const aParts = aPreds.map(function(p, j) { return _scScoreOne(p, actuals[j]); });
+                const bParts = bPreds.map(function(p, j) { return _scScoreOne(p, actuals[j]); });
+
+                let totalA = 0, totalB = 0;
+                const aScores = [], bScores = [];
+                for (let j = 0; j < 6; j++) {
+                    if (aParts[j].points !== null) { totalA += aParts[j].points; aScores.push(String(aParts[j].points)); }
+                    else aScores.push('');
+                    if (bParts[j].points !== null) { totalB += bParts[j].points; bScores.push(String(bParts[j].points)); }
+                    else bScores.push('');
+                }
+
+                // 胜负判定：所有 6 个 TB 都有有效赛果时才结算
+                let winner = '', reason = '';
+                if (allActualsValid) {
+                    if (totalA > totalB) winner = 'player1';
+                    else if (totalB > totalA) winner = 'player2';
+                    else {
+                        // 指定/ZD 判定
+                        let aDes = '', bDes = '';
+                        for (let k = 0; k < 6; k++) {
+                            if (!aDes && aPreds[k].designated) aDes = aPreds[k].designated;
+                            if (!bDes && bPreds[k].designated) bDes = bPreds[k].designated;
+                        }
+                        if (aDes || bDes) {
+                            const actualWinners = {};
+                            actuals.forEach(function(a) {
+                                if (a.valid && !a.canceled && a.winner) actualWinners[_scNormName(a.winner)] = true;
+                            });
+                            const aWon = !!actualWinners[_scNormName(aDes)];
+                            const bWon = !!actualWinners[_scNormName(bDes)];
+                            if (aDes && !bDes) { winner = 'player1'; reason = 'ZD'; }
+                            else if (!aDes && bDes) { winner = 'player2'; reason = 'ZD'; }
+                            else if (aWon && !bWon) { winner = 'player1'; reason = 'ZD'; }
+                            else if (bWon && !aWon) { winner = 'player2'; reason = 'ZD'; }
+                        }
+                        // 逐 TB 比较
+                        if (!winner) {
+                            for (let t = 0; t < 6; t++) {
+                                const act = actuals[t];
+                                if (!act.valid || act.canceled || act.retire) continue;
+                                const ap = aParts[t].points, bp = bParts[t].points;
+                                if (ap === null && bp === null) continue;
+                                if (ap !== bp) {
+                                    winner = ap > bp ? 'player1' : 'player2';
+                                    reason = 'TB' + (t + 1);
+                                    break;
+                                }
+                                if (aParts[t].tbDiff !== null && bParts[t].tbDiff !== null && aParts[t].tbDiff !== bParts[t].tbDiff) {
+                                    winner = aParts[t].tbDiff < bParts[t].tbDiff ? 'player1' : 'player2';
+                                    reason = 'TB' + (t + 1);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 写回 matches 表
+                await updateMatch(m.id, {
+                    guess_a_tb_score: aScores.join(','),
+                    guess_b_tb_score: bScores.join(','),
+                    guess_a_total: totalA,
+                    guess_b_total: totalB,
+                    guess_winner: winner,
+                    guess_reason: reason,
+                });
+            }
+        }
+
         // 解析比赛竞猜文本（静态版本：名字和比分分开）
         window.parseMatchGuessText = function() {
             const text = document.getElementById('matchGuessTextInput').value.trim();
@@ -5559,6 +5675,8 @@
                 closeModal('guessModal');
                 showToast(id ? '竞猜已更新' : '竞猜已创建', 'success');
                 adminLoadDailyGuessList();
+                // 自动算分（异步，不阻塞界面）
+                autoScoreSinglesForDay(parseInt(tid), data.guess_date || '', data).catch(function() {});
             } else {
                 showToast('操作失败: ' + (result.error || '未知错误'), 'error');
             }

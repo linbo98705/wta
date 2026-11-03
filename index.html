@@ -2514,7 +2514,10 @@
                 <div class="form-group" style="margin-top: 16px;">
                     <label style="display:flex; justify-content:space-between; align-items:center;">
                         <span><span class="ai-icon-sm">${icoEdit}</span>快速解析竞猜内容（分开填写）</span>
-                        <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessTextSeparate()"><span class="ai-icon-sm">${icoSearch}</span>一键填充</button>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn btn-outline btn-sm" onclick="adminAutoScoreSingles()"><span class="ai-icon-sm">${icoSettings}</span>单打自动算分</button>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="parseMatchGuessTextSeparate()"><span class="ai-icon-sm">${icoSearch}</span>一键填充</button>
+                        </div>
                     </label>
                     <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;" id="guessTextInputGrid">
                         <div>
@@ -4442,6 +4445,247 @@
             elA.style.color = totalA > totalB ? 'white' : '';
             elB.style.background = totalB > totalA ? 'var(--accent-green)' : totalB < totalA ? '' : '';
             elB.style.color = totalB > totalA ? 'white' : '';
+        };
+
+        // ══════════════════════════════════════════════════════════
+        // 单打自动算分（依据《网球联赛赛事指南 5.0》4320 指定赛制）
+        // ══════════════════════════════════════════════════════════
+        function _scStripParen(s) {
+            return (s || '').replace(/[（(][^）)]*[）)]/g, ' ');
+        }
+        function _scNormName(s) {
+            if (!s) return '';
+            return _scStripParen(s)
+                .replace(/[\uFF10-\uFF19]/g, function(c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+                .replace(/[\uFF21-\uFF3A\uFF41-\uFF5A]/g, function(c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+                .replace(/\s+/g, '')
+                .replace(/[\s\u3000，。！？、；：""''“”‘’（）()《》【】｛｝·.,\-_\/|\\'"]/g, '')
+                .toLowerCase();
+        }
+        // 提取“指定/ZD”球员名
+        function _scExtractDesignated(text) {
+            if (!text) return '';
+            var m = text.match(/(?:指定|zd)\s*[:：]?\s*([^\d,，;；)）]+)/i);
+            if (m) return _scStripParen(m[1]).trim();
+            m = text.match(/([^\d\s,，;；()（）]+?)\s*[（(]\s*(?:指定|zd)\s*[)）]/i);
+            if (m) return _scStripParen(m[1]).trim();
+            return '';
+        }
+        // 拆分比分 → [[该球员局数, 对手局数], ...]
+        // 支持 6-3 6-4 / 63 64 / 6362 / 7-6(4) / 全角数字
+        function _scParseSets(scoreStr) {
+            var s = (scoreStr || '')
+                .replace(/[\uFF10-\uFF19]/g, function(c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+                .replace(/[：:]/g, '-')
+                .replace(/[–—]/g, '-')
+                .replace(/[（(]\s*\d+\s*[)）]/g, ' ');
+            var tokens = s.split(/[\s,，、；;]+/).filter(function(x) { return x; });
+            var sets = [], pending = null;
+            tokens.forEach(function(tok) {
+                var nums = tok.match(/\d+/g);
+                var digits = tok.replace(/\D/g, '');
+                if (!digits) return;
+                if (nums && nums.length >= 2) {
+                    pending = null;
+                    sets.push([parseInt(nums[0], 10), parseInt(nums[1], 10)]);
+                    return;
+                }
+                if (digits.length === 1) {
+                    if (pending === null) pending = parseInt(digits, 10);
+                    else { sets.push([pending, parseInt(digits, 10)]); pending = null; }
+                    return;
+                }
+                pending = null;
+                for (var i = 0; i + 1 < digits.length; i += 2) {
+                    sets.push([parseInt(digits[i], 10), parseInt(digits[i + 1], 10)]);
+                }
+            });
+            return sets;
+        }
+        // 解析一条预测/赛果："球员名 6-3 6-4" → { name, sets, designated }
+        function _scParseEntry(text) {
+            var raw = (text || '').trim();
+            if (!raw) return { name: '', sets: [], designated: '' };
+            if (raw.indexOf('|') >= 0) {
+                var parts = raw.split('|');
+                raw = parts[0] + ' ' + parts.slice(1).join(' ');
+            }
+            var designated = _scExtractDesignated(raw);
+            var cleaned = raw
+                .replace(/(?:指定|zd)\s*[:：]?\s*[^\d,，;；)）]*/gi, ' ')
+                .replace(/(?:指定|zd)/gi, ' ');
+            var scoreIdx = cleaned.search(/\d/);
+            var name = '', scores = '';
+            if (scoreIdx > 0) { name = cleaned.substring(0, scoreIdx); scores = cleaned.substring(scoreIdx); }
+            else if (scoreIdx === 0) { scores = cleaned; }
+            else { name = cleaned; }
+            name = _scStripParen(name).replace(/[（(）)]/g, '').trim();
+            if (!name && designated) name = designated;
+            return { name: name, sets: _scParseSets(scores), designated: designated };
+        }
+        // tb 差：|真实胜者总赢局数 - 预测胜者总赢局数| + |真实负者总赢局数 - 预测负者总赢局数|
+        function _scTbDiff(predSets, actSets) {
+            var pW = 0, pL = 0, aW = 0, aL = 0;
+            predSets.forEach(function(s) { pW += s[0]; pL += s[1]; });
+            actSets.forEach(function(s) { aW += s[0]; aL += s[1]; });
+            return Math.abs(aW - pW) + Math.abs(aL - pL);
+        }
+        // 三盘盘序是否一致（胜者视角的 胜/负 序列）
+        function _scSetOrderSame(predSets, actSets) {
+            if (predSets.length !== 3 || actSets.length !== 3) return false;
+            for (var i = 0; i < 3; i++) {
+                var pWin = predSets[i][0] > predSets[i][1];
+                var aWin = actSets[i][0] > actSets[i][1];
+                if (pWin !== aWin) return false;
+            }
+            return true;
+        }
+        // 解析赛果 → { valid, canceled, retire, retireeWonSet, winner, sets }
+        function _scParseActual(text) {
+            var raw = (text || '').trim();
+            if (!raw) return { valid: false };
+            if (/赛前退赛|强制退赛|取消/.test(raw)) return { valid: true, canceled: true };
+            var retire = /(退赛|退出|retired|\bret\b)/i.test(raw);
+            var p = _scParseEntry(raw);
+            if (!p.name || p.sets.length === 0) return { valid: false };
+            var retireeWonSet = false;
+            if (retire) {
+                for (var i = 0; i < p.sets.length; i++) {
+                    if (p.sets[i][0] < p.sets[i][1]) { retireeWonSet = true; break; }
+                }
+            }
+            return { valid: true, canceled: false, retire: retire, retireeWonSet: retireeWonSet, winner: p.name, sets: p.sets };
+        }
+        // 单题得分
+        function _scScoreOne(pred, act) {
+            if (!act || !act.valid) return { points: null, tbDiff: null };
+            if (!pred || !pred.name || pred.sets.length === 0) return { points: 0, tbDiff: null };
+            if (act.canceled) return { points: 0, tbDiff: null };
+            if (_scNormName(pred.name) !== _scNormName(act.winner)) return { points: 0, tbDiff: null };
+            var ps = pred.sets.length, as = act.sets.length;
+            // 赛中退赛：按预测盘数与退赛方是否拿盘计分
+            if (act.retire) {
+                if (ps === 3) return { points: act.retireeWonSet ? 3 : 2, tbDiff: null };
+                if (ps === 2) return { points: act.retireeWonSet ? 2 : 3, tbDiff: null };
+                return { points: 0, tbDiff: null };
+            }
+            // 真实赛果两盘
+            if (as === 2) {
+                if (ps === 2) {
+                    var d2 = _scTbDiff(pred.sets, act.sets);
+                    return { points: d2 <= 2 ? 4 : 3, tbDiff: d2 };
+                }
+                return { points: 2, tbDiff: null };
+            }
+            // 真实赛果三盘
+            if (as === 3) {
+                if (ps === 3) {
+                    var same = _scSetOrderSame(pred.sets, act.sets);
+                    return { points: same ? 4 : 3, tbDiff: _scTbDiff(pred.sets, act.sets) };
+                }
+                return { points: 2, tbDiff: null };
+            }
+            return { points: 2, tbDiff: null };
+        }
+
+        window.adminAutoScoreSingles = async function() {
+            var tid = document.getElementById('matchTournamentSelect').value;
+            if (!tid) { showToast('请先选择赛事', 'error'); return; }
+            var tournament = await getTournament(parseInt(tid, 10));
+            if (tournament && tournament.match_type === 'doubles') {
+                showToast('当前赛事为双打，单打自动算分不适用', 'warning');
+                return;
+            }
+            var p1Name = document.getElementById('matchupP1').textContent.trim();
+            var p2Name = document.getElementById('matchupP2').textContent.trim();
+            var matchDate = document.getElementById('mMatchDate').value;
+            var guesses = await getDailyGuesses(parseInt(tid, 10));
+            if (!Array.isArray(guesses) || guesses.length === 0) {
+                showToast('该赛事暂无每日竞猜，请先在「竞猜」中维护各TB赛题与赛果', 'error');
+                return;
+            }
+            var guess = null;
+            if (matchDate) {
+                guess = guesses.find(function(g) { return (g.guess_date || '').slice(0, 10) === matchDate; });
+            }
+            if (!guess && guesses.length === 1) guess = guesses[0];
+            if (!guess) {
+                showToast('未找到与比赛日期（' + (matchDate || '未填写') + '）对应的每日竞猜，请先填写比赛日期或到「竞猜」核对日期', 'error');
+                return;
+            }
+
+            var aPreds = [], bPreds = [], actuals = [];
+            for (var i = 1; i <= 6; i++) {
+                aPreds.push(_scParseEntry(document.getElementById('gaPred' + i).value.trim()));
+                bPreds.push(_scParseEntry(document.getElementById('gbPred' + i).value.trim()));
+                actuals.push(_scParseActual(guess['tb' + i + '_result']));
+            }
+            var aParts = aPreds.map(function(p, idx) { return _scScoreOne(p, actuals[idx]); });
+            var bParts = bPreds.map(function(p, idx) { return _scScoreOne(p, actuals[idx]); });
+
+            var totalA = 0, totalB = 0, pendingCount = 0;
+            for (var j = 0; j < 6; j++) {
+                if (aParts[j].points === null && bParts[j].points === null) pendingCount++;
+                if (aParts[j].points !== null) totalA += aParts[j].points;
+                if (bParts[j].points !== null) totalB += bParts[j].points;
+                document.getElementById('gaPs' + (j + 1)).value = aParts[j].points === null ? '' : String(aParts[j].points);
+                document.getElementById('gbPs' + (j + 1)).value = bParts[j].points === null ? '' : String(bParts[j].points);
+            }
+            adminCalcTotals();
+
+            // ── 胜负判定：总分 → 指定 → 逐TB比较（得分 / tb差） ──
+            var winner = '', reason = '', unresolved = false;
+            if (totalA > totalB) winner = 'player1';
+            else if (totalB > totalA) winner = 'player2';
+            else {
+                var aDes = '', bDes = '';
+                for (var k = 0; k < 6; k++) {
+                    if (!aDes && aPreds[k].designated) aDes = aPreds[k].designated;
+                    if (!bDes && bPreds[k].designated) bDes = bPreds[k].designated;
+                }
+                if (aDes || bDes) {
+                    var actualWinners = {};
+                    actuals.forEach(function(a) {
+                        if (a.valid && !a.canceled && a.winner) actualWinners[_scNormName(a.winner)] = true;
+                    });
+                    var aWon = !!actualWinners[_scNormName(aDes)];
+                    var bWon = !!actualWinners[_scNormName(bDes)];
+                    if (aDes && !bDes) { winner = 'player1'; reason = 'ZD'; }
+                    else if (!aDes && bDes) { winner = 'player2'; reason = 'ZD'; }
+                    else if (aWon && !bWon) { winner = 'player1'; reason = 'ZD'; }
+                    else if (bWon && !aWon) { winner = 'player2'; reason = 'ZD'; }
+                    // 双方指定相同/均失利/均取胜（需世界排名）→ 进入 TB 比较
+                }
+                if (!winner) {
+                    for (var t = 0; t < 6; t++) {
+                        var act = actuals[t];
+                        if (!act.valid || act.canceled || act.retire) continue;
+                        var ap = aParts[t].points, bp = bParts[t].points;
+                        if (ap === null && bp === null) continue;
+                        if (ap !== bp) {
+                            winner = ap > bp ? 'player1' : 'player2';
+                            reason = 'TB' + (t + 1);
+                            break;
+                        }
+                        if (aParts[t].tbDiff !== null && bParts[t].tbDiff !== null && aParts[t].tbDiff !== bParts[t].tbDiff) {
+                            winner = aParts[t].tbDiff < bParts[t].tbDiff ? 'player1' : 'player2';
+                            reason = 'TB' + (t + 1);
+                            break;
+                        }
+                    }
+                }
+                if (!winner) unresolved = true;
+            }
+
+            document.getElementById('mGuessWinner').value = winner;
+            document.getElementById('mGuessReason').value = reason;
+
+            var winnerName = winner === 'player1' ? p1Name : winner === 'player2' ? p2Name : '';
+            var msg = '自动算分：' + p1Name + ' ' + totalA + ' 分 / ' + p2Name + ' ' + totalB + ' 分';
+            if (winnerName) msg += '，胜者：' + winnerName + (reason ? '（' + reason + '）' : '');
+            else if (unresolved) msg += '；总分、指定、TB差均未分出胜负，请按发送时间人工判定';
+            if (pendingCount > 0) msg += '（' + pendingCount + ' 个TB暂无赛果，未计分）';
+            showToast(msg, winnerName ? 'success' : 'warning');
         };
 
         // 解析比赛竞猜文本（静态版本：名字和比分分开）

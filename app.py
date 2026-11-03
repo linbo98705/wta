@@ -189,6 +189,7 @@ def init_db():
     except (sqlite3.OperationalError, sqlite3.IntegrityError):
         pass
     for col, col_type in [
+        ('match_date', 'TEXT DEFAULT \'\''),
         ('guess_team_a', 'TEXT DEFAULT \'\''),
         ('guess_team_b', 'TEXT DEFAULT \'\''),
         ('guess_a_tb', 'TEXT DEFAULT \'\''),
@@ -1790,6 +1791,309 @@ def api_get_daily_guesses(tid):
     ).fetchall()
     return jsonify([dict(r) for r in rows])
 
+# ══════════════════════════════════════════════════════════════════
+# 自动算分（依据《网球联赛赛事指南 5.0》4320 指定赛制）
+# 依据：JS 版 _sc* 函数
+# ══════════════════════════════════════════════════════════════════
+import re as _re
+
+def _sc_fullwidth_to_halfwidth(s):
+    """全角数字/字母 → 半角"""
+    out = []
+    for ch in s:
+        code = ord(ch)
+        if 0xFF10 <= code <= 0xFF19:       # 全角数字
+            out.append(chr(code - 0xFEE0))
+        elif 0xFF21 <= code <= 0xFF3A:     # 全角大写
+            out.append(chr(code - 0xFEE0))
+        elif 0xFF41 <= code <= 0xFF5A:     # 全角小写
+            out.append(chr(code - 0xFEE0))
+        else:
+            out.append(ch)
+    return ''.join(out)
+
+def _sc_strip_paren(s):
+    return _re.sub(r'[（(][^）)]*[）)]', ' ', s or '')
+
+def _sc_norm_name(s):
+    if not s:
+        return ''
+    s = _sc_fullwidth_to_halfwidth(s)
+    s = _sc_strip_paren(s)
+    s = _re.sub(r'\s+', '', s)
+    s = _re.sub(r'[\s\u3000，。！？、；：""''""‘’（）()《》【】｛｝·.,\-_/\\\'"]', '', s)
+    return s.lower()
+
+def _sc_extract_designated(text):
+    if not text:
+        return ''
+    m = _re.search(r'(?:指定|zd)\s*[:：]?\s*([^\d,，;；)）]+)', text, _re.I)
+    if m:
+        return _sc_strip_paren(m.group(1)).strip()
+    m = _re.search(r'([^\d\s,，;；()（）]+?)\s*[（(]\s*(?:指定|zd)\s*[)）]', text, _re.I)
+    if m:
+        return _sc_strip_paren(m.group(1)).strip()
+    return ''
+
+def _sc_parse_sets(score_str):
+    s = _sc_fullwidth_to_halfwidth(score_str or '')
+    s = s.replace(':', '-').replace('：', '-').replace('–', '-').replace('—', '-')
+    s = _re.sub(r'[（(]\s*\d+\s*[)）]', ' ', s)   # 抢七括号内容丢弃
+    tokens = [t for t in _re.split(r'[\s,，、；;]+', s) if t]
+    sets = []
+    pending = None
+    for tok in tokens:
+        nums = _re.findall(r'\d+', tok)
+        digits = _re.sub(r'\D', '', tok)
+        if not digits:
+            continue
+        if nums and len(nums) >= 2:
+            pending = None
+            sets.append([int(nums[0]), int(nums[1])])
+            continue
+        if len(digits) == 1:
+            if pending is None:
+                pending = int(digits)
+            else:
+                sets.append([pending, int(digits)])
+                pending = None
+            continue
+        pending = None
+        for i in range(0, len(digits) - 1, 2):
+            sets.append([int(digits[i]), int(digits[i + 1])])
+    return sets
+
+def _sc_parse_entry(text):
+    raw = (text or '').strip()
+    if not raw:
+        return {'name': '', 'sets': [], 'designated': ''}
+    if '|' in raw:
+        parts = raw.split('|')
+        raw = parts[0] + ' ' + ' '.join(parts[1:])
+    designated = _sc_extract_designated(raw)
+    cleaned = _re.sub(r'(?:指定|zd)\s*[:：]?\s*[^\d,，;；)）]*', ' ', raw, flags=_re.I)
+    cleaned = _re.sub(r'(?:指定|zd)', ' ', cleaned, flags=_re.I)
+    m = _re.search(r'\d', cleaned)
+    if m:
+        idx = m.start()
+        name = cleaned[:idx]
+        scores = cleaned[idx:]
+    else:
+        name, scores = cleaned, ''
+    name = _sc_strip_paren(name)
+    name = name.replace('（', '').replace('）', '').replace('(', '').replace(')', '').strip()
+    if not name and designated:
+        name = designated
+    return {'name': name, 'sets': _sc_parse_sets(scores), 'designated': designated}
+
+def _sc_tb_diff(pred_sets, act_sets):
+    pW = sum(s[0] for s in pred_sets)
+    pL = sum(s[1] for s in pred_sets)
+    aW = sum(s[0] for s in act_sets)
+    aL = sum(s[1] for s in act_sets)
+    return abs(aW - pW) + abs(aL - pL)
+
+def _sc_set_order_same(pred_sets, act_sets):
+    if len(pred_sets) != 3 or len(act_sets) != 3:
+        return False
+    for i in range(3):
+        p_win = pred_sets[i][0] > pred_sets[i][1]
+        a_win = act_sets[i][0] > act_sets[i][1]
+        if p_win != a_win:
+            return False
+    return True
+
+def _sc_parse_actual(text):
+    raw = (text or '').strip()
+    base = {'valid': False, 'canceled': False, 'retire': False,
+            'retiree_won_set': False, 'winner': '', 'sets': []}
+    if not raw:
+        return base
+    if _re.search(r'赛前退赛|强制退赛|取消', raw):
+        return {'valid': True, 'canceled': True, 'retire': False,
+                'retiree_won_set': False, 'winner': '', 'sets': []}
+    retire = bool(_re.search(r'退赛|退出|retired|\bret\b', raw, _re.I))
+    p = _sc_parse_entry(raw)
+    if not p['name'] or len(p['sets']) == 0:
+        return base
+    retiree_won_set = False
+    if retire:
+        for s in p['sets']:
+            if s[0] < s[1]:
+                retiree_won_set = True
+                break
+    return {'valid': True, 'canceled': False, 'retire': retire,
+            'retiree_won_set': retiree_won_set, 'winner': p['name'], 'sets': p['sets']}
+
+def _sc_score_one(pred, act):
+    """单题得分；返回 {'points': int|None, 'tb_diff': int|None}  —— None 表示该 TB 还没法计分"""
+    if not act or not act.get('valid'):
+        return {'points': None, 'tb_diff': None}
+    if not pred or not pred.get('name') or len(pred.get('sets', [])) == 0:
+        return {'points': 0, 'tb_diff': None}
+    if act.get('canceled'):
+        return {'points': 0, 'tb_diff': None}
+    if _sc_norm_name(pred['name']) != _sc_norm_name(act['winner']):
+        return {'points': 0, 'tb_diff': None}
+    ps = len(pred['sets'])
+    a_s = len(act['sets'])
+    if act.get('retire'):
+        if ps == 3:
+            return {'points': 3 if act.get('retiree_won_set') else 2, 'tb_diff': None}
+        if ps == 2:
+            return {'points': 2 if act.get('retiree_won_set') else 3, 'tb_diff': None}
+        return {'points': 0, 'tb_diff': None}
+    if a_s == 2:
+        if ps == 2:
+            d2 = _sc_tb_diff(pred['sets'], act['sets'])
+            return {'points': 4 if d2 <= 2 else 3, 'tb_diff': d2}
+        return {'points': 2, 'tb_diff': None}
+    if a_s == 3:
+        if ps == 3:
+            same = _sc_set_order_same(pred['sets'], act['sets'])
+            return {'points': 4 if same else 3, 'tb_diff': _sc_tb_diff(pred['sets'], act['sets'])}
+        return {'points': 2, 'tb_diff': None}
+    return {'points': 2, 'tb_diff': None}
+
+
+def _auto_score_one_match(match_row, actuals):
+    """
+    对一条 match 算分（单打）。
+    match_row: matches 表行（dict-like，由 sqlite3.Row fetch 出来）
+    actuals: list of 6 个 _sc_parse_actual 结果
+    返回: dict 含 guess_a_tb_score, guess_b_tb_score, guess_a_total, guess_b_total, guess_winner, guess_reason
+          若有任何一个 TB 还没赛果，points 为 None，winner 为空
+    """
+    # parse match_date (for logging only)
+    guess_a_entries = [x.strip() for x in (match_row['guess_a_tb'] or '').split(',')]
+    guess_b_entries = [x.strip() for x in (match_row['guess_b_tb'] or '').split(',')]
+
+    a_preds = [_sc_parse_entry(guess_a_entries[i] if i < len(guess_a_entries) else '') for i in range(6)]
+    b_preds = [_sc_parse_entry(guess_b_entries[i] if i < len(guess_b_entries) else '') for i in range(6)]
+
+    a_parts = [_sc_score_one(a_preds[i], actuals[i]) for i in range(6)]
+    b_parts = [_sc_score_one(b_preds[i], actuals[i]) for i in range(6)]
+
+    a_scores = [p['points'] if p['points'] is not None else '' for p in a_parts]
+    b_scores = [p['points'] if p['points'] is not None else '' for p in b_parts]
+
+    totalA = sum(p['points'] for p in a_parts if p['points'] is not None)
+    totalB = sum(p['points'] for p in b_parts if p['points'] is not None)
+
+    # 所有 6 个 TB 都有有效赛果时才结算胜负
+    all_resolved = all(a['valid'] for a in actuals)
+
+    winner = ''
+    reason = ''
+    if all_resolved:
+        if totalA > totalB:
+            winner = 'player1'
+        elif totalB > totalA:
+            winner = 'player2'
+        else:
+            # 指定/ZD 判定
+            a_des = ''
+            b_des = ''
+            for i in range(6):
+                if not a_des and a_preds[i].get('designated'):
+                    a_des = a_preds[i]['designated']
+                if not b_des and b_preds[i].get('designated'):
+                    b_des = b_preds[i]['designated']
+            if a_des or b_des:
+                actual_winners = {}
+                for a in actuals:
+                    if a['valid'] and a['winner']:
+                        actual_winners[_sc_norm_name(a['winner'])] = True
+                a_won = bool(actual_winners.get(_sc_norm_name(a_des))) if a_des else False
+                b_won = bool(actual_winners.get(_sc_norm_name(b_des))) if b_des else False
+                if a_des and not b_des:
+                    winner, reason = 'player1', 'ZD'
+                elif not a_des and b_des:
+                    winner, reason = 'player2', 'ZD'
+                elif a_won and not b_won:
+                    winner, reason = 'player1', 'ZD'
+                elif b_won and not a_won:
+                    winner, reason = 'player2', 'ZD'
+
+            # 指定仍没分 → 逐 TB 比较
+            if not winner:
+                for t in range(6):
+                    act = actuals[t]
+                    if not act['valid'] or act['canceled'] or act['retire']:
+                        continue
+                    ap, bp = a_parts[t]['points'], b_parts[t]['points']
+                    if ap is None and bp is None:
+                        continue
+                    if ap != bp:
+                        winner = 'player1' if ap > bp else 'player2'
+                        reason = 'TB' + str(t + 1)
+                        break
+                    ad = a_parts[t]['tb_diff']
+                    bd = b_parts[t]['tb_diff']
+                    if ad is not None and bd is not None and ad != bd:
+                        winner = 'player1' if ad < bd else 'player2'
+                        reason = 'TB' + str(t + 1)
+                        break
+
+    return {
+        'guess_a_tb_score': ','.join(str(x) for x in a_scores),
+        'guess_b_tb_score': ','.join(str(x) for x in b_scores),
+        'guess_a_total': totalA,
+        'guess_b_total': totalB,
+        'guess_winner': winner,
+        'guess_reason': reason,
+    }
+
+
+def auto_score_for_tournament_day(db, tournament_id, date_str):
+    """
+    给定赛事 + 日期（YYYY-MM-DD 或完整 datetime 前缀），
+    找到当天的 daily_guess，结合 matches，自动算分并更新所有单打比赛。
+    返回更新的 match 条数。
+    """
+    if not date_str:
+        return 0
+    day = date_str[:10]   # 取 YYYY-MM-DD
+
+    guesses = db.execute(
+        'SELECT * FROM daily_guesses WHERE tournament_id=? AND substr(guess_date, 1, 10)=? ORDER BY id DESC',
+        (tournament_id, day)
+    ).fetchall()
+    if not guesses:
+        return 0
+    guess = guesses[0]
+
+    actuals = [_sc_parse_actual(guess[f'tb{i}_result'] or '') for i in range(1, 7)]
+
+    matches = db.execute(
+        'SELECT * FROM matches WHERE tournament_id=? AND match_date LIKE ?',
+        (tournament_id, day + '%')
+    ).fetchall()
+
+    updated = 0
+    for m in matches:
+        # 只处理单打
+        match_type = m['match_type'] if m['match_type'] else 'singles'
+        if match_type != 'singles':
+            continue
+
+        res = _auto_score_one_match(m, actuals)
+        db.execute(
+            '''UPDATE matches
+               SET guess_a_tb_score=?, guess_b_tb_score=?,
+                   guess_a_total=?, guess_b_total=?,
+                   guess_winner=?, guess_reason=?
+               WHERE id=?''',
+            (res['guess_a_tb_score'], res['guess_b_tb_score'],
+             res['guess_a_total'], res['guess_b_total'],
+             res['guess_winner'], res['guess_reason'],
+             m['id'])
+        )
+        updated += 1
+    db.commit()
+    return updated
+
+
 @app.route('/api/tournaments/<int:tid>/daily-guesses', methods=['POST'])
 @require_login
 @require_tournament_access('tid')
@@ -1809,6 +2113,11 @@ def api_create_daily_guess(tid):
     placeholders = ','.join(['?'] * len(values))
     db.execute(f'INSERT INTO daily_guesses ({",".join(fields)}) VALUES ({placeholders})', values)
     db.commit()
+    # 自动算分
+    try:
+        auto_score_for_tournament_day(db, tid, data.get('guess_date', ''))
+    except Exception:
+        pass   # 算分失败不阻塞主流程
     return jsonify({'success': True})
 
 @app.route('/api/daily-guesses/<int:gid>', methods=['PUT'])
@@ -1843,6 +2152,14 @@ def api_update_daily_guess(gid):
         values.append(gid)
         db.execute(f'UPDATE daily_guesses SET {",".join(fields)} WHERE id=?', values)
         db.commit()
+    # 自动算分
+    try:
+        guess_date = data.get('guess_date', guess['guess_date'] if guess else '')
+        tournament_id = guess['tournament_id'] if guess else None
+        if tournament_id and guess_date:
+            auto_score_for_tournament_day(db, tournament_id, guess_date)
+    except Exception:
+        pass
     return jsonify({'success': True})
 
 @app.route('/api/daily-guesses/<int:gid>', methods=['DELETE'])

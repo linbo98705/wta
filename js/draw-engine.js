@@ -144,7 +144,7 @@ function buildBracket(matches, playerMap, startRound, category) {
     const totalW = seqOffset + numCols * (COL_WIDTH + COL_GAP) - COL_GAP;
     // 32签各轮积分表（按赛事级别区分；冠军积分在决赛奖杯旁单独标注）
     const ROUND_POINTS_32 = {
-        WTA250: { rounds: { R32: 1, R16: 30, QF: 60, SF: 98, F: 163 }, champion: 250 },
+        WTA250: { rounds: { R32: 1, R16: 30, QF: 54, SF: 98, F: 163 }, champion: 250 },
         WTA500: { rounds: { R32: 1, R16: 60, QF: 108, SF: 195, F: 325 }, champion: 500 },
     };
     const categoryKey = String(category || '').toUpperCase().replace(/\s+/g, '');

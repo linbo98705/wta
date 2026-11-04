@@ -4801,11 +4801,51 @@
             }
         }
 
+        // ══════════════════════════════════════════════════════════
+        // 粘贴文本清洗 + TB 前缀 / vs 分隔识别（兼容零宽字符、全角）
+        // ══════════════════════════════════════════════════════════
+        // 去掉零宽字符（微信/贴吧复制常见），并把全角字母数字标点转半角
+        function _sgClean(s) {
+            return String(s == null ? '' : s)
+                .replace(/[\u200b-\u200f\u2060\ufeff\u00ad]/g, '')
+                .replace(/[\uFF01-\uFF5E]/g, function(c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); });
+        }
+        // 识别 TB 编号前缀："TB1 " / "TB-1 " / "TB1：" / "第1题" / "第1场"
+        function _sgTbPrefix(line) {
+            var m = line.match(/^[^\w]*[Tt][Bb][\s\-_.:·]*(\d{1,2})\s*[、,.:\s]?/);
+            if (m) return { num: parseInt(m[1], 10), rest: line.substring(m[0].length) };
+            m = line.match(/^[^\w]*第\s*(\d{1,2})\s*[题场]/);
+            if (m) return { num: parseInt(m[1], 10), rest: line.substring(m[0].length) };
+            return { num: null, rest: line };
+        }
+        // 该行是否是一行对阵（vs / VS / v.s / 对阵 / |）
+        function _sgHasVsLine(line) {
+            if (/对阵/.test(line)) return true;
+            if (line.indexOf('|') >= 0) return true;
+            return /(^|[^A-Za-z])[vV][.．]?[sS]([^A-Za-z]|$)/.test(line);
+        }
+        // 拆成 [左侧, 右侧]；无法拆返回 null
+        function _sgSplitSides(line) {
+            if (/对阵/.test(line)) {
+                var p = line.split(/对阵/);
+                if (p.length >= 2) return [p[0], p.slice(1).join('对阵')];
+            }
+            if (/(^|[^A-Za-z])[vV][.．]?[sS]([^A-Za-z]|$)/.test(line)) {
+                var q = line.split(/[\s]*[vV][.．]?[sS][\s]*/);
+                if (q.length >= 2) return [q[0], q.slice(1).join(' vs ')];
+            }
+            if (line.indexOf('|') >= 0) {
+                var r = line.split('|');
+                if (r.length >= 2) return [r[0], r.slice(1).join('|')];
+            }
+            return null;
+        }
+
         // 解析比赛竞猜文本（静态版本：名字和比分分开）
         window.parseMatchGuessText = function() {
-            const text = document.getElementById('matchGuessTextInput').value.trim();
+            const text = _sgClean(document.getElementById('matchGuessTextInput').value || '').trim();
             if (!text) { showToast('请先输入或粘贴竞猜内容', 'error'); return; }
-            const lines = text.split('\n').filter(l => l.trim());
+            const lines = text.split(/\r?\n/).filter(l => l.trim());
             const maxTb = 6;
 
             // 先清空所有行
@@ -4828,10 +4868,10 @@
             for (let i = 0; i < lines.length; i++) {
                 let line = lines[i].trim();
                 // 只识别TB开头的行
-                const tbMatch = line.match(/^\s*TB\s*(\d+)\s*[:：\s]?/i);
-                if (!tbMatch) continue;
-                const tbIndex = parseInt(tbMatch[1]);
-                line = line.substring(tbMatch[0].length).trim();
+                const tb = _sgTbPrefix(line);
+                if (tb.num === null) continue;
+                const tbIndex = tb.num;
+                line = tb.rest.trim();
                 // 去掉冒号及之前的内容
                 const colonIdx = line.search(/[:：]/);
                 if (colonIdx >= 0) line = line.substring(colonIdx + 1).trim();
@@ -4993,10 +5033,10 @@
 
         // 分开解析四名球员的竞猜内容
         window.parseMatchGuessTextSeparate = function() {
-            const textA = document.getElementById('matchGuessTextInputA').value.trim();
-            const textB = document.getElementById('matchGuessTextInputB').value.trim();
-            const textA2 = document.getElementById('matchGuessTextInputA2').value.trim();
-            const textB2 = document.getElementById('matchGuessTextInputB2').value.trim();
+            const textA = _sgClean(document.getElementById('matchGuessTextInputA').value || '').trim();
+            const textB = _sgClean(document.getElementById('matchGuessTextInputB').value || '').trim();
+            const textA2 = _sgClean(document.getElementById('matchGuessTextInputA2').value || '').trim();
+            const textB2 = _sgClean(document.getElementById('matchGuessTextInputB2').value || '').trim();
             if (!textA && !textB && !textA2 && !textB2) { showToast('请先输入竞猜内容', 'error'); return; }
 
             const p1Name = document.getElementById('matchupP1').textContent.trim();
@@ -5016,7 +5056,7 @@
 
             for (const side of sides) {
                 if (!side.text) continue;
-                const lines = side.text.split('\n').filter(l => l.trim());
+                const lines = side.text.split(/\r?\n/).filter(l => l.trim());
                 // 清空该侧
                 for (let i = 1; i <= maxTb; i++) {
                     document.getElementById(side.pred + i).value = '';
@@ -5025,11 +5065,11 @@
                 // 解析TB开头
                 for (const rawLine of lines) {
                     let line = rawLine.trim();
-                    const tbMatch = line.match(/^\s*TB\s*(\d+)\s*[:：\s]?/i);
-                    if (!tbMatch) continue;
-                    const tbIndex = parseInt(tbMatch[1]);
+                    const tb = _sgTbPrefix(line);
+                    if (tb.num === null) continue;
+                    const tbIndex = tb.num;
                     if (tbIndex > maxTb) continue;
-                    line = line.substring(tbMatch[0].length).trim();
+                    line = tb.rest.trim();
                     // 如果只填了比分，自动补球员名
                     if (line && !line.match(/[^\d\s\-–\/]/) && side.name && side.name !== side.defaultName) {
                         line = side.name + ' ' + line;
@@ -5432,8 +5472,8 @@
         };
 
         window.adminParseGuessMatches = function() {
-            const text = document.getElementById('gBulkMatches').value || '';
-            const allLines = text.split('\n').map(l => l.trim()).filter(l => l);
+            const text = _sgClean(document.getElementById('gBulkMatches').value || '');
+            const allLines = text.split(/\r?\n/).map(l => _sgClean(l).trim()).filter(l => l);
             const currentYear = new Date().getFullYear();
 
             // 从字符串中提取日期，支持多种格式：
@@ -5547,16 +5587,10 @@
             // 用 vs 匹配对阵行（大小写不敏感），并识别 TB 编号前缀
             const matchLines = [];
             for (const line of allLines) {
-                if (!/\bvs\b/i.test(line)) continue;
-                // 识别 TB 编号前缀（如 "TB5:"、"TB7 "、"tb3："）
-                const tbMatch = line.match(/^\s*TB\s*(\d+)\s*[:：\s]?/i);
-                let tbNum = null;
-                let cleanLine = line;
-                if (tbMatch) {
-                    tbNum = parseInt(tbMatch[1]);
-                    cleanLine = line.substring(tbMatch[0].length).trim();
-                }
-                matchLines.push({ tbNum, line: cleanLine, raw: line });
+                if (!_sgHasVsLine(line)) continue;
+                // 识别 TB 编号前缀（如 "TB5"、"TB-3"、"tb3："、"第1题"）
+                const tb = _sgTbPrefix(line);
+                matchLines.push({ tbNum: tb.num, line: tb.rest.trim(), raw: line });
             }
             if (matchLines.length === 0 && !parsedDate && !parsedDeadline) {
                 showToast('未识别到有效的内容', 'error'); return;
@@ -5575,31 +5609,35 @@
 
             let filled = 0;
             let autoIdx = 0;
+            // 已被显式 TB 编号占用的行，自动补位时必须跳过，避免覆盖
+            const usedTb = {};
+            matchLines.forEach(function(it) { if (it.tbNum !== null) usedTb[it.tbNum] = true; });
+
             for (const item of matchLines) {
                 let line = item.line;
                 // 去掉冒号及之前的内容
                 const colonIdx = line.search(/[:：]/);
                 if (colonIdx >= 0) line = line.substring(colonIdx + 1).trim();
                 // 大小写不敏感，不要求两侧必须有空格
-                const parts = line.split(/\s*vs\s*/i);
-                if (parts.length >= 2) {
-                    const p1 = parts[0].trim();
-                    const p2 = parts.slice(1).join(' vs ').trim();
-                    // 确定行号：有 TB 编号用编号，否则按顺序
-                    let rowNum;
-                    if (item.tbNum !== null) {
-                        rowNum = item.tbNum;
-                    } else {
-                        autoIdx++;
-                        rowNum = autoIdx;
-                    }
-                    if (rowNum > maxTb) {
-                        showToast(`内容中包含 TB${rowNum}，但数据库最多支持 TB${maxTb}，已忽略`, 'warning');
-                        continue;
-                    }
-                    const matchField = document.getElementById('gTb' + rowNum + 'Match');
-                    if (matchField) { matchField.value = p1 + ' vs ' + p2; filled++; }
+                const parts = _sgSplitSides(line);
+                if (!parts) continue;
+                const p1 = (parts[0] || '').trim();
+                const p2 = (parts[1] || '').trim();
+                if (!p1 || !p2) continue;
+                // 确定行号：有 TB 编号用编号，否则按顺序补到空位
+                let rowNum;
+                if (item.tbNum !== null) {
+                    rowNum = item.tbNum;
+                } else {
+                    do { autoIdx++; } while (usedTb[autoIdx] && autoIdx <= maxTb);
+                    rowNum = autoIdx;
                 }
+                if (rowNum > maxTb) {
+                    showToast(`内容中包含 TB${rowNum}，但数据库最多支持 TB${maxTb}，已忽略`, 'warning');
+                    continue;
+                }
+                const matchField = document.getElementById('gTb' + rowNum + 'Match');
+                if (matchField) { matchField.value = p1 + ' vs ' + p2; filled++; }
             }
             const msgs = [];
             if (parsedDate) msgs.push('日期 ' + parsedDate);

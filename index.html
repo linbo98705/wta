@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>网球联赛</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://opyihggmivpsexcyqlzn.supabase.co">
+    <link rel="preconnect" href="https://opyihggmivpsexcyqlzn.supabase.co" crossorigin>
     <!-- Archivo 仅美网主题用，改为非阻塞加载，避免外网字体拖慢首屏 -->
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="static/css/style.css?v=80">
@@ -289,12 +288,16 @@
     </nav>
 
     <!-- Page Content -->
-    <div id="app"></div>
+    <div id="app">
+        <div class="main-content"><section class="section"><div class="container">
+            <div style="padding:80px 0;text-align:center;color:#9ca3af;font-size:0.875rem;">加载中…</div>
+        </div></section></div>
+    </div>
 
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- html2canvas (HTML 转 Canvas) - 本地引用避免 CDN 不可用 -->
-    <script src="static/js/html2canvas.min.js"></script>
+    <!-- Supabase SDK（已本地化，避免 jsdelivr CDN 在国内拖慢首屏） -->
+    <script src="static/js/supabase-js.min.js?v=1"></script>
+    <!-- html2canvas (HTML 转 Canvas) - 仅导出时用到，defer 不阻塞首屏 -->
+    <script src="static/js/html2canvas.min.js" defer></script>
     <!-- App Scripts -->
     <script src="js/supabase-client.js?v=8"></script>
     <script src="js/utils.js?v=12"></script>

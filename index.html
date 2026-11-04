@@ -4554,35 +4554,38 @@
             return { valid: true, canceled: false, retire: retire, retireeWonSet: retireeWonSet, winner: p.name, sets: p.sets };
         }
         // 单题得分
+        // 返回 points=null  → 无赛果，不计入
+        // 返回 points=0  → 猜错 / 赛前退赛 / 强制退赛（赛题取消）
+        // 返回 points=2/3/4 → 猜对得分
         function _scScoreOne(pred, act) {
-            if (!act || !act.valid) return { points: null, tbDiff: null };
-            if (!pred || !pred.name || pred.sets.length === 0) return { points: 0, tbDiff: null };
-            if (act.canceled) return { points: 0, tbDiff: null };
-            if (_scNormName(pred.name) !== _scNormName(act.winner)) return { points: 0, tbDiff: null };
+            if (!act || !act.valid) return { points: null, canceled: false, tbDiff: null };
+            if (!pred || !pred.name || pred.sets.length === 0) return { points: 0, canceled: false, tbDiff: null };
+            if (act.canceled) return { points: 0, canceled: true, tbDiff: null };
+            if (_scNormName(pred.name) !== _scNormName(act.winner)) return { points: 0, canceled: false, tbDiff: null };
             var ps = pred.sets.length, as = act.sets.length;
             // 赛中退赛：按预测盘数与退赛方是否拿盘计分
             if (act.retire) {
-                if (ps === 3) return { points: act.retireeWonSet ? 3 : 2, tbDiff: null };
-                if (ps === 2) return { points: act.retireeWonSet ? 2 : 3, tbDiff: null };
-                return { points: 0, tbDiff: null };
+                if (ps === 3) return { points: act.retireeWonSet ? 3 : 2, canceled: false, tbDiff: null };
+                if (ps === 2) return { points: act.retireeWonSet ? 2 : 3, canceled: false, tbDiff: null };
+                return { points: 0, canceled: false, tbDiff: null };
             }
             // 真实赛果两盘
             if (as === 2) {
                 if (ps === 2) {
                     var d2 = _scTbDiff(pred.sets, act.sets);
-                    return { points: d2 <= 2 ? 4 : 3, tbDiff: d2 };
+                    return { points: d2 <= 2 ? 4 : 3, canceled: false, tbDiff: d2 };
                 }
-                return { points: 2, tbDiff: null };
+                return { points: 2, canceled: false, tbDiff: null };
             }
             // 真实赛果三盘
             if (as === 3) {
                 if (ps === 3) {
                     var same = _scSetOrderSame(pred.sets, act.sets);
-                    return { points: same ? 4 : 3, tbDiff: _scTbDiff(pred.sets, act.sets) };
+                    return { points: same ? 4 : 3, canceled: false, tbDiff: _scTbDiff(pred.sets, act.sets) };
                 }
-                return { points: 2, tbDiff: null };
+                return { points: 2, canceled: false, tbDiff: null };
             }
-            return { points: 2, tbDiff: null };
+            return { points: 2, canceled: false, tbDiff: null };
         }
 
         window.adminAutoScoreSingles = async function() {
@@ -4620,13 +4623,17 @@
             var aParts = aPreds.map(function(p, idx) { return _scScoreOne(p, actuals[idx]); });
             var bParts = bPreds.map(function(p, idx) { return _scScoreOne(p, actuals[idx]); });
 
-            var totalA = 0, totalB = 0, pendingCount = 0;
+            var totalA = 0, totalB = 0, pendingCount = 0, canceledCount = 0;
             for (var j = 0; j < 6; j++) {
-                if (aParts[j].points === null && bParts[j].points === null) pendingCount++;
-                if (aParts[j].points !== null) totalA += aParts[j].points;
-                if (bParts[j].points !== null) totalB += bParts[j].points;
-                document.getElementById('gaPs' + (j + 1)).value = aParts[j].points === null ? '' : String(aParts[j].points);
-                document.getElementById('gbPs' + (j + 1)).value = bParts[j].points === null ? '' : String(bParts[j].points);
+                var aP = aParts[j], bP = bParts[j];
+                if (aP.points === null && bP.points === null) { pendingCount++; }
+                else if (aP.canceled) { canceledCount++; }  // 赛前退赛/强制退赛，该 TB 双方都不参与计分
+                else {
+                    if (aP.points !== null) totalA += aP.points;
+                    if (bP.points !== null) totalB += bP.points;
+                }
+                document.getElementById('gaPs' + (j + 1)).value = aP.points === null ? '' : aP.canceled ? '—' : String(aP.points);
+                document.getElementById('gbPs' + (j + 1)).value = bP.points === null ? '' : bP.canceled ? '—' : String(bP.points);
             }
             adminCalcTotals();
 
@@ -4681,6 +4688,7 @@
             var msg = '自动算分：' + p1Name + ' ' + totalA + ' 分 / ' + p2Name + ' ' + totalB + ' 分';
             if (winnerName) msg += '，胜者：' + winnerName + (reason ? '（' + reason + '）' : '');
             else if (unresolved) msg += '；总分、指定、TB差均未分出胜负，请按发送时间人工判定';
+            if (canceledCount > 0) msg += '（' + canceledCount + ' 个TB赛前退赛/强制退赛，已取消不计分）';
             if (pendingCount > 0) msg += '（' + pendingCount + ' 个TB暂无赛果，未计分）';
             showToast(msg, winnerName ? 'success' : 'warning');
         };

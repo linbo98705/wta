@@ -5816,10 +5816,12 @@
         function _sgParseResult(resultStr) {
             let s = (resultStr || '').trim();
             let special = '';
-            if (/赛前退赛/.test(s)) { special = '赛前退赛'; s = ''; }
-            else if (/强制退赛/.test(s)) { special = '强制退赛'; s = ''; }
-            else if (/取消|弃权/.test(s)) { special = '取消'; s = ''; }
-            else if (/退回|退赛/.test(s)) { special = '赛中退赛'; s = s.replace(/退回|退赛/g, '').trim(); }
+            if (/赛前退赛/.test(s)) special = '赛前退赛';
+            else if (/强制退赛/.test(s)) special = '强制退赛';
+            else if (/取消|弃权/.test(s)) special = '取消';
+            else if (/退赛/.test(s)) special = '赛中退赛';
+            // 特殊情况：去掉标记词后，剩余部分仍可能是胜者（赛前退赛也允许记录晋级者）
+            if (special) s = s.replace(/赛前退赛|强制退赛|取消|弃权|退赛/g, '').trim();
             let winner = '', score = '';
             if (s) {
                 const idx = s.search(/\d/);
@@ -5882,7 +5884,8 @@
                 var spEl = document.getElementById('gTb' + i + 'Special');
                 var special = spEl ? spEl.value : '';
                 if (special === '赛前退赛' || special === '强制退赛' || special === '取消') {
-                    data['tb' + i + '_result'] = special;
+                    // 赛前/强制退赛、取消：仍保留所选胜者（晋级者），只是该 TB 不计分
+                    data['tb' + i + '_result'] = (winner ? winner + ' ' : '') + special;
                 } else if (special === '赛中退赛') {
                     data['tb' + i + '_result'] = (winner + (score ? ' ' + score : '') + ' 退赛').trim();
                 } else {

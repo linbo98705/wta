@@ -2592,14 +2592,14 @@
                 </div>
                 <div style="overflow-x:auto;">
                     <table class="data-table" style="margin-top: 8px;">
-                        <thead><tr><th style="width:60px;">TB</th><th>对阵 (如: 奥克佳布列娃 vs 多丹)</th><th>胜者球员</th><th>比分 (如: 6-3 6-3)</th></tr></thead>
+                        <thead><tr><th style="width:60px;">TB</th><th>对阵 (如: 奥克佳布列娃 vs 多丹)</th><th style="width:130px;">胜者球员</th><th style="width:120px;">比分 (如: 6-3 6-3)</th><th style="width:110px;">特殊情况</th></tr></thead>
                         <tbody>
-                            <tr><td style="text-align:center; font-weight:bold;">TB1</td><td><input type="text" class="form-control" id="gTb1Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb1Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb1Score" placeholder="6-3 6-3"></td></tr>
-                            <tr><td style="text-align:center; font-weight:bold;">TB2</td><td><input type="text" class="form-control" id="gTb2Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb2Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb2Score" placeholder="6-3 6-3"></td></tr>
-                            <tr><td style="text-align:center; font-weight:bold;">TB3</td><td><input type="text" class="form-control" id="gTb3Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb3Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb3Score" placeholder="6-3 6-3"></td></tr>
-                            <tr><td style="text-align:center; font-weight:bold;">TB4</td><td><input type="text" class="form-control" id="gTb4Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb4Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb4Score" placeholder="6-3 6-3"></td></tr>
-                            <tr><td style="text-align:center; font-weight:bold;">TB5</td><td><input type="text" class="form-control" id="gTb5Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb5Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb5Score" placeholder="6-3 6-3"></td></tr>
-                            <tr><td style="text-align:center; font-weight:bold;">TB6</td><td><input type="text" class="form-control" id="gTb6Match" placeholder="球员A vs 球员B"></td><td><input type="text" class="form-control" id="gTb6Winner" placeholder="胜者姓名"></td><td><input type="text" class="form-control" id="gTb6Score" placeholder="6-3 6-3"></td></tr>
+                            <tr><td style="text-align:center; font-weight:bold;">TB1</td><td><input type="text" class="form-control" id="gTb1Match" placeholder="球员A vs 球员B" oninput="adminRefreshTbWinner(1)"></td><td><select class="form-control" id="gTb1Winner"><option value="">-</option></select></td><td><input type="text" class="form-control" id="gTb1Score" placeholder="6-3 6-3"></td><td><select class="form-control" id="gTb1Special"><option value="">无</option><option value="赛前退赛">赛前退赛</option><option value="赛中退赛">赛中退赛</option><option value="强制退赛">强制退赛</option><option value="取消">取消/弃权</option></select></td></tr>
+                            <tr><td style="text-align:center; font-weight:bold;">TB2</td><td><input type="text" class="form-control" id="gTb2Match" placeholder="球员A vs 球员B" oninput="adminRefreshTbWinner(2)"></td><td><select class="form-control" id="gTb2Winner"><option value="">-</option></select></td><td><input type="text" class="form-control" id="gTb2Score" placeholder="6-3 6-3"></td><td><select class="form-control" id="gTb2Special"><option value="">无</option><option value="赛前退赛">赛前退赛</option><option value="赛中退赛">赛中退赛</option><option value="强制退赛">强制退赛</option><option value="取消">取消/弃权</option></select></td></tr>
+                            <tr><td style="text-align:center; font-weight:bold;">TB3</td><td><input type="text" class="form-control" id="gTb3Match" placeholder="球员A vs 球员B" oninput="adminRefreshTbWinner(3)"></td><td><select class="form-control" id="gTb3Winner"><option value="">-</option></select></td><td><input type="text" class="form-control" id="gTb3Score" placeholder="6-3 6-3"></td><td><select class="form-control" id="gTb3Special"><option value="">无</option><option value="赛前退赛">赛前退赛</option><option value="赛中退赛">赛中退赛</option><option value="强制退赛">强制退赛</option><option value="取消">取消/弃权</option></select></td></tr>
+                            <tr><td style="text-align:center; font-weight:bold;">TB4</td><td><input type="text" class="form-control" id="gTb4Match" placeholder="球员A vs 球员B" oninput="adminRefreshTbWinner(4)"></td><td><select class="form-control" id="gTb4Winner"><option value="">-</option></select></td><td><input type="text" class="form-control" id="gTb4Score" placeholder="6-3 6-3"></td><td><select class="form-control" id="gTb4Special"><option value="">无</option><option value="赛前退赛">赛前退赛</option><option value="赛中退赛">赛中退赛</option><option value="强制退赛">强制退赛</option><option value="取消">取消/弃权</option></select></td></tr>
+                            <tr><td style="text-align:center; font-weight:bold;">TB5</td><td><input type="text" class="form-control" id="gTb5Match" placeholder="球员A vs 球员B" oninput="adminRefreshTbWinner(5)"></td><td><select class="form-control" id="gTb5Winner"><option value="">-</option></select></td><td><input type="text" class="form-control" id="gTb5Score" placeholder="6-3 6-3"></td><td><select class="form-control" id="gTb5Special"><option value="">无</option><option value="赛前退赛">赛前退赛</option><option value="赛中退赛">赛中退赛</option><option value="强制退赛">强制退赛</option><option value="取消">取消/弃权</option></select></td></tr>
+                            <tr><td style="text-align:center; font-weight:bold;">TB6</td><td><input type="text" class="form-control" id="gTb6Match" placeholder="球员A vs 球员B" oninput="adminRefreshTbWinner(6)"></td><td><select class="form-control" id="gTb6Winner"><option value="">-</option></select></td><td><input type="text" class="form-control" id="gTb6Score" placeholder="6-3 6-3"></td><td><select class="form-control" id="gTb6Special"><option value="">无</option><option value="赛前退赛">赛前退赛</option><option value="赛中退赛">赛中退赛</option><option value="强制退赛">强制退赛</option><option value="取消">取消/弃权</option></select></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -5640,6 +5640,8 @@
                 if (matchField) { matchField.value = p1 + ' vs ' + p2; filled++; }
             }
             const msgs = [];
+            // 对阵填充完成后刷新胜者下拉
+            for (let i = 1; i <= maxTb; i++) window.adminRefreshTbWinner(i);
             if (parsedDate) msgs.push('日期 ' + parsedDate);
             if (parsedDeadline) msgs.push('截止 ' + parsedDeadline.replace('T', ' '));
             if (filled > 0) msgs.push(filled + ' 条对阵');
@@ -5650,36 +5652,68 @@
             }
         };
 
+        // 根据「对阵」重新生成胜者下拉项
+        window.adminRefreshTbWinner = function(i) {
+            const matchEl = document.getElementById('gTb' + i + 'Match');
+            const selEl = document.getElementById('gTb' + i + 'Winner');
+            if (!matchEl || !selEl) return;
+            const sides = _sgSplitSides(_sgClean(matchEl.value || '')) || [];
+            const p1 = (sides[0] || '').trim();
+            const p2 = (sides[1] || '').trim();
+            const prev = selEl.value;
+            let html = '<option value="">-</option>';
+            if (p1) html += '<option value="' + escapeHtml(p1) + '">' + escapeHtml(p1) + '</option>';
+            if (p2) html += '<option value="' + escapeHtml(p2) + '">' + escapeHtml(p2) + '</option>';
+            selEl.innerHTML = html;
+            if (prev && (prev === p1 || prev === p2)) selEl.value = prev;
+        };
+
+        // 从 tb 结果文本反向拆出 { winner, score, special }
+        function _sgParseResult(resultStr) {
+            let s = (resultStr || '').trim();
+            let special = '';
+            if (/赛前退赛/.test(s)) { special = '赛前退赛'; s = ''; }
+            else if (/强制退赛/.test(s)) { special = '强制退赛'; s = ''; }
+            else if (/取消|弃权/.test(s)) { special = '取消'; s = ''; }
+            else if (/退回|退赛/.test(s)) { special = '赛中退赛'; s = s.replace(/退回|退赛/g, '').trim(); }
+            let winner = '', score = '';
+            if (s) {
+                const idx = s.search(/\d/);
+                if (idx > 0) { winner = s.substring(0, idx).trim(); score = s.substring(idx).trim(); }
+                else if (idx === 0) { score = s.trim(); }
+                else { winner = s.trim(); }
+            }
+            return { winner: winner, score: score, special: special };
+        }
+
         window.adminOpenGuessModal = function(guessData) {
             document.getElementById('guessForm').reset();
             document.getElementById('gId').value = '';
+            // 先按空对阵重置 6 行胜者下拉，避免残留上次的选项
+            for (let i = 1; i <= 6; i++) window.adminRefreshTbWinner(i);
             if (guessData) {
                 document.getElementById('gId').value = guessData.id;
                 document.getElementById('gDate').value = guessData.guess_date || '';
                 document.getElementById('gDeadline').value = guessData.deadline || '';
                 for (let i = 1; i <= 6; i++) {
                     document.getElementById('gTb' + i + 'Match').value = guessData['tb' + i + '_match'] || '';
-                    var resultStr = guessData['tb' + i + '_result'] || '';
-                    var winner = '';
-                    var score = '';
-                    if (resultStr) {
-                        var parts = resultStr.split(' ');
-                        if (parts.length >= 2) {
-                            score = parts[parts.length - 1];
-                            if (/^\d/.test(score)) {
-                                winner = parts.slice(0, -1).join(' ');
-                            } else {
-                                winner = resultStr;
-                                score = '';
-                            }
-                        } else {
-                            winner = resultStr;
-                        }
-                    }
+                    const parsed = _sgParseResult(guessData['tb' + i + '_result'] || '');
+                    // 按对阵刷新胜者下拉
+                    window.adminRefreshTbWinner(i);
                     var wEl = document.getElementById('gTb' + i + 'Winner');
                     var sEl = document.getElementById('gTb' + i + 'Score');
-                    if (wEl) wEl.value = winner;
-                    if (sEl) sEl.value = score;
+                    if (wEl) {
+                        if (parsed.winner && !Array.prototype.some.call(wEl.options, function(o) { return o.value === parsed.winner; })) {
+                            var opt = document.createElement('option');
+                            opt.value = parsed.winner;
+                            opt.textContent = parsed.winner;
+                            wEl.appendChild(opt);
+                        }
+                        wEl.value = parsed.winner || '';
+                    }
+                    if (sEl) sEl.value = parsed.score || '';
+                    var spEl = document.getElementById('gTb' + i + 'Special');
+                    if (spEl) spEl.value = parsed.special || '';
                 }
                 document.getElementById('guessModalTitle').textContent = '编辑竞猜';
             } else {
@@ -5701,7 +5735,15 @@
                 data['tb' + i + '_match'] = document.getElementById('gTb' + i + 'Match').value.trim();
                 var winner = (document.getElementById('gTb' + i + 'Winner') ? document.getElementById('gTb' + i + 'Winner').value : '').trim();
                 var score = (document.getElementById('gTb' + i + 'Score') ? document.getElementById('gTb' + i + 'Score').value : '').trim();
-                data['tb' + i + '_result'] = (winner + (score ? ' ' + score : '')).trim();
+                var spEl = document.getElementById('gTb' + i + 'Special');
+                var special = spEl ? spEl.value : '';
+                if (special === '赛前退赛' || special === '强制退赛' || special === '取消') {
+                    data['tb' + i + '_result'] = special;
+                } else if (special === '赛中退赛') {
+                    data['tb' + i + '_result'] = (winner + (score ? ' ' + score : '') + ' 退赛').trim();
+                } else {
+                    data['tb' + i + '_result'] = (winner + (score ? ' ' + score : '')).trim();
+                }
             }
             let result;
             if (id) {

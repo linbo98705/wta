@@ -4642,23 +4642,86 @@
             if (totalA > totalB) winner = 'player1';
             else if (totalB > totalA) winner = 'player2';
             else {
-                var aDes = '', bDes = '';
+                // ── 找出双方指定球员 ──
+                var aDes = '', aDesRetired = false, bDes = '', bDesRetired = false;
                 for (var k = 0; k < 6; k++) {
-                    if (!aDes && aPreds[k].designated) aDes = aPreds[k].designated;
-                    if (!bDes && bPreds[k].designated) bDes = bPreds[k].designated;
+                    if (!aDes && aPreds[k].designated) {
+                        aDes = aPreds[k].designated;
+                        var aAct = actuals[k];
+                        if (aAct.valid && aAct.canceled) aDesRetired = true;
+                    }
+                    if (!bDes && bPreds[k].designated) {
+                        bDes = bPreds[k].designated;
+                        var bAct = actuals[k];
+                        if (bAct.valid && bAct.canceled) bDesRetired = true;
+                    }
                 }
+                // ── 构造正常赛果的胜者表（赛前/强制退赛不计入，赛中退赛正常计入）──
+                var actualWinners = {};
+                actuals.forEach(function(a) {
+                    if (a.valid && !a.canceled && a.winner) actualWinners[_scNormName(a.winner)] = true;
+                });
+
+                var zdResolved = false;
                 if (aDes || bDes) {
-                    var actualWinners = {};
-                    actuals.forEach(function(a) {
-                        if (a.valid && !a.canceled && a.winner) actualWinners[_scNormName(a.winner)] = true;
-                    });
-                    var aWon = !!actualWinners[_scNormName(aDes)];
-                    var bWon = !!actualWinners[_scNormName(bDes)];
-                    if (aDes && !bDes) { winner = 'player1'; reason = 'ZD'; }
-                    else if (!aDes && bDes) { winner = 'player2'; reason = 'ZD'; }
-                    else if (aWon && !bWon) { winner = 'player1'; reason = 'ZD'; }
-                    else if (bWon && !aWon) { winner = 'player2'; reason = 'ZD'; }
-                    // 双方指定相同/均失利/均取胜（需世界排名）→ 进入 TB 比较
+                    // ▶ 场景1：赛前退赛的指定特殊规则
+                    // A 指定赛前退赛 或 B 指定赛前退赛 触发
+                    if (aDesRetired || bDesRetired) {
+                        // 先收集双方赛前退赛的指定球员集合（可能多名？只取第一个）
+                        // 指南原文：A 指定赛前退赛 → 看 B 的情况
+                        // 对称处理：
+                        //   - 若 A 的指定没赛前退赛，但 B 的赛前退赛 → 对称判定 A 直接胜的条件
+                        //   - 若双方指定都赛前退赛 → 跳过指定进 TB 差
+                        if (aDesRetired && bDesRetired) {
+                            // 双方赛前退赛 → 跳过指定 → TB 差
+                        } else if (aDesRetired && !bDesRetired) {
+                            // A 指定赛前退赛 → B 胜 且 B 排名 < A 排名 → B 直接赢
+                            var bWins = !!actualWinners[_scNormName(bDes)];
+                            if (bWins && aDes && bDes) {
+                                // 有排名数据才能判定谁排名低；无数据时按"其余情况"处理 → 跳过指定进 TB 差
+                                // 留接口：_scWorldRank(playerName) 返回排名（数值越小越高）
+                                var aRank = typeof _scWorldRank === 'function' ? _scWorldRank(aDes) : null;
+                                var bRank = typeof _scWorldRank === 'function' ? _scWorldRank(bDes) : null;
+                                if (aRank !== null && bRank !== null && bRank < aRank) {
+                                    winner = 'player2'; reason = 'ZD'; zdResolved = true;
+                                }
+                            }
+                        } else if (!aDesRetired && bDesRetired) {
+                            // B 指定赛前退赛 → A 胜 且 A 排名 < B 排名 → A 直接赢
+                            var aWins = !!actualWinners[_scNormName(aDes)];
+                            if (aWins && aDes && bDes) {
+                                var aRank2 = typeof _scWorldRank === 'function' ? _scWorldRank(aDes) : null;
+                                var bRank2 = typeof _scWorldRank === 'function' ? _scWorldRank(bDes) : null;
+                                if (aRank2 !== null && bRank2 !== null && aRank2 < bRank2) {
+                                    winner = 'player1'; reason = 'ZD'; zdResolved = true;
+                                }
+                            }
+                        }
+                        // 所有其余情况 → 跳过指定环节，直接进 TB 差比较（zdResolved 保持 false）
+                    } else {
+                        // ▶ 场景2：无赛前退赛 → 正常指定规则
+                        var aWon = !!actualWinners[_scNormName(aDes)];
+                        var bWon = !!actualWinners[_scNormName(bDes)];
+                        var sameDes = aDes && bDes && _scNormName(aDes) === _scNormName(bDes);
+                        if (aDes && !bDes) { winner = 'player1'; reason = 'ZD'; zdResolved = true; }
+                        else if (!aDes && bDes) { winner = 'player2'; reason = 'ZD'; zdResolved = true; }
+                        else if (aWon && !bWon && !sameDes) { winner = 'player1'; reason = 'ZD'; zdResolved = true; }
+                        else if (bWon && !aWon && !sameDes) { winner = 'player2'; reason = 'ZD'; zdResolved = true; }
+                        else if (sameDes) { /* 平指定 → TB 差 */ }
+                        else if (aWon && bWon) {
+                            // 双方指定都取胜 → 排名低者胜（无排名数据时进 TB 差）
+                            var aRank3 = typeof _scWorldRank === 'function' ? _scWorldRank(aDes) : null;
+                            var bRank3 = typeof _scWorldRank === 'function' ? _scWorldRank(bDes) : null;
+                            if (aRank3 !== null && bRank3 !== null) {
+                                if (aRank3 !== bRank3) {
+                                    winner = aRank3 < bRank3 ? 'player1' : 'player2';
+                                    reason = 'ZD'; zdResolved = true;
+                                }
+                            }
+                            // 无数据 → 进 TB 差
+                        }
+                        // else: 双方均失利 → 平指定 → TB 差
+                    }
                 }
                 if (!winner) {
                     for (var t = 0; t < 6; t++) {
@@ -4745,10 +4808,13 @@
                 let totalA = 0, totalB = 0;
                 const aScores = [], bScores = [];
                 for (let j = 0; j < 6; j++) {
-                    if (aParts[j].points !== null) { totalA += aParts[j].points; aScores.push(String(aParts[j].points)); }
-                    else aScores.push('');
-                    if (bParts[j].points !== null) { totalB += bParts[j].points; bScores.push(String(bParts[j].points)); }
-                    else bScores.push('');
+                    var aP = aParts[j], bP = bParts[j];
+                    if (aP.canceled) { aScores.push('—'); }
+                    else if (aP.points !== null) { totalA += aP.points; aScores.push(String(aP.points)); }
+                    else { aScores.push(''); }
+                    if (bP.canceled) { bScores.push('—'); }
+                    else if (bP.points !== null) { totalB += bP.points; bScores.push(String(bP.points)); }
+                    else { bScores.push(''); }
                 }
 
                 // 胜负判定：所有 6 个 TB 都有有效赛果时才结算
@@ -4757,25 +4823,73 @@
                     if (totalA > totalB) winner = 'player1';
                     else if (totalB > totalA) winner = 'player2';
                     else {
-                        // 指定/ZD 判定
-                        let aDes = '', bDes = '';
+                        // ── 找出双方指定球员 + 是否涉及赛前退赛 ──
+                        let aDes = '', aDesRetired = false, bDes = '', bDesRetired = false;
                         for (let k = 0; k < 6; k++) {
-                            if (!aDes && aPreds[k].designated) aDes = aPreds[k].designated;
-                            if (!bDes && bPreds[k].designated) bDes = bPreds[k].designated;
+                            if (!aDes && aPreds[k].designated) {
+                                aDes = aPreds[k].designated;
+                                var aAct = actuals[k];
+                                if (aAct.valid && aAct.canceled) aDesRetired = true;
+                            }
+                            if (!bDes && bPreds[k].designated) {
+                                bDes = bPreds[k].designated;
+                                var bAct = actuals[k];
+                                if (bAct.valid && bAct.canceled) bDesRetired = true;
+                            }
                         }
+                        // 构造正常赛果胜者表
+                        const actualWinners = {};
+                        actuals.forEach(function(a) {
+                            if (a.valid && !a.canceled && a.winner) actualWinners[_scNormName(a.winner)] = true;
+                        });
+
                         if (aDes || bDes) {
-                            const actualWinners = {};
-                            actuals.forEach(function(a) {
-                                if (a.valid && !a.canceled && a.winner) actualWinners[_scNormName(a.winner)] = true;
-                            });
-                            const aWon = !!actualWinners[_scNormName(aDes)];
-                            const bWon = !!actualWinners[_scNormName(bDes)];
-                            if (aDes && !bDes) { winner = 'player1'; reason = 'ZD'; }
-                            else if (!aDes && bDes) { winner = 'player2'; reason = 'ZD'; }
-                            else if (aWon && !bWon) { winner = 'player1'; reason = 'ZD'; }
-                            else if (bWon && !aWon) { winner = 'player2'; reason = 'ZD'; }
+                            if (aDesRetired || bDesRetired) {
+                                // ▶ 场景1：赛前退赛指定特殊规则
+                                if (aDesRetired && bDesRetired) {
+                                    // 双方都赛前退赛 → 跳过指定
+                                } else if (aDesRetired && !bDesRetired) {
+                                    const bWins = !!actualWinners[_scNormName(bDes)];
+                                    if (bWins) {
+                                        const aRank = typeof _scWorldRank === 'function' ? _scWorldRank(aDes) : null;
+                                        const bRank = typeof _scWorldRank === 'function' ? _scWorldRank(bDes) : null;
+                                        if (aRank !== null && bRank !== null && bRank < aRank) {
+                                            winner = 'player2'; reason = 'ZD';
+                                        }
+                                    }
+                                } else if (!aDesRetired && bDesRetired) {
+                                    const aWins = !!actualWinners[_scNormName(aDes)];
+                                    if (aWins) {
+                                        const aRank = typeof _scWorldRank === 'function' ? _scWorldRank(aDes) : null;
+                                        const bRank = typeof _scWorldRank === 'function' ? _scWorldRank(bDes) : null;
+                                        if (aRank !== null && bRank !== null && aRank < bRank) {
+                                            winner = 'player1'; reason = 'ZD';
+                                        }
+                                    }
+                                }
+                                // 其余情况 → 跳过指定进 TB 差
+                            } else {
+                                // ▶ 场景2：无赛前退赛 → 正常指定规则
+                                const aWon = !!actualWinners[_scNormName(aDes)];
+                                const bWon = !!actualWinners[_scNormName(bDes)];
+                                const sameDes = aDes && bDes && _scNormName(aDes) === _scNormName(bDes);
+                                if (aDes && !bDes) { winner = 'player1'; reason = 'ZD'; }
+                                else if (!aDes && bDes) { winner = 'player2'; reason = 'ZD'; }
+                                else if (aWon && !bWon && !sameDes) { winner = 'player1'; reason = 'ZD'; }
+                                else if (bWon && !aWon && !sameDes) { winner = 'player2'; reason = 'ZD'; }
+                                else if (sameDes) { /* 平指定 → TB 差 */ }
+                                else if (aWon && bWon) {
+                                    const aRank = typeof _scWorldRank === 'function' ? _scWorldRank(aDes) : null;
+                                    const bRank = typeof _scWorldRank === 'function' ? _scWorldRank(bDes) : null;
+                                    if (aRank !== null && bRank !== null && aRank !== bRank) {
+                                        winner = aRank < bRank ? 'player1' : 'player2';
+                                        reason = 'ZD';
+                                    }
+                                }
+                                // else: 双方均失利 → 平指定 → TB 差
+                            }
                         }
-                        // 逐 TB 比较
+                        // 逐 TB 比较（赛前退赛 + 赛中退赛 TB 跳过）
                         if (!winner) {
                             for (let t = 0; t < 6; t++) {
                                 const act = actuals[t];

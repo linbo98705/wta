@@ -2085,6 +2085,17 @@ img { max-width: 100%; height: auto; }
     min-width: 28px;
 }
 .gc-empty { color: var(--gray-400); }
+.gc-canceled {
+    display: inline-block;
+    color: #fff !important;
+    background: #6c757d;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    line-height: 1.4;
+}
 .gc-score-zero {
     color: var(--gray-400);
     font-size: 0.75rem;

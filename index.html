@@ -1230,7 +1230,12 @@
         let _currentRound = 'all';
         let _currentDate = defaultDate;
 
-        function renderGuessSchedule(m) {
+        function renderGuessSchedule(m, guessForDate) {
+            function _isTbCanceled(tbIdx) {
+                if (!guessForDate) return false;
+                var r = String(guessForDate['tb' + tbIdx + '_result'] || '');
+                return /赛前退赛|强制退赛|取消/.test(r);
+            }
             const p1Name = m.p1_name || '球员1';
             const p2Name = m.p2_name || '球员2';
             const isDoubles = !!(t && t.match_type === 'doubles');
@@ -1298,12 +1303,14 @@
                        (score ? '<span class="gc-b-score-text">' + escapeHtml(score) + '</span>' : '') +
                        '</div>';
             }
-            function scoreACell(val) {
-                if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
+            function scoreACell(val, tbIdx) {
+                if (_isTbCanceled(tbIdx)) return '<span class="gc-canceled" title="赛前/强制退赛，赛题取消">取消</span>';
+                if (!val || val.trim() === '' || val === '—' || val === '取消') return '<span class="gc-empty">-</span>';
                 return '<span class="gc-a-score">' + (parseInt(val) || 0) + '</span>';
             }
-            function scoreBCell(val) {
-                if (!val || val.trim() === '') return '<span class="gc-empty">-</span>';
+            function scoreBCell(val, tbIdx) {
+                if (_isTbCanceled(tbIdx)) return '<span class="gc-canceled" title="赛前/强制退赛，赛题取消">取消</span>';
+                if (!val || val.trim() === '' || val === '—' || val === '取消') return '<span class="gc-empty">-</span>';
                 return '<span class="gc-b-score">' + (parseInt(val) || 0) + '</span>';
             }
 
@@ -1383,9 +1390,9 @@
                 var rowStatus = guessMatchStatus(aName, aScoreTxt, bName, bScoreTxt);
                 var rowClass = rowStatus ? (' gt-row-' + rowStatus) : '';
                 if (isDoubles) {
-                    rows += '<tr class="' + rowClass + '"><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a"><span>' + predACell(aNames[i], aScoreTexts[i]) + '</span> / <span>' + predACell(a2Names[i], a2ScoreTexts[i]) + '</span></td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b"><span>' + predBCell(bNames[i], bScoreTexts[i]) + '</span> / <span>' + predBCell(b2Names[i], b2ScoreTexts[i]) + '</span></td></tr>';
+                    rows += '<tr class="' + rowClass + '"><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a"><span>' + predACell(aNames[i], aScoreTexts[i]) + '</span> / <span>' + predACell(a2Names[i], a2ScoreTexts[i]) + '</span></td><td class="gt-score">' + scoreACell(aScores[i], i + 1) + '</td><td class="gt-score">' + scoreBCell(bScores[i], i + 1) + '</td><td class="gt-b"><span>' + predBCell(bNames[i], bScoreTexts[i]) + '</span> / <span>' + predBCell(b2Names[i], b2ScoreTexts[i]) + '</span></td></tr>';
                 } else {
-                    rows += '<tr class="' + rowClass + '"><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i]) + '</td><td class="gt-score">' + scoreBCell(bScores[i]) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
+                    rows += '<tr class="' + rowClass + '"><td class="gt-label">TB' + (i + 1) + '</td><td class="gt-a">' + predACell(aNames[i], aScoreTexts[i]) + '</td><td class="gt-score">' + scoreACell(aScores[i], i + 1) + '</td><td class="gt-score">' + scoreBCell(bScores[i], i + 1) + '</td><td class="gt-b">' + predBCell(bNames[i], bScoreTexts[i]) + '</td></tr>';
                 }
             }
 
@@ -1396,7 +1403,19 @@
             return '<div class="match-guess"><table class="gt-table"><thead><tr><th class="gt-th-label"></th><th class="gt-th-a">' + escapeHtml(p1Name) + '</th><th class="gt-th-score">得分</th><th class="gt-th-score">得分</th><th class="gt-th-b">' + escapeHtml(p2Name) + '</th></tr></thead><tbody>' + rows + '<tr class="gt-total-row"><td class="gt-label" style="font-weight:700;">总分</td><td class="gt-a">' + ((aTotal > bTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player1' && guessReason) ? '<div class="gt-reason gt-reason-a">' + escapeHtml(guessReason) + '</div>' : '') + '</td><td class="gt-score gt-total ' + (aTotal > bTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player1' ? 'gt-winner' : '')) + '">' + aTotal + '</td><td class="gt-score gt-total ' + (bTotal > aTotal ? 'gt-winner' : (aTotal === bTotal && guessWinner === 'player2' ? 'gt-winner' : '')) + '">' + bTotal + '</td><td class="gt-b">' + ((bTotal > aTotal && guessReason) || (aTotal === bTotal && guessWinner === 'player2' && guessReason) ? '<div class="gt-reason gt-reason-b">' + escapeHtml(guessReason) + '</div>' : '') + '</td></tr></tbody></table></div>';
         }
 
-        function renderMatches() {
+        async function renderMatches() {
+            // 提前拉一次当日竞猜赛果，按日期建 Map，给 renderGuessSchedule 用
+            var _guessesByDate = {};
+            try {
+                var _allGuesses = await getDailyGuesses(t ? t.id : null);
+                if (Array.isArray(_allGuesses)) {
+                    _allGuesses.forEach(function(g) {
+                        var d = String(g.guess_date || '').slice(0, 10);
+                        if (d) _guessesByDate[d] = g;
+                    });
+                }
+            } catch (e) { /* 忽略 */ }
+
             let filtered = realMatches;
             if (_currentDate) {
                 filtered = filtered.filter(m => m.match_date && m.match_date === _currentDate);
@@ -1505,7 +1524,7 @@
                         + (m.p4_name ? ' <span class="mc-sep-pc">/</span><br class="mc-mob-br"> ' + escapeHtml(m.p4_name) + matchPlayerFlag(m.p4_country_code, m.p4_country) : '');
                     const topScoreBadge = isTopScore ? '<span class="top-score-badge" title="当日最高分"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>当日最高分</span>' : '';
 
-                    html += '<div class="match-card' + collapsedClass + topScoreClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + topScoreBadge + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p1Display + '</strong>' : p1Display) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-flex;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p2Display + '</strong>' : p2Display) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-flex;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + (m.status === 'scheduled' ? '' : renderGuessSchedule(m)) + '</div></div>';
+                    html += '<div class="match-card' + collapsedClass + topScoreClass + '" data-match-id="' + m.id + '"><div class="match-card-toggle"><div class="mc-toggle-top"><span class="match-round-badge">' + (_roundLabels[m.round] || m.round) + '</span><span class="match-status ' + m.status + '">' + (isCompleted ? '已完成' : isLive ? '进行中' : '待进行') + '</span>' + topScoreBadge + (quickScoreText ? '<span class="mc-quick-score">' + quickScoreText + '</span>' : '') + '<span class="toggle-icon">' + initIcon + '</span></div><div class="mc-toggle-matchup"><div class="mc-player mc-player-left ' + (isCompleted ? (m.winner_id === m.player1_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p1Display + '</strong>' : p1Display) + (isCompleted && m.winner_id === m.player1_id && m.round === 'F' ? ' <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-flex;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s1 + '</span>' : '') + '</div><div class="mc-vs-text">VS</div><div class="mc-player mc-player-right ' + (isCompleted ? (m.winner_id === m.player2_id ? 'mc-winner' : 'mc-loser') : '') + '">' + '<div class="mc-player-col"><span class="mc-player-name">' + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span> ' : '') + (isCompleted ? '<strong>' + p2Display + '</strong>' : p2Display) + (isCompleted && m.winner_id === m.player2_id && m.round === 'F' ? ' <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-flex;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>' : '') + '</span></div>' + (isCompleted ? '<span class="mc-player-score">' + s2 + '</span>' : '') + '</div></div></div><div class="mc-body">' + (m.status === 'scheduled' ? '' : renderGuessSchedule(m, _guessesByDate[String(m.match_date || '').slice(0, 10)] || null)) + '</div></div>';
                 });
                 html += '</div>'; // match-grid
                 html += '</div>'; // court-column

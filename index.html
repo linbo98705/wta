@@ -4501,6 +4501,21 @@
             var tokens = s.split(/[\s,，、；;]+/).filter(function(x) { return x; });
             var sets = [], pending = null;
             tokens.forEach(function(tok) {
+                // 紧凑写法如 633610-4（= 6-3 3-6 10-4，双打第三盘抢十）：
+                // 连字符左侧压缩了多盘时，尾部优先取 10，前缀按两字符成盘
+                var hyph = tok.split('-');
+                if (hyph.length === 2 && /^\d+$/.test(hyph[0]) && /^\d+$/.test(hyph[1]) && hyph[0].length > 2) {
+                    var left = hyph[0], right = parseInt(hyph[1], 10);
+                    var lastW;
+                    if (/10$/.test(left)) { lastW = 10; left = left.slice(0, -2); }
+                    else { lastW = parseInt(left.slice(-1), 10); left = left.slice(0, -1); }
+                    pending = null;
+                    for (var k = 0; k + 1 < left.length; k += 2) {
+                        sets.push([parseInt(left[k], 10), parseInt(left[k + 1], 10)]);
+                    }
+                    sets.push([lastW, right]);
+                    return;
+                }
                 var nums = tok.match(/\d+/g);
                 var digits = tok.replace(/\D/g, '');
                 if (!digits) return;

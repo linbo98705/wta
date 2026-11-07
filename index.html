@@ -794,8 +794,101 @@
             logging: false,
             useCORS: true,
             width: cssWidth,
-            windowWidth: cssWidth
+            windowWidth: cssWidth,
+            scrollX: 0,
+            scrollY: 0
         };
+    }
+
+    // canvas 像素面积上限，低于 iOS/Android 的隐性上限，避免长图被静默截断
+    const EXPORT_MAX_CANVAS_AREA = 12 * 1000 * 1000;
+
+    // 强制克隆容器走桌面布局。
+    // 手机上媒体查询可能仍按真实视口命中（部分 WebView 不认 windowWidth），
+    // 所以直接给克隆节点写内联样式：内联样式优先级高于媒体查询，必定生效。
+    function forceExportDesktopLayout(wrapper, cssWidth) {
+        // 容器铺满导出宽度：签表比默认 1200 宽时，不铺满会把右侧轮次裁掉
+        wrapper.querySelectorAll('.container').forEach(function(el) {
+            el.style.setProperty('width', cssWidth + 'px', 'important');
+            el.style.setProperty('max-width', 'none', 'important');
+            el.style.setProperty('margin', '0', 'important');
+            el.style.setProperty('box-sizing', 'border-box', 'important');
+        });
+        // 任何滚动/裁剪容器都放开，保证整段内容都参与截图
+        wrapper.querySelectorAll('.card, .card-body, .draw-card, .bracket-container, .match-grid, .match-list').forEach(function(el) {
+            el.style.setProperty('overflow', 'visible', 'important');
+            el.style.setProperty('max-width', 'none', 'important');
+            el.style.setProperty('height', 'auto', 'important');
+        });
+        // 场地分列：恢复桌面横排
+        wrapper.querySelectorAll('.court-columns').forEach(function(el) {
+            el.style.setProperty('display', 'flex', 'important');
+            el.style.setProperty('flex-direction', 'row', 'important');
+            el.style.setProperty('flex-wrap', 'wrap', 'important');
+            el.style.setProperty('gap', '12px', 'important');
+        });
+        wrapper.querySelectorAll('.court-column').forEach(function(el) {
+            el.style.setProperty('display', 'flex', 'important');
+            el.style.setProperty('flex-direction', 'column', 'important');
+        });
+        // 比赛卡片头部：恢复「球员 - VS - 球员」三列横排
+        wrapper.querySelectorAll('.mc-toggle-matchup').forEach(function(el) {
+            el.style.setProperty('display', 'grid', 'important');
+            el.style.setProperty('grid-template-columns', '1fr auto 1fr', 'important');
+            el.style.setProperty('align-items', 'center', 'important');
+            el.style.setProperty('gap', '16px', 'important');
+        });
+        wrapper.querySelectorAll('.mc-toggle-top').forEach(function(el) {
+            el.style.setProperty('flex-wrap', 'nowrap', 'important');
+            el.style.setProperty('gap', '8px', 'important');
+        });
+        wrapper.querySelectorAll('.mc-player').forEach(function(el) {
+            el.style.setProperty('flex-direction', 'row', 'important');
+            el.style.setProperty('align-items', 'center', 'important');
+            el.style.setProperty('justify-content', 'center', 'important');
+            el.style.setProperty('gap', '8px', 'important');
+        });
+        // 竞猜表格：固定列宽，避免手机端被压成极窄列
+        wrapper.querySelectorAll('.gt-table').forEach(function(el) {
+            el.style.setProperty('table-layout', 'fixed', 'important');
+            el.style.setProperty('width', '100%', 'important');
+        });
+        wrapper.querySelectorAll('.gt-a, .gt-b, .gc-pred-wrap, .gc-a-text, .gc-b-text').forEach(function(el) {
+            el.style.setProperty('overflow', 'visible', 'important');
+        });
+    }
+
+    // 统一截图入口：内容超长时自动降采样，保证整张长图都能画出来
+    async function captureExportCanvas(el, cssWidth) {
+        const contentH = Math.max(el.scrollHeight || 0, el.offsetHeight || 0, 1);
+        const opts = exportCanvasOptions(cssWidth);
+        let scale = opts.scale;
+        const area = cssWidth * contentH;
+        if (area * scale * scale > EXPORT_MAX_CANVAS_AREA) {
+            // 面积超限会被系统静默截断，宁可整体缩小也要保证内容完整
+            scale = Math.max(0.5, Math.sqrt(EXPORT_MAX_CANVAS_AREA / area));
+        }
+        // 单边也限制在 8192px 内，超出 iOS canvas 单边上限同样会被截断
+        const dimScale = Math.min(1, 8192 / Math.max(cssWidth, contentH));
+        scale = Math.min(scale, Math.max(0.5, dimScale));
+        return html2canvas(el, Object.assign({}, opts, { scale: scale, height: contentH }));
+    }
+
+    // 保存图片：优先 Blob URL（超长 dataURL 在 iOS 上容易失败/截断）
+    async function saveCanvasAsImage(canvas, fileName) {
+        let href = '';
+        try {
+            const blob = await new Promise(function(resolve) { canvas.toBlob(resolve, 'image/png'); });
+            if (blob) href = URL.createObjectURL(blob);
+        } catch (e) { href = ''; }
+        if (!href) href = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = href;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        if (href.indexOf('blob:') === 0) setTimeout(function() { URL.revokeObjectURL(href); }, 5000);
     }
 
     // 把「夜景照片 + 页面同款 115deg 紫红渐变蒙版」烘焙成一张按 header 实际尺寸的位图
@@ -967,15 +1060,13 @@
 
             // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
             await prepareImagesForExport(wrapper);
-            const canvas = await html2canvas(wrapper, exportCanvasOptions(800));
+            forceExportDesktopLayout(wrapper, 800);
+            const canvas = await captureExportCanvas(wrapper, 800);
             fillExportBackground(canvas);
             document.body.removeChild(wrapper);
 
             // 下载为 PNG 长图
-            const link = document.createElement('a');
-            link.download = (t ? t.name + '_' : '') + '参赛名单.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            await saveCanvasAsImage(canvas, (t ? t.name + '_' : '') + '参赛名单.png');
 
             showToast('长图导出成功', 'success');
         } catch (err) {
@@ -1056,7 +1147,7 @@
             // 检测签表实际宽度（bracket-wrap 的固定宽度）
             const bracketWrap = bracketContainer.querySelector('.bracket-wrap');
             const bracketWidth = bracketWrap ? (parseInt(bracketWrap.style.width) || 0) : 0;
-            const exportWidth = Math.max(bracketWidth + 100, 1200);
+            let exportWidth = Math.max(bracketWidth + 100, 1200);
 
             // 克隆到临时容器
             const wrapper = document.createElement('div');
@@ -1083,18 +1174,22 @@
                 cloneBracketContainer.scrollLeft = 0;
             }
 
+            // 以克隆后的签表实际宽度为准校正导出宽度，避免右侧轮次被裁切
+            const cloneWrap = wrapper.querySelector('.bracket-wrap');
+            const cloneWrapWidth = cloneWrap ? (parseInt(cloneWrap.style.width) || cloneWrap.offsetWidth || 0) : 0;
+            exportWidth = Math.max(exportWidth, cloneWrapWidth + 100);
+            wrapper.style.width = exportWidth + 'px';
+            forceExportDesktopLayout(wrapper, exportWidth);
+
             // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
             await prepareImagesForExport(wrapper);
 
-            const canvas = await html2canvas(wrapper, exportCanvasOptions(exportWidth));
+            const canvas = await captureExportCanvas(wrapper, exportWidth);
             fillExportBackground(canvas);
             document.body.removeChild(wrapper);
 
             // 下载为 PNG
-            const link = document.createElement('a');
-            link.download = (t ? t.name + '_' : '') + '签表.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            await saveCanvasAsImage(canvas, (t ? t.name + '_' : '') + '签表.png');
 
             showToast('长图导出成功', 'success');
         } catch (err) {
@@ -1676,6 +1771,8 @@
                 // 恢复原页面显示
                 if (exportBtn) exportBtn.style.display = '';
                 if (roundFilterEl) roundFilterEl.style.display = roundFilterOriginalDisplay;
+                // 强制克隆容器走桌面布局（手机上媒体查询会压窄布局，导致列缺失）
+                forceExportDesktopLayout(wrapper, exportWidth);
                 cardSection.querySelectorAll('.match-card').forEach((card, i) => {
                     if (originalCollapsed[i]) {
                         card.classList.add('collapsed');
@@ -1687,7 +1784,7 @@
                 // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
                 await prepareImagesForExport(wrapper);
 
-                const canvas = await html2canvas(wrapper, exportCanvasOptions(exportWidth));
+                const canvas = await captureExportCanvas(wrapper, exportWidth);
                 fillExportBackground(canvas);
                 document.body.removeChild(wrapper);
 
@@ -1701,10 +1798,7 @@
                 }
                 fileName += '.png';
 
-                const link = document.createElement('a');
-                link.download = fileName;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                await saveCanvasAsImage(canvas, fileName);
 
                 showToast('长图导出成功', 'success');
             } catch (err) {

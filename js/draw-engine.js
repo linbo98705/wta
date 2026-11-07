@@ -85,12 +85,19 @@ function renderMatch(m, playerMap, round) {
     const p1Display = m.p1_name ? '<span>' + m.p1_name + '</span>' + (m.p3_name ? ' / ' + playerFlag(m.player3_id) + '<span>' + m.p3_name + '</span>' : '') : '<span>\u2014</span>';
     const p2Display = m.p2_name ? '<span>' + m.p2_name + '</span>' + (m.p4_name ? ' / ' + playerFlag(m.player4_id) + '<span>' + m.p4_name + '</span>' : '') : '<span>\u2014</span>';
 
+    // 退赛标注：胜利原因为「对手退赛」时，在对应轮次给退赛方（非胜者）加标记
+    const retiredReason = /退赛/.test(String(m.guess_reason || ''));
+    const p1Retired = retiredReason && m.status === 'completed' && m.winner_id && m.winner_id !== m.player1_id;
+    const p2Retired = retiredReason && m.status === 'completed' && m.winner_id && m.winner_id !== m.player2_id;
+    const retireTag = '<span class="bracket-retire" title="退赛">退赛</span>';
+
     return '<div class="bracket-player ' + p1Class + '">'
         + '<div class="bracket-player-name" title="' + p1Full + '">'
         + p1Flag
         + p1Trophy
         + (p1Seed > 0 ? '<span class="seed-badge">' + p1Seed + '</span>' : '')
         + p1Display
+        + (p1Retired ? retireTag : '')
         + '</div></div>'
         + '<div class="bracket-player ' + p2Class + '">'
         + '<div class="bracket-player-name" title="' + p2Full + '">'
@@ -98,6 +105,7 @@ function renderMatch(m, playerMap, round) {
         + p2Trophy
         + (p2Seed > 0 ? '<span class="seed-badge">' + p2Seed + '</span>' : '')
         + p2Display
+        + (p2Retired ? retireTag : '')
         + '</div></div>';
 }
 

@@ -1588,6 +1588,20 @@ img { max-width: 100%; height: auto; }
     flex-shrink: 0;
 }
 
+/* 签表退赛标记 */
+.bracket-retire {
+    flex-shrink: 0;
+    font-size: 0.58rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 3px;
+    background: #FDECEC;
+    color: #C62828;
+    border: 1px solid #F1C0C0;
+}
+
+
 .bracket-player .seed-badge {
     min-width: 20px;
     height: 18px;

@@ -42,7 +42,7 @@ const OLYMPIC_FLAG_HTML = '<img src="static/flags/olympic.svg" alt="无国旗" t
  * @param {string} round - 轮次（如 'F' 表示决赛）
  * @returns {string} 两行 bracket-player 的 HTML
  */
-function renderMatch(m, playerMap, round, champPoints) {
+function renderMatch(m, playerMap, round) {
     const p1Seed = (playerMap && playerMap[m.player1_id]) ? (playerMap[m.player1_id].t_seed || 0) : 0;
     const p2Seed = (playerMap && playerMap[m.player2_id]) ? (playerMap[m.player2_id].t_seed || 0) : 0;
 
@@ -77,9 +77,8 @@ function renderMatch(m, playerMap, round, champPoints) {
     const p1Class = m.winner_id && m.winner_id === m.player1_id ? 'winner' : (m.winner_id && m.winner_id !== m.player1_id ? 'loser' : '');
     const p2Class = m.winner_id && m.winner_id === m.player2_id ? 'winner' : (m.winner_id && m.winner_id !== m.player2_id ? 'loser' : '');
     const isFinal = round === 'F';
-    const champTag = (isFinal && champPoints) ? '<span style="font-size:0.625rem; font-weight:700; color:var(--purple); margin-left:3px;" title="冠军积分">' + champPoints + '分</span>' : '';
-    const p1Trophy = (isFinal && p1Class === 'winner') ? '<span class="bracket-trophy" title="冠军">🏆</span>' + champTag : '';
-    const p2Trophy = (isFinal && p2Class === 'winner') ? '<span class="bracket-trophy" title="冠军">🏆</span>' + champTag : '';
+    const p1Trophy = (isFinal && p1Class === 'winner') ? '<span class="bracket-trophy" title="冠军">🏆</span>' : '';
+    const p2Trophy = (isFinal && p2Class === 'winner') ? '<span class="bracket-trophy" title="冠军">🏆</span>' : '';
 
     const p1Full = m.p1_name ? (m.p3_name ? m.p1_name + ' / ' + m.p3_name : m.p1_name) : '\u2014';
     const p2Full = m.p2_name ? (m.p4_name ? m.p2_name + ' / ' + m.p4_name : m.p2_name) : '\u2014';
@@ -142,7 +141,7 @@ function buildBracket(matches, playerMap, startRound, category) {
     const sectionColW = showSections ? SECTION_COL_WIDTH : 0;
     const seqOffset = sectionColW + SEQ_COL_WIDTH + SEQ_COL_GAP; // 区标签列+序号列偏移量
     const totalW = seqOffset + numCols * (COL_WIDTH + COL_GAP) - COL_GAP;
-    // 32签各轮积分表（按赛事级别区分；冠军积分在决赛奖杯旁单独标注）
+    // 32签各轮积分表（按赛事级别区分；冠军积分与各轮积分并列显示在轮次标题行）
     const ROUND_POINTS_32 = {
         WTA250: { rounds: { R32: 1, R16: 30, QF: 54, SF: 98, F: 163 }, champion: 250 },
         WTA500: { rounds: { R32: 1, R16: 60, QF: 108, SF: 195, F: 325 }, champion: 500 },
@@ -279,6 +278,9 @@ function buildBracket(matches, playerMap, startRound, category) {
             + (showPoints && pointsConf.rounds[roundOrder[ri]] != null
                 ? '<div style="font-size:0.625rem; font-weight:600; color:var(--gray-400); line-height:1.3;">' + pointsConf.rounds[roundOrder[ri]] + '分</div>'
                 : '')
+            + (showPoints && roundOrder[ri] === 'F'
+                ? '<div style="font-size:0.625rem; font-weight:700; color:var(--purple); line-height:1.3;" title="冠军积分">冠军 ' + pointsConf.champion + '分</div>'
+                : '')
             + '</div>';
     }
     html += '</div>';
@@ -333,7 +335,7 @@ function buildBracket(matches, playerMap, startRound, category) {
             html += '<div class="bracket-match-wrapper" style="position:absolute; left:' + colX
                 + 'px; top:' + mTop + 'px; width:' + COL_WIDTH + 'px; height:' + MATCH_HEIGHT
                 + 'px; z-index:3;">';
-            html += '<div class="bracket-match" style="height:100%;">' + renderMatch(m, playerMap, roundOrder[ci], pointsConf ? pointsConf.champion : null) + '</div>';
+            html += '<div class="bracket-match" style="height:100%;">' + renderMatch(m, playerMap, roundOrder[ci]) + '</div>';
             html += '</div>';
         }
     }

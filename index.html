@@ -889,18 +889,47 @@
 
     // 统一截图入口：默认 2 倍清晰渲染；内容超长时自动降倍，保证整张长图都能画出来
     async function captureExportCanvas(el, cssWidth) {
-        const contentH = Math.max(el.scrollHeight || 0, el.offsetHeight || 0, 1);
+        // 截图前必须等字体和图片全部就绪：图片未解码时它占的高度是 0，
+        // 这时量到的容器高度偏小，而 html2canvas 渲染时图片又会把内容撑高，
+        // 结果就是 canvas 底部把最后一行（总分）裁掉。
+        if (document.fonts && document.fonts.ready) {
+            try { await document.fonts.ready; } catch (e) { /* 忽略字体等待失败 */ }
+        }
+        await Promise.all([].slice.call(el.querySelectorAll('img')).map(function(img) {
+            if (img.complete) return Promise.resolve();
+            return new Promise(function(resolve) {
+                img.addEventListener('load', resolve, { once: true });
+                img.addEventListener('error', resolve, { once: true });
+                setTimeout(resolve, 1500);
+            });
+        }));
+        // 等两帧，让图片加载/字体替换引起的重排彻底结束
+        await new Promise(function(r) { requestAnimationFrame(function() { requestAnimationFrame(r); }); });
+
+        // 容器底部补一段留白：即使高度有几十像素误差，也不会切掉最后一行
+        el.style.setProperty('padding-bottom', '32px', 'important');
+
+        const rectH = (el.getBoundingClientRect && el.getBoundingClientRect().height) || 0;
+        const contentH = Math.ceil(Math.max(el.scrollHeight || 0, el.offsetHeight || 0, rectH, 1));
+        // 再留 16px 余量，覆盖渲染时的取整误差
+        const captureH = contentH + 16;
         const opts = exportCanvasOptions(cssWidth);
         let scale = opts.scale;
-        const area = cssWidth * contentH;
+        const area = cssWidth * captureH;
         if (area * scale * scale > EXPORT_MAX_CANVAS_AREA) {
             // 面积超限会被系统静默截断，宁可整体缩小也要保证内容完整
             scale = Math.max(0.6, Math.sqrt(EXPORT_MAX_CANVAS_AREA / area));
         }
         // 单边也限制在 8192px 内，超出 iOS canvas 单边上限同样会被截断
-        const dimScale = Math.min(1, 8192 / Math.max(cssWidth, contentH));
+        const dimScale = Math.min(1, 8192 / Math.max(cssWidth, captureH));
         scale = Math.min(scale, Math.max(0.6, dimScale));
-        return html2canvas(el, Object.assign({}, opts, { scale: scale, height: contentH }));
+        return html2canvas(el, Object.assign({}, opts, {
+            scale: scale,
+            width: cssWidth,
+            height: captureH,
+            // 截图视口高度也撑到内容高度，避免超长内容在克隆文档里被视口裁掉
+            windowHeight: captureH
+        }));
     }
 
     // 保存图片：优先 Blob URL（超长 dataURL 在 iOS 上容易失败/截断）

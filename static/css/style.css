@@ -370,15 +370,18 @@ body[data-theme="hk-open"] .seed-badge.seed-top {
 
 /* ── 签表：浅黄小卡浮于白色面板，晋级色保诚红 ── */
 body[data-theme="hk-open"] .bracket-match {
+    --bracket-radius: 12px;
     background: #F6FAD4;
     border-color: rgba(27, 6, 66, 0.15);
-    border-radius: 12px;
+    border-radius: var(--bracket-radius);
 }
 body[data-theme="hk-open"] .bracket-player {
     color: rgba(36, 16, 64, 0.88);
 }
 body[data-theme="hk-open"] .bracket-player.winner {
-    background: linear-gradient(90deg, rgba(220, 31, 51, 0.12) 0%, transparent 100%);
+    background: #FBDCE2;
+    color: #8C0A1B;
+    box-shadow: inset 3px 0 0 #DC1F33;
 }
 body[data-theme="hk-open"] .bracket-player.winner .bracket-player-score {
     color: #DC1F33;
@@ -1516,9 +1519,10 @@ img { max-width: 100%; height: auto; }
 }
 
 .bracket-match {
+    --bracket-radius: 8px;
     background: var(--white);
     border: 1px solid var(--gray-200);
-    border-radius: 8px;
+    border-radius: var(--bracket-radius);
     overflow: visible;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
@@ -1554,8 +1558,20 @@ img { max-width: 100%; height: auto; }
 
 .bracket-player.winner {
     font-weight: 700;
-    color: var(--gray-800);
-    background: linear-gradient(90deg, rgba(139, 92, 246, 0.06) 0%, transparent 100%);
+    color: var(--purple-dark);
+    /* 胜者行用实底色 + 左侧色条，只靠淡渐变在手机上几乎看不出差别 */
+    background: var(--purple-lighter);
+    box-shadow: inset 3px 0 0 var(--purple);
+}
+
+/* 胜者行填满整行，首/末行要跟随卡片圆角，避免直角盖住圆角边框 */
+.bracket-player:first-child {
+    border-top-left-radius: var(--bracket-radius, 8px);
+    border-top-right-radius: var(--bracket-radius, 8px);
+}
+.bracket-player:last-child {
+    border-bottom-left-radius: var(--bracket-radius, 8px);
+    border-bottom-right-radius: var(--bracket-radius, 8px);
 }
 
 .bracket-player.loser {
@@ -1571,7 +1587,7 @@ img { max-width: 100%; height: auto; }
 }
 
 .bracket-player.winner .bracket-player-score {
-    color: #7C3AED;
+    color: var(--purple);
 }
 
 .bracket-player-name {

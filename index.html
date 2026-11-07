@@ -781,6 +781,23 @@
         ctx.restore();
     }
 
+    // ── 导出长图参数（解决手机端导出不全）───────────────
+    // 手机端直接截图会踩两个坑：
+    // 1) html2canvas 克隆文档的视口仍按窄屏计算，移动端媒体查询生效 → 部分列/内容被隐藏
+    // 2) scale=2 时像素面积过长，iOS 超过 canvas 上限 → 图片底部被静默截断
+    // 统一处理：克隆视口宽度固定为导出宽度（>768 走桌面布局），手机端 scale 降为 1
+    function exportCanvasOptions(cssWidth) {
+        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '') || window.innerWidth <= 768;
+        return {
+            scale: isMobile ? 1 : 2,
+            backgroundColor: null,
+            logging: false,
+            useCORS: true,
+            width: cssWidth,
+            windowWidth: cssWidth
+        };
+    }
+
     // 把「夜景照片 + 页面同款 115deg 紫红渐变蒙版」烘焙成一张按 header 实际尺寸的位图
     function bakeHeroBackground(heroImg, cssW, cssH) {
         const ratio = 2;
@@ -928,7 +945,7 @@
             // 克隆到临时容器，保留网页原始样式
             const wrapper = document.createElement('div');
             wrapper.className = 'export-wrapper';
-            wrapper.style.position = 'fixed';
+            wrapper.style.position = 'absolute';
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
             wrapper.style.width = '800px';
@@ -950,7 +967,7 @@
 
             // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
             await prepareImagesForExport(wrapper);
-            const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
+            const canvas = await html2canvas(wrapper, exportCanvasOptions(800));
             fillExportBackground(canvas);
             document.body.removeChild(wrapper);
 
@@ -1044,7 +1061,7 @@
             // 克隆到临时容器
             const wrapper = document.createElement('div');
             wrapper.className = 'export-wrapper';
-            wrapper.style.position = 'fixed';
+            wrapper.style.position = 'absolute';
             wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
             wrapper.style.width = exportWidth + 'px';
@@ -1069,7 +1086,7 @@
             // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
             await prepareImagesForExport(wrapper);
 
-            const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true, width: exportWidth, windowWidth: exportWidth });
+            const canvas = await html2canvas(wrapper, exportCanvasOptions(exportWidth));
             fillExportBackground(canvas);
             document.body.removeChild(wrapper);
 
@@ -1603,7 +1620,7 @@
                 // 克隆到临时容器
                 const wrapper = document.createElement('div');
                 wrapper.className = 'export-wrapper';
-                wrapper.style.position = 'fixed';
+                wrapper.style.position = 'absolute';
                 wrapper.style.left = '-9999px';
                 wrapper.style.top = '0';
                 // 根据场地数量决定宽度：单场地用半宽，多场地用全宽
@@ -1670,7 +1687,7 @@
                 // 图片预处理：旗帜等 SVG 栅格化成 PNG dataURL（hero 背景图除外）
                 await prepareImagesForExport(wrapper);
 
-                const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
+                const canvas = await html2canvas(wrapper, exportCanvasOptions(exportWidth));
                 fillExportBackground(canvas);
                 document.body.removeChild(wrapper);
 

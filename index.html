@@ -848,13 +848,41 @@
             el.style.setProperty('justify-content', 'center', 'important');
             el.style.setProperty('gap', '8px', 'important');
         });
-        // 竞猜表格：固定列宽，避免手机端被压成极窄列
+        // 竞猜表格：完全按桌面尺寸渲染。
+        // 手机端媒体查询会把得分列压到 28px、缩小字号，部分 WebView 里会挤成看不到数字，
+        // 这里用内联样式直接覆盖成桌面尺寸，保证「得分」列的数字稳稳画出来。
         wrapper.querySelectorAll('.gt-table').forEach(function(el) {
             el.style.setProperty('table-layout', 'fixed', 'important');
             el.style.setProperty('width', '100%', 'important');
+            el.style.setProperty('font-size', '0.875rem', 'important');
+            el.style.setProperty('overflow', 'visible', 'important');
+        });
+        wrapper.querySelectorAll('.gt-table th').forEach(function(el) {
+            el.style.setProperty('padding', '8px 10px', 'important');
+            el.style.setProperty('font-size', '0.8125rem', 'important');
+        });
+        wrapper.querySelectorAll('.gt-table td').forEach(function(el) {
+            el.style.setProperty('padding', '6px 10px', 'important');
+        });
+        wrapper.querySelectorAll('.gt-th-label, .gt-label').forEach(function(el) {
+            el.style.setProperty('width', '50px', 'important');
+            el.style.setProperty('font-size', '0.8125rem', 'important');
+        });
+        wrapper.querySelectorAll('.gt-th-score, .gt-score').forEach(function(el) {
+            el.style.setProperty('width', '60px', 'important');
+            el.style.setProperty('min-width', '60px', 'important');
+            el.style.setProperty('font-size', '0.8125rem', 'important');
+            el.style.setProperty('overflow', 'visible', 'important');
         });
         wrapper.querySelectorAll('.gt-a, .gt-b, .gc-pred-wrap, .gc-a-text, .gc-b-text').forEach(function(el) {
             el.style.setProperty('overflow', 'visible', 'important');
+        });
+        wrapper.querySelectorAll('.gc-a-score, .gc-b-score').forEach(function(el) {
+            el.style.setProperty('display', 'inline-block', 'important');
+            el.style.setProperty('min-width', '28px', 'important');
+            el.style.setProperty('padding', '2px 10px', 'important');
+            el.style.setProperty('font-size', '0.8125rem', 'important');
+            el.style.setProperty('white-space', 'nowrap', 'important');
         });
     }
 

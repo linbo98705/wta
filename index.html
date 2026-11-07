@@ -785,11 +785,12 @@
     // 手机端直接截图会踩两个坑：
     // 1) html2canvas 克隆文档的视口仍按窄屏计算，移动端媒体查询生效 → 部分列/内容被隐藏
     // 2) scale=2 时像素面积过长，iOS 超过 canvas 上限 → 图片底部被静默截断
-    // 统一处理：克隆视口宽度固定为导出宽度（>768 走桌面布局），手机端 scale 降为 1
+    // 1) 克隆视口宽度固定为导出宽度（>768 走桌面布局）
+    // 2) 统一用 2 倍渲染：手机端用 1 倍时「得分」小胶囊里的数字只有几像素，看着像横线/空白
+    // 3) 内容过长时由 captureExportCanvas 自动降倍，避免超过 canvas 上限被截断
     function exportCanvasOptions(cssWidth) {
-        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '') || window.innerWidth <= 768;
         return {
-            scale: isMobile ? 1 : 2,
+            scale: 2,
             backgroundColor: null,
             logging: false,
             useCORS: true,
@@ -886,7 +887,7 @@
         });
     }
 
-    // 统一截图入口：内容超长时自动降采样，保证整张长图都能画出来
+    // 统一截图入口：默认 2 倍清晰渲染；内容超长时自动降倍，保证整张长图都能画出来
     async function captureExportCanvas(el, cssWidth) {
         const contentH = Math.max(el.scrollHeight || 0, el.offsetHeight || 0, 1);
         const opts = exportCanvasOptions(cssWidth);
@@ -894,11 +895,11 @@
         const area = cssWidth * contentH;
         if (area * scale * scale > EXPORT_MAX_CANVAS_AREA) {
             // 面积超限会被系统静默截断，宁可整体缩小也要保证内容完整
-            scale = Math.max(0.5, Math.sqrt(EXPORT_MAX_CANVAS_AREA / area));
+            scale = Math.max(0.6, Math.sqrt(EXPORT_MAX_CANVAS_AREA / area));
         }
         // 单边也限制在 8192px 内，超出 iOS canvas 单边上限同样会被截断
         const dimScale = Math.min(1, 8192 / Math.max(cssWidth, contentH));
-        scale = Math.min(scale, Math.max(0.5, dimScale));
+        scale = Math.min(scale, Math.max(0.6, dimScale));
         return html2canvas(el, Object.assign({}, opts, { scale: scale, height: contentH }));
     }
 
